@@ -3,6 +3,8 @@
 import { AREA } from '@circle/shared';
 import { useParams, useRouter } from 'next/navigation';
 import { ConfirmSheet } from '@/components/confirm';
+import { PostCard } from '@/components/feed/post-card';
+import { usePostForm } from '@/components/feed/post-form';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
 import { Avatar, Card, Empty, IconBtn, Tag } from '@/components/primitives';
@@ -13,6 +15,7 @@ import { Cover, priceLabel, TrilhaSheet } from '@/components/trilhas/trilha-shee
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { mix } from '@/lib/color';
+import { useFeed } from '@/lib/feed';
 import { useMe } from '@/lib/me';
 import { useGroup, useSocialActions } from '@/lib/social';
 
@@ -25,6 +28,8 @@ export default function GrupoPage() {
   const actions = useSocialActions();
   const toast = useToast();
   const { openSheet, openActions } = useSheets();
+  const newPost = usePostForm();
+  const posts = useFeed({ group: id });
 
   if (error) {
     return (
@@ -159,6 +164,25 @@ export default function GrupoPage() {
             <p className="text-sm text-muted">{g.admin ? 'Escolha trilhas da loja para o grupo seguir junto.' : 'O administrador ainda não escolheu trilhas.'}</p>
           )}
         </section>
+
+        {g.member && (
+          <section className="space-y-3">
+            <div className="flex items-center">
+              <h2 className="flex-1 text-[17px] font-semibold">Posts do grupo</h2>
+              <Button variant="aline" className="rounded-full px-3 py-1.5 text-[12px]" onClick={() => newPost(undefined, g.id)}>
+                <Icon n="plus" className="h-4 w-4" />
+                Criar post
+              </Button>
+            </div>
+            {posts.data?.pages.flatMap(p => p.posts).map(p => <PostCard key={p.id} p={p} />)}
+            {posts.hasNextPage && (
+              <Button variant="line" className="w-full" disabled={posts.isFetchingNextPage} onClick={() => posts.fetchNextPage()}>
+                Ver mais posts
+              </Button>
+            )}
+            {posts.data && !posts.data.pages[0]?.posts.length && <p className="text-sm text-muted">Ninguém postou no grupo ainda.</p>}
+          </section>
+        )}
 
         <section>
           <h2 className="mb-2 text-[17px] font-semibold">Membros</h2>

@@ -46,3 +46,29 @@ export type CommentDto = { id: string; author: PersonDto; mine: boolean; text: s
 
 /** Rascunho de post ao compartilhar uma conclusão ("Quer compartilhar?"). */
 export type PostDraft = { title: string; text: string; area?: AreaId | null; refType?: PostRefType; refId?: string };
+
+// ---------- Stories ----------
+
+export const STORY_HOURS = 24;
+export const STORY_MAX_AREAS = 3;
+export const STORY_CAPTION_MAX = 150;
+
+export type StoryDto = {
+  id: string;
+  url: string;
+  areas: AreaId[];
+  caption: string;
+  visibility: Visibility;
+  liked: boolean;
+  seen: boolean;
+  /** Só para o autor. */
+  likes: number | null;
+  views: number | null;
+  createdAt: string;
+  expiresAt: string;
+};
+
+/** Stories ativos agrupados por pessoa (a sua primeiro, depois quem tem story não visto). */
+export type StoryGroupDto = { author: PersonDto; mine: boolean; allSeen: boolean; stories: StoryDto[] };
+
+export type StoryViewerDto = { person: PersonDto; viewedAt: string; liked: boolean };

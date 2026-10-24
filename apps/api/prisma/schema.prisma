@@ -98,6 +98,9 @@ model User {
   postLikes              PostLike[]
   postSaves              PostSave[]
   comments               Comment[]
+  stories                Story[]
+  storyLikes             StoryLike[]
+  storyViews             StoryView[]
 
   @@map("users")
 }
@@ -364,6 +367,7 @@ model File {
   createdAt  DateTime        @default(now())
   attachment TaskAttachment?
   postMedia  PostMedia?
+  story      Story?
 
   @@index([userId, status])
   @@map("files")
@@ -763,4 +767,51 @@ model Comment {
 
   @@index([postId, createdAt])
   @@map("comments")
+}
+
+// ---------- Stories ----------
+
+/// Story: foto que some em 24 horas, com 1 a 3 áreas (os ícones viram marca d'água).
+/// Quem vê segue a mesma regra dos posts fora de grupo.
+model Story {
+  id         String      @id @default(cuid())
+  authorId   String
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  fileId     String      @unique
+  file       File        @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  areas      Area[]
+  /// Legenda curta (até 150 caracteres).
+  caption    String      @default("")
+  visibility Visibility
+  expiresAt  DateTime
+  createdAt  DateTime    @default(now())
+  likes      StoryLike[]
+  views      StoryView[]
+
+  @@index([expiresAt])
+  @@index([authorId, createdAt])
+  @@map("stories")
+}
+
+model StoryLike {
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([storyId, userId])
+  @@map("story_likes")
+}
+
+/// "Visto por": só o autor vê a lista.
+model StoryView {
+  storyId  String
+  story    Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viewedAt DateTime @default(now())
+
+  @@id([storyId, userId])
+  @@map("story_views")
 }
