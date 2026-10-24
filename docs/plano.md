@@ -84,7 +84,7 @@ Em palavras simples:
 
 - Interface `AiProvider` com duas implementações escolhidas por `AI_MODE`:
   - `mock`: devolve um relatório realista montado a partir dos dados reais do usuário, com pequeno atraso simulado. Nenhuma chamada externa.
-  - `anthropic`: chama a API do Claude (`ANTHROPIC_API_KEY`, `AI_MODEL`, padrão `claude-sonnet-5-5`) e valida a resposta em JSON.
+  - `anthropic`: chama a API do Claude (`ANTHROPIC_API_KEY`, `AI_MODEL`, padrão `claude-opus-5-5`) e valida a resposta em JSON.
 - A pessoa escolhe **quais fontes** entram (Necrológio, Roda, Pirâmide, Quadro, Tarefas); só essas são enviadas.
 - A resposta traz índice de alinhamento, análise por área, insights e **1 a 3 trilhas sugeridas** (iniciativa → épicos → tarefas). A pessoa vê cada cascata, pode desmarcar itens e importa para o backlog.
 - Limite de frequência por usuário (ex.: 1 relatório a cada 5 minutos).

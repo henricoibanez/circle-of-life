@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConditionalModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AnalysisModule } from './analysis/analysis.module';
 import { AuthModule } from './auth/auth.module';
 import { BacklogModule } from './backlog/backlog.module';
 import { AppConfigModule } from './config/config.module';
@@ -48,6 +49,7 @@ import { XpModule } from './xp/xp.module';
     SocialModule,
     FeedModule,
     StoriesModule,
+    AnalysisModule,
   ],
   controllers: [HealthController],
 })

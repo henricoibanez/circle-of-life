@@ -8,3 +8,4 @@ export * from './exercises';
 export * from './trilhas';
 export * from './social';
 export * from './feed';
+export * from './analysis';

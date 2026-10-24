@@ -54,6 +54,16 @@ export const envSchema = z.object({
   VAPID_SUBJECT: z.string().optional().default('mailto:nao-responda@circleoflife.local'),
   /** A partir de que hora (no fuso da pessoa) o aviso de tarefas atrasadas é enviado. */
   OVERDUE_HOUR: z.coerce.number().int().min(0).max(23).default(8),
+
+  // ---------- Análise inteligente (IA) ----------
+  /** mock: relatório de exemplo montado com os dados da pessoa, sem chamar nada externo. anthropic: usa a API do Claude. */
+  AI_MODE: z.enum(['mock', 'anthropic']).default('mock'),
+  /** Chave da API do Claude (só com AI_MODE=anthropic). */
+  ANTHROPIC_API_KEY: z.string().optional().default(''),
+  /** Modelo do Claude usado na análise. */
+  AI_MODEL: z.string().min(1).default('claude-opus-5-5'),
+  /** Intervalo mínimo, em minutos, entre dois relatórios da mesma pessoa. */
+  AI_MIN_MINUTES: z.coerce.number().int().nonnegative().default(5),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -66,6 +76,10 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     .refine(env => env.NODE_ENV !== 'production' || env.JWT_SECRET !== EXAMPLE_JWT_SECRET, {
       path: ['JWT_SECRET'],
       message: 'em produção, troque o valor de exemplo por um segredo aleatório',
+    })
+    .refine(env => env.AI_MODE !== 'anthropic' || env.ANTHROPIC_API_KEY.length > 0, {
+      path: ['ANTHROPIC_API_KEY'],
+      message: 'obrigatória quando AI_MODE=anthropic',
     })
     .safeParse(raw);
   if (!result.success) {
