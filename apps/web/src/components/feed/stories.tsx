@@ -23,8 +23,9 @@ export function AreaWatermark({ areas, className = '' }: { areas: AreaId[]; clas
   return (
     <span className={`pointer-events-none flex gap-1.5 ${className}`} aria-label={`Áreas: ${areas.map(a => AREA[a].name).join(', ')}`}>
       {areas.map(a => (
-        <span key={a} className="grid h-8 w-8 place-items-center rounded-full bg-white/25 text-white/90 backdrop-blur-sm">
-          <Icon n={AREA[a].icon} className="h-4 w-4" />
+        // Mesmo ícone colorido da Roda da Vida, sobre fundo branco, com 75% de opacidade.
+        <span key={a} className="rounded-full bg-white opacity-75">
+          <AreaIcon id={a} size="w-9 h-9" icon="w-[18px] h-[18px]" />
         </span>
       ))}
     </span>
@@ -165,7 +166,7 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
           <DialogPrimitive.Title className="sr-only">Story de {g.mine ? 'você' : g.author.name}</DialogPrimitive.Title>
           <div className="relative min-h-0 flex-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={s.url} alt={s.caption || `Story de ${g.author.name}`} className="absolute inset-0 h-full w-full object-contain" />
+            <img src={s.url} alt={s.caption || `Story de ${g.author.name}`} className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 to-transparent px-3 pb-8" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)' }}>
               <div className="flex gap-1">
                 {g.stories.map((x, i) => (
