@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+/* O tema completo do protótipo (paletas, modo escuro, fontes) entra na etapa 3. */
+:root {
+  --bg: 250 250 247;
+  --ink: 24 28 22;
+  --p: 94 135 60;
+}
+
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--ink));
+}

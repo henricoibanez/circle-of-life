@@ -1,0 +1,21 @@
+{
+  "name": "circle-of-life",
+  "private": true,
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "setup:local": "tsx scripts/setup-local.ts",
+    "dev": "tsx scripts/dev.ts",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "dotenv": "18.0.6",
+    "embedded-postgres": "17.10.0-beta.17",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,88 @@
+# =====================================================================
+# Alternativa com Docker ao "pnpm dev".
+#
+# ATENÇÃO: este arquivo NÃO foi testado (o computador do projeto não tem
+# Docker). Ele usa os mesmos programas e versões do ambiente local:
+# PostgreSQL 17, SeaweedFS 4.48 e Mailpit 1.31.4.
+#
+# Uso: copie .env.example para .env e rode "docker compose up".
+# Endereços: site http://localhost:3000 · e-mails http://localhost:8025
+# =====================================================================
+
+x-node: &node
+  image: node:24-bookworm-slim
+  working_dir: /app
+  env_file: .env
+  environment:
+    COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+    # Dentro do Docker os serviços se acham pelo nome, não por "localhost".
+    DATABASE_URL: postgresql://circle:circle@postgres:5432/circle_of_life
+    S3_ENDPOINT: http://storage:8333
+    S3_PUBLIC_ENDPOINT: http://localhost:8333
+    SMTP_HOST: mailpit
+    API_INTERNAL_URL: http://api:4000
+  volumes:
+    - .:/app
+    # As bibliotecas do contêiner (Linux) ficam separadas das do Windows.
+    - node_modules:/app/node_modules
+    - api_node_modules:/app/apps/api/node_modules
+    - web_node_modules:/app/apps/web/node_modules
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: circle
+      POSTGRES_PASSWORD: circle
+      POSTGRES_DB: circle_of_life
+    ports: ['5432:5432']
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U circle -d circle_of_life']
+      interval: 3s
+      retries: 20
+
+  storage:
+    image: chrislusf/seaweedfs:4.48
+    command: >
+      server -ip=storage -ip.bind=0.0.0.0 -dir=/data -s3
+      -s3.config=/etc/seaweedfs/s3.json -master.volumeSizeLimitMB=64
+    ports: ['8333:8333']
+    volumes:
+      - storage_data:/data
+      # Chaves de acesso iguais às do .env.example.
+      - ./docker/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    ports: ['8025:8025', '1025:1025']
+
+  # Instala as bibliotecas uma vez; api e web esperam terminar.
+  install:
+    <<: *node
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile"
+
+  api:
+    <<: *node
+    command: sh -c "corepack enable && pnpm --filter @circle/api dev"
+    ports: ['4000:4000']
+    depends_on:
+      install: { condition: service_completed_successfully }
+      postgres: { condition: service_healthy }
+      storage: { condition: service_started }
+      mailpit: { condition: service_started }
+
+  web:
+    <<: *node
+    command: sh -c "corepack enable && pnpm --filter @circle/web dev"
+    ports: ['3000:3000']
+    depends_on:
+      install: { condition: service_completed_successfully }
+      api: { condition: service_started }
+
+volumes:
+  postgres_data:
+  storage_data:
+  node_modules:
+  api_node_modules:
+  web_node_modules:

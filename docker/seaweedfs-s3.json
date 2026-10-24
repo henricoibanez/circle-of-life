@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "circle",
+      "credentials": [{ "accessKey": "circle-local", "secretKey": "circle-local-secret" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

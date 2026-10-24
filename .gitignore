@@ -1,0 +1,27 @@
+# Dependências
+node_modules/
+
+# Programas e dados locais (Postgres, storage, Mailpit)
+.local/
+
+# Variáveis de ambiente reais (nunca vão para o git)
+.env
+.env.*
+!.env.example
+
+# Saídas de build
+dist/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Material de referência (grande demais para o git; fica só no computador)
+referencia/
