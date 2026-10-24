@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* Onde o Tailwind procura as classes usadas (todo o código do site). */
+@source '..';
+
 /*
  * Tema do protótipo (referencia/prototipo/circle-of-life.html).
  *

@@ -13,7 +13,8 @@
     "db:reset": "pnpm --filter @circle/api db:reset",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @circle/api test"
+    "test": "pnpm --filter @circle/api test",
+    "stop": "tsx scripts/stop.ts"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

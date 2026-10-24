@@ -37,10 +37,13 @@ export function useBacklogActions() {
     mutationFn: ({ path, method, body }: { path: string; method: string; body?: Body }) => api<any>(path, { method, body }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: BACKLOG_KEY });
-      qc.invalidateQueries({ queryKey: ['board'] });
+      qc.invalidateQueries({ queryKey: ['sprints'] });
       qc.invalidateQueries({ queryKey: ['me'] });
     },
-    onError: e => toast(e instanceof ApiError ? e.message : 'Algo deu errado. Tente de novo.'),
+    onError: e => {
+      qc.invalidateQueries({ queryKey: BACKLOG_KEY });
+      toast(e instanceof ApiError ? e.message : 'Algo deu errado. Tente de novo.');
+    },
   });
   const run = (path: string, method = 'POST', body?: Body) => mutation.mutateAsync({ path, method, body });
 
@@ -64,6 +67,12 @@ export function useBacklogActions() {
     updateTask: (id: string, b: Body) => run(`/tasks/${id}`, 'PATCH', b) as Promise<TaskDto>,
     deleteTask: (id: string) => run(`/tasks/${id}`, 'DELETE'),
     duplicateTask: (id: string) => run(`/tasks/${id}/duplicate`) as Promise<TaskDto>,
-    moveTask: (id: string, status: TaskStatus) => run(`/tasks/${id}/move`, 'POST', { status }) as Promise<{ task: TaskDto; from: TaskStatus }>,
+    moveTask: (id: string, status: TaskStatus) => {
+      // Atualiza a tela na hora (sem esperar a API), para o arrastar ficar fluido.
+      qc.setQueryData<BacklogDto>(BACKLOG_KEY, b =>
+        b && { ...b, tasks: b.tasks.map(t => (t.id === id ? { ...t, status, archivedAt: null, doneAt: status === 'done' ? new Date().toISOString() : null } : t)) },
+      );
+      return run(`/tasks/${id}/move`, 'POST', { status }) as Promise<{ task: TaskDto; from: TaskStatus }>;
+    },
   };
 }

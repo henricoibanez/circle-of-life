@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
+import { SprintsController } from '../sprints/sprints.controller';
 import { SprintsService } from '../sprints/sprints.service';
 import { BacklogService } from './backlog.service';
 import { CreateEpicDto, CreateInitiativeDto, CreateTaskDto, MoveTaskDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
@@ -94,7 +95,7 @@ class BacklogController {
 }
 
 @Module({
-  controllers: [BacklogController],
+  controllers: [BacklogController, SprintsController],
   providers: [BacklogService, SprintsService],
   exports: [BacklogService, SprintsService],
 })

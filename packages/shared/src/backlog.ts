@@ -59,3 +59,15 @@ export function isLate(t: Pick<TaskDto, 'dueDate' | 'status'>, now = new Date())
   if (!t.dueDate || t.status === 'done') return false;
   return new Date(`${t.dueDate}T23:59:59`) < now;
 }
+
+export type SprintDto = {
+  id: string;
+  number: number;
+  startAt: string;
+  plannedEnd: string;
+  closedAt: string | null;
+  doneCount: number | null;
+  totalCount: number | null;
+};
+
+export type SprintOverviewDto = { current: SprintDto; history: SprintDto[] };

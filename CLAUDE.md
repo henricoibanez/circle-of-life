@@ -214,6 +214,7 @@ Tudo que muda entre ambientes vem de **variáveis de ambiente**: endereços, cha
 pnpm install       # instala as bibliotecas (o PostgreSQL vem junto, pelo npm)
 pnpm setup:local   # uma vez: baixa SeaweedFS e Mailpit para .local/bin (conferidos por SHA-256)
 pnpm dev           # sobe tudo (banco, storage, e-mail, api e web); Ctrl+C desliga
+pnpm stop          # desliga o ambiente local se o terminal do pnpm dev foi fechado (só processos desta pasta)
 pnpm typecheck     # confere os tipos de todos os apps
 pnpm test          # testes automáticos da API (precisa do pnpm dev ligado; usa o banco circle_of_life_test)
 pnpm db:studio     # abre uma tela no navegador para ver as tabelas do banco
@@ -229,7 +230,8 @@ pnpm --filter @circle/api db:migrate --name descricao   # cria uma migration nov
 - O pnpm só deixa rodar scripts de instalação dos pacotes listados em `allowBuilds` no `pnpm-workspace.yaml`. Confira o que o script faz antes de liberar um novo.
 - Testes da API: `node:test` do próprio Node, sobre o código compilado pelo `tsc` (o Nest precisa dos metadados de tipos que só o `tsc` gera). Ficam em `apps/api/test/*.spec.ts`; cada arquivo roda num processo separado. Toda regra de negócio nova ganha teste.
 - Rotas da API: toda rota exige login por padrão (guarda global). Use `@Public()` para abrir e `@AdminOnly()` para restringir a administradores. Pegue o usuário com `@CurrentUser()`.
-- Para desligar o ambiente fora do terminal, encerre **só os processos desta pasta** (por PID), nunca todos os `node.exe` do computador.
+- Para desligar o ambiente fora do terminal, use `pnpm stop` (encerra **só os processos desta pasta**), nunca todos os `node.exe` do computador. Se o dono estiver com o `pnpm dev` aberto no terminal dele, não desligue sem avisar.
+- Pastas novas no site às vezes não são vistas pelo Tailwind do `next dev` já ligado (classes faltando na tela): reinicie o ambiente.
 - O `next dev` gera o `apps/web/AGENTS.md`, que aponta para a documentação do Next.js instalada em `node_modules/next/dist/docs/`. Consulte essa documentação antes de usar APIs do Next.js.
 
 O computador do dono tem 8 GB de memória e 2 núcleos: prefira soluções leves e evite processos desnecessários rodando ao mesmo tempo.
