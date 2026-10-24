@@ -645,10 +645,7 @@ Todos com prefixo `/api`, respostas em JSON, mensagens de erro em português. To
 
 | Método | Rota | O que faz |
 |---|---|---|
-| GET | `/reports/overview?days=7|30|90` | Concluídas, em andamento, atrasadas, total, taxa, áreas, iniciativas, dia da semana, épicos com mais entregas. |
-| GET | `/reports/areas` | Por área. |
-| GET | `/reports/evolution` | Média da roda, tarefas por semana, sprints. |
-| GET | `/reports/deliveries?from=&to=&area=` | Entregas: data, tarefa, épico, área. |
+| — | (sem rotas próprias) | Os relatórios são calculados no site a partir de `/backlog`, `/roda` e `/sprints`, que já trazem tudo o que é preciso. Se o volume de dados crescer muito, criar rotas `/reports/*`. |
 | GET | `/analysis/latest` | Último relatório (ou exemplo) e fontes disponíveis. |
 | POST | `/analysis` | `{ sources: [...] }` → gera relatório. |
 | POST | `/analysis/:id/suggestions/:index/import` | Importa a trilha sugerida (com os itens marcados) para o backlog. |
