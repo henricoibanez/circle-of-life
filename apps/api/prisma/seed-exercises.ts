@@ -24,3 +24,9 @@ export async function seedMaslow(prisma: PrismaClient, userId: string) {
   await prisma.maslowCheck.createMany({ data: MASLOW_CHECKS.map(itemKey => ({ userId, itemKey })) });
   await prisma.maslowNote.create({ data: { userId, level: 'fis', text: 'Respiração: quero voltar a caminhar no parque antes do trabalho.', createdAt: ago(6) } });
 }
+
+const NECRO = '<h1>Meu legado</h1><p>Se um dia eu partir, quero que lembrem de mim pelo amor que compartilhei, pelas pessoas que inspirei e pelas histórias que construí.</p><p>Minha missão nesta vida sempre foi ajudar o máximo de pessoas que eu pudesse, deixando um impacto positivo por onde eu passasse.</p><h2>Minha história</h2><p>Errou, aprendeu com os erros e decidiu usar o que aprendeu para ajudar quem vinha atrás.</p><h2>Valores e crenças</h2><ul><li>Honestidade em todas as minhas atitudes</li><li>Empatia e compaixão pelo próximo</li><li>Coragem para fazer o que é certo</li><li>Gratidão pelas pequenas coisas da vida</li></ul><h2>Conquistas e momentos marcantes</h2><p>Minha família, meus amigos e todas as conquistas que alcançamos juntos. Cada desafio me ensinou algo valioso.</p><h2>Conselhos e lições</h2><p>Viva com propósito. Ame intensamente. Seja gentil. E nunca pare de aprender.</p>';
+
+export async function seedNecrologio(prisma: PrismaClient, userId: string) {
+  await prisma.necrologio.create({ data: { userId, html: NECRO } });
+}

@@ -83,6 +83,7 @@ model User {
   rodaSnapshots   RodaSnapshot[]
   maslowChecks    MaslowCheck[]
   maslowNotes     MaslowNote[]
+  necrologio      Necrologio?
 
   @@map("users")
 }
@@ -417,4 +418,14 @@ model MaslowNote {
 
   @@index([userId])
   @@map("maslow_notes")
+}
+
+/// Necrológio: o texto (HTML já limpo pelo servidor). Sem seções nesta versão.
+model Necrologio {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  html      String   @default("")
+  updatedAt DateTime @updatedAt
+
+  @@map("necrologios")
 }
