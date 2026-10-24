@@ -81,6 +81,8 @@ model User {
   files           File[]
   rodaScores      RodaScore[]
   rodaSnapshots   RodaSnapshot[]
+  maslowChecks    MaslowCheck[]
+  maslowNotes     MaslowNote[]
 
   @@map("users")
 }
@@ -389,4 +391,30 @@ model RodaSnapshot {
 
   @@index([userId, createdAt])
   @@map("roda_snapshots")
+}
+
+/// Item da Pirâmide de Maslow marcado como atendido. Os itens em si ficam em packages/shared/src/maslow.ts.
+model MaslowCheck {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Ex.: "fis-0" (nível + posição do item).
+  itemKey   String
+  checkedAt DateTime @default(now())
+
+  @@id([userId, itemKey])
+  @@map("maslow_checks")
+}
+
+/// Reflexão escrita em um nível da pirâmide.
+model MaslowNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// aut, est, soc, seg ou fis.
+  level     String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("maslow_notes")
 }

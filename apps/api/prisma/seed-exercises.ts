@@ -17,3 +17,10 @@ export async function seedRoda(prisma: PrismaClient, userId: string) {
   await prisma.rodaScore.createMany({ data: Object.entries(RODA_NOW).map(([area, score]) => ({ userId, area: area as never, score })) });
   await prisma.rodaSnapshot.createMany({ data: RODA_HISTORY.map(h => ({ userId, scores: h.scores, createdAt: ago(h.days) })) });
 }
+
+const MASLOW_CHECKS = ['fis-0', 'fis-1', 'fis-2', 'fis-3', 'fis-5', 'seg-0', 'seg-1', 'seg-2', 'seg-5', 'soc-0', 'soc-1', 'soc-2', 'soc-4', 'est-0', 'est-1', 'est-3', 'est-4', 'aut-0', 'aut-1', 'aut-2', 'aut-3', 'aut-4', 'aut-5'];
+
+export async function seedMaslow(prisma: PrismaClient, userId: string) {
+  await prisma.maslowCheck.createMany({ data: MASLOW_CHECKS.map(itemKey => ({ userId, itemKey })) });
+  await prisma.maslowNote.create({ data: { userId, level: 'fis', text: 'Respiração: quero voltar a caminhar no parque antes do trabalho.', createdAt: ago(6) } });
+}

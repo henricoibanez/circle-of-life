@@ -28,3 +28,24 @@ export const MASLOW: MaslowLevel[] = [
 export const maslowItemKey = (level: MaslowLevelId, index: number) => `${level}-${index}`;
 
 export const MASLOW_ITEM_KEYS = MASLOW.flatMap(m => m.items.map((_, i) => maslowItemKey(m.id, i)));
+
+export type MaslowDto = { checks: string[]; notes: { id: string; level: MaslowLevelId; text: string; createdAt: string }[] };
+
+/** Percentual (0 a 1) de itens marcados em um nível. */
+export function maslowLevelPct(checks: Set<string>, level: MaslowLevelId) {
+  const m = MASLOW.find(x => x.id === level)!;
+  return m.items.filter((_, i) => checks.has(maslowItemKey(level, i))).length / m.items.length;
+}
+
+/** Quanto do nível precisa estar atendido para considerar que a pessoa "passou" por ele. */
+export const MASLOW_LEVEL_DONE = 0.7;
+
+/**
+ * Nível atual: subindo da base (fisiológicas) para o topo, é o primeiro nível
+ * que ainda não está pelo menos 70% atendido — o degrau em que a pessoa está
+ * trabalhando. Com todos atendidos, é a autorrealização.
+ */
+export function maslowCurrentLevel(checks: Set<string>) {
+  const fromBase = [...MASLOW].reverse();
+  return fromBase.find(m => maslowLevelPct(checks, m.id) < MASLOW_LEVEL_DONE) ?? MASLOW[0]!;
+}
