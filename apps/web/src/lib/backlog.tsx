@@ -2,6 +2,8 @@
 
 import type { AreaId, BacklogDto, EpicDto, InitiativeDto, TaskDto, TaskStatus, XpChange } from '@circle/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { SharePrompt } from '@/components/feed/post-form';
+import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { api, ApiError, type Me } from './api';
 
@@ -33,6 +35,7 @@ type Body = Record<string, unknown>;
 export function useBacklogActions() {
   const qc = useQueryClient();
   const toast = useToast();
+  const { openSheet } = useSheets();
   const mutation = useMutation({
     mutationFn: ({ path, method, body }: { path: string; method: string; body?: Body }) => api<any>(path, { method, body }),
     onSuccess: (data: { xp?: XpChange } | undefined) => {
@@ -75,7 +78,11 @@ export function useBacklogActions() {
         b && { ...b, tasks: b.tasks.map(t => (t.id === id ? { ...t, status, archivedAt: null, doneAt: status === 'done' ? new Date().toISOString() : null } : t)) },
       );
       return (run(`/tasks/${id}/move`, 'POST', { status }) as Promise<{ task: TaskDto; from: TaskStatus; xp: XpChange }>).then(r => {
-        if (r.xp.gained > 0) toast(`Tarefa concluída, +${r.xp.gained} XP`);
+        if (status === 'done' && r.from !== 'done') {
+          // Sempre pergunta se quer compartilhar a conclusão (decisão do dono do projeto).
+          const area = qc.getQueryData<BacklogDto>(BACKLOG_KEY)?.epics.find(e => e.id === r.task.epicId)?.area ?? null;
+          openSheet(close => <SharePrompt draft={{ title: r.task.title, text: '', area, refType: 'task', refId: r.task.id }} xp={r.xp.gained} onClose={close} />);
+        } else if (r.xp.gained > 0) toast(`Tarefa concluída, +${r.xp.gained} XP`);
         return r;
       });
     },

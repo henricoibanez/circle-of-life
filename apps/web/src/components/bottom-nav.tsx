@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Icon, type IconName } from './icon';
 import { Sheet, useSheets } from './sheet';
-import { useToast } from './toasts';
 import { useBacklogSheets } from './backlog/use-backlog-sheets';
+import { usePostForm } from './feed/post-form';
 
 const TABS: { href: string; icon: IconName; label: string }[] = [
   { href: '/feed', icon: 'home', label: 'Feed' },
@@ -63,13 +63,13 @@ export function BottomNav() {
 
 /** Folha do botão "+": escolher o que criar. */
 export function AddSheet({ onClose }: { onClose: () => void }) {
-  const toast = useToast();
   const sheets = useBacklogSheets();
+  const newPost = usePostForm();
   const opts: { n: IconName; title: string; d: string; bg: string; ic: string; open: () => void }[] = [
     { n: 'target', title: 'Nova Iniciativa', d: 'Objetivo estratégico de alto nível', bg: 'bg-primary/5', ic: 'bg-primary text-onprimary', open: () => sheets.openInitiative() },
     { n: 'layersArea', title: 'Novo Épico', d: 'Conjunto de entregáveis relacionados', bg: 'bg-accent/5', ic: 'bg-accent text-white', open: () => sheets.openEpic() },
     { n: 'checkSq', title: 'Nova Tarefa', d: 'Ação específica e executável', bg: 'bg-sunk/60', ic: 'bg-emerald-600 text-white', open: () => sheets.openTask() },
-    { n: 'edit', title: 'Novo post', d: 'Compartilhar algo no feed', bg: 'bg-sunk/60', ic: 'bg-ink text-bg', open: () => toast('Novo post: chega na etapa 17') },
+    { n: 'edit', title: 'Novo post', d: 'Compartilhar algo no feed', bg: 'bg-sunk/60', ic: 'bg-ink text-bg', open: () => newPost() },
   ];
   return (
     <Sheet title="Adicionar" onClose={onClose} footer={<Button variant="line" className="flex-1" onClick={onClose}>Cancelar</Button>}>

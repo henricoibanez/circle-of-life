@@ -80,7 +80,7 @@ export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: Backl
 
   const close = async () => {
     const r = await actions.closeEpic(e.id);
-    celebrate({ icon: 'trophy', title: `Épico concluído: ${r.epic.title}`, text: `${r.doneTasks} tarefas entregues.`, xp: r.xp.gained });
+    celebrate({ icon: 'trophy', title: `Épico concluído: ${r.epic.title}`, text: `${r.doneTasks} tarefas entregues.`, xp: r.xp.gained, area: r.epic.area, refType: 'epic', refId: r.epic.id });
   };
 
   return (

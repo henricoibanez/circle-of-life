@@ -499,6 +499,8 @@ Stories expirados somem do app e a foto é apagada do storage por uma limpeza pe
 
 Quem vê um post: `publico` = todos os usuários do app; `amigos` = amigos do autor; `privado` = só o autor. Post em grupo = membros do grupo.
 
+Filtros do feed: **Para você** = tudo o que a pessoa pode ver; **Amigos** = posts dos amigos; **Grupos** = posts dos grupos de que participa; **Seguindo** = amigos + grupos juntos; **Salvos** = posts que ela salvou (chip a mais, fora do protótipo, para os salvos terem onde aparecer). Um post pode ter só a conquista, sem texto (é o caso do "Quer compartilhar?" ao concluir tarefa).
+
 ### Notificações
 
 ```prisma

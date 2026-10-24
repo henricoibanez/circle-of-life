@@ -17,6 +17,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { config as loadEnv } from 'dotenv';
 import { PrismaClient, type Prisma } from '../src/generated/prisma/client';
 import { seedBacklog } from './seed-backlog';
+import { seedFeed } from './seed-feed';
 import { clearSocial, seedSocial } from './seed-social';
 import { seedTrilhas } from './seed-trilhas';
 import { seedDreams, seedMaslow, seedNecrologio, seedRoda } from './seed-exercises';
@@ -79,6 +80,7 @@ async function main() {
   await seedDreams(prisma, henrico);
   await seedTrilhas(prisma, created);
   const social = await seedSocial(prisma, created);
+  const posts = await seedFeed(prisma, created);
   const late = await prisma.task.findFirst({ where: { userId: henrico, title: { startsWith: 'Lição de casa' } } });
   if (late) {
     await prisma.task.update({ where: { id: late.id }, data: { overdueNotifiedAt: new Date() } });
@@ -87,7 +89,7 @@ async function main() {
     });
   }
 
-  console.log(`✓ Seed concluído: ${USERS.length} usuários de teste, 1 convite pendente (convidado@teste.local) e o backlog do Henrico (${backlog.initiatives} iniciativas, ${backlog.epics} épicos, ${backlog.tasks} tarefas, sprints 10 a 12) os exercícios de reflexão, 10 trilhas (1 aguardando aprovação), ${social.groups} grupos e ${social.friendships} amizades.`);
+  console.log(`✓ Seed concluído: ${USERS.length} usuários de teste, 1 convite pendente (convidado@teste.local) e o backlog do Henrico (${backlog.initiatives} iniciativas, ${backlog.epics} épicos, ${backlog.tasks} tarefas, sprints 10 a 12) os exercícios de reflexão, 10 trilhas (1 aguardando aprovação), ${social.groups} grupos, ${social.friendships} amizades e ${posts} posts.`);
 }
 
 main()

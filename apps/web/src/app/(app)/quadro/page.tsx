@@ -210,7 +210,7 @@ function DreamSheet({ dream, onClose }: { dream?: DreamDto; onClose: () => void 
         const r = await api<{ xp: XpChange }>(`/dreams/${dream.id}/realize`, { method: 'POST' });
         qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, disponivel: r.xp.disponivel } });
         onClose();
-        celebrate({ icon: 'star', title: 'Sonho realizado', text: f.text, xp: r.xp.gained });
+        celebrate({ icon: 'star', title: 'Sonho realizado', text: f.text, xp: r.xp.gained, area: f.area, refType: 'sonho', refId: dream.id });
       }
     });
 

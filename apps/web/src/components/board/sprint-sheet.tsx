@@ -37,6 +37,8 @@ export function SprintSheet({ onClose }: { onClose: () => void }) {
         r.open ? `, ${r.open} ${r.open === 1 ? 'voltou' : 'voltaram'} ao backlog` : ''
       }.`,
       xp: r.xp.gained,
+      refType: 'sprint',
+      refId: r.closed.id,
     });
   };
 

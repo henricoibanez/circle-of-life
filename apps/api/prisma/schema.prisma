@@ -94,6 +94,10 @@ model User {
   friendRequestsSent     Friendship[]  @relation("FriendRequestsSent")
   friendRequestsReceived Friendship[]  @relation("FriendRequestsReceived")
   groupMemberships       GroupMember[]
+  posts                  Post[]
+  postLikes              PostLike[]
+  postSaves              PostSave[]
+  comments               Comment[]
 
   @@map("users")
 }
@@ -359,6 +363,7 @@ model File {
   status     FileStatus      @default(pending)
   createdAt  DateTime        @default(now())
   attachment TaskAttachment?
+  postMedia  PostMedia?
 
   @@index([userId, status])
   @@map("files")
@@ -647,6 +652,7 @@ model Group {
   createdAt   DateTime      @default(now())
   members     GroupMember[]
   trilhas     GroupTrilha[]
+  posts       Post[]
 
   @@map("groups")
 }
@@ -675,4 +681,86 @@ model GroupTrilha {
 
   @@id([groupId, trilhaId])
   @@map("group_trilhas")
+}
+
+// ---------- Feed ----------
+
+/// Post do feed. Quem vê: publico = todos; amigos = amigos do autor; privado = só o autor.
+/// Post de grupo: só os membros do grupo.
+model Post {
+  id         String      @id @default(cuid())
+  authorId   String
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  /// Conquista (opcional), mostrada em destaque com o ✓.
+  title      String      @default("")
+  text       String
+  area       Area?
+  groupId    String?
+  group      Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  visibility Visibility
+  tags       String[]
+  /// O que originou o post ao compartilhar uma conclusão (task, epic, initiative, sprint, sonho).
+  refType    String?
+  refId      String?
+  /// "+N XP" mostrado no post, calculado pela API a partir do extrato de XP do que originou o post.
+  xpShown    Int?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  media      PostMedia[]
+  likes      PostLike[]
+  saves      PostSave[]
+  comments   Comment[]
+
+  @@index([createdAt])
+  @@index([authorId, createdAt])
+  @@index([groupId, createdAt])
+  @@map("posts")
+}
+
+/// Imagens do post (até 8), na ordem escolhida.
+model PostMedia {
+  id       String @id @default(cuid())
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  fileId   String @unique
+  file     File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  position Int
+
+  @@index([postId])
+  @@map("post_media")
+}
+
+model PostLike {
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([postId, userId])
+  @@map("post_likes")
+}
+
+model PostSave {
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([postId, userId])
+  @@map("post_saves")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@map("comments")
 }

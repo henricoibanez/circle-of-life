@@ -7,3 +7,4 @@ export * from './xp';
 export * from './exercises';
 export * from './trilhas';
 export * from './social';
+export * from './feed';

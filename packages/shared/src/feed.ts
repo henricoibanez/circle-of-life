@@ -1,0 +1,48 @@
+import type { AreaId } from './areas';
+import type { PersonDto } from './social';
+
+export type Visibility = 'publico' | 'amigos' | 'privado';
+
+export const VISIBILITY: { id: Visibility; label: string; icon: 'globe' | 'users' | 'lock' }[] = [
+  { id: 'publico', label: 'Todo mundo', icon: 'globe' },
+  { id: 'amigos', label: 'Somente amigos', icon: 'users' },
+  { id: 'privado', label: 'Privado', icon: 'lock' },
+];
+
+/** Filtros do feed (chips). "Seguindo" = amigos + grupos de que você participa. */
+export const FEED_FILTERS = ['para', 'amigos', 'grupos', 'seguindo', 'salvos'] as const;
+export type FeedFilter = (typeof FEED_FILTERS)[number];
+
+export const MAX_POST_IMAGES = 8;
+
+/** O que originou um post de conclusão (para mostrar o "+N XP"). */
+export const POST_REF_TYPES = ['task', 'epic', 'initiative', 'sprint', 'sonho'] as const;
+export type PostRefType = (typeof POST_REF_TYPES)[number];
+
+export type PostDto = {
+  id: string;
+  author: PersonDto;
+  mine: boolean;
+  title: string;
+  text: string;
+  area: AreaId | null;
+  group: { id: string; name: string; icon: string } | null;
+  visibility: Visibility;
+  tags: string[];
+  media: { id: string; url: string }[];
+  xpShown: number | null;
+  likes: number;
+  liked: boolean;
+  /** Até 3 pessoas que curtiram (sem você), para o "Curtido por". */
+  likers: PersonDto[];
+  comments: number;
+  saved: boolean;
+  createdAt: string;
+};
+
+export type FeedPageDto = { posts: PostDto[]; nextCursor: string | null };
+
+export type CommentDto = { id: string; author: PersonDto; mine: boolean; text: string; createdAt: string };
+
+/** Rascunho de post ao compartilhar uma conclusão ("Quer compartilhar?"). */
+export type PostDraft = { title: string; text: string; area?: AreaId | null; refType?: PostRefType; refId?: string };

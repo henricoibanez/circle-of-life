@@ -65,6 +65,9 @@ export const ICON_PATHS = {
   bolt: 'M13 2 4 14h7l-1 8 9-12h-7z', alert: 'M12 3 2 20h20zM12 10v4M12 17h.01',
   plane: 'M2 16l20-7-3 11-6-4-3 4v-5l9-6-11 5z', graduation: 'M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5', bulb: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z',
   download: 'M12 3v12M7 10l5 5 5-5M4 21h16', send: 'M22 2 11 13M22 2l-7 20-4-9-9-4z', copy: 'M8 8h12v12H8zM4 16V4h12',
+  // Novos (fora do protótipo), no mesmo estilo: visibilidade dos posts.
+  globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9z',
+  lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

@@ -1,16 +1,19 @@
 'use client';
 
+import type { AreaId, PostRefType } from '@circle/shared';
+import { PostForm } from './feed/post-form';
 import { Icon, type IconName } from './icon';
 import { Sheet, useSheets } from './sheet';
 import { Button } from './ui/button';
 
-export type Celebration = { icon?: IconName; title: string; text: string; xp?: number };
+export type Celebration = { icon?: IconName; title: string; text: string; xp?: number; area?: AreaId | null; refType?: PostRefType; refId?: string };
 
 /**
- * Folha de comemoração (épico encerrado, sprint concluída, iniciativa concluída…),
- * como a Celebrate do protótipo. O botão "Compartilhar" no feed chega na etapa 17.
+ * Folha de comemoração (épico encerrado, sprint concluída, iniciativa concluída, sonho…),
+ * como a Celebrate do protótipo, com o botão opcional "Compartilhar" no feed.
  */
 export function CelebrateSheet({ data, onClose }: { data: Celebration; onClose: () => void }) {
+  const { openSheet } = useSheets();
   return (
     <Sheet title="" onClose={onClose}>
       <div className="pb-2 text-center">
@@ -25,10 +28,23 @@ export function CelebrateSheet({ data, onClose }: { data: Celebration; onClose: 
           </p>
         )}
         <div className="mt-6 flex gap-2">
-          <Button className="flex-1" onClick={onClose}>
-            Continuar
+          <Button variant="line" className="flex-1" onClick={onClose}>
+            Agora não
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => {
+              onClose();
+              openSheet(close => (
+                <PostForm draft={{ title: data.title, text: data.text, area: data.area, refType: data.refType, refId: data.refId }} onClose={close} />
+              ));
+            }}
+          >
+            <Icon n="share" className="h-4 w-4" />
+            Compartilhar
           </Button>
         </div>
+        <p className="mt-3 text-xs text-muted">Compartilhar é opcional. Só aparece no feed se você quiser.</p>
       </div>
     </Sheet>
   );

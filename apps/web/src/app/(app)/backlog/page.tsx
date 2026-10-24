@@ -33,6 +33,9 @@ export default function BacklogPage() {
         title: `Iniciativa concluída: ${r.initiative.title}`,
         text: `${r.doneTasks} ${r.doneTasks === 1 ? 'tarefa entregue' : 'tarefas entregues'} em todos os épicos.`,
         xp: r.xp.gained,
+        area: r.initiative.areas[0] ?? null,
+        refType: 'initiative',
+        refId: r.initiative.id,
       }),
     );
   const [tab, setTab] = useState<Tab>('ini');

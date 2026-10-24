@@ -9,6 +9,7 @@ import { DreamsModule } from './exercises/dreams.module';
 import { MaslowModule } from './exercises/maslow.module';
 import { NecrologioModule } from './exercises/necrologio.module';
 import { RodaModule } from './exercises/roda.module';
+import { FeedModule } from './feed/feed.module';
 import { HealthController } from './health/health.controller';
 import { InvitesModule } from './invites/invites.module';
 import { MailModule } from './mail/mail.module';
@@ -44,6 +45,7 @@ import { XpModule } from './xp/xp.module';
     DreamsModule,
     TrilhasModule,
     SocialModule,
+    FeedModule,
   ],
   controllers: [HealthController],
 })
