@@ -9,6 +9,8 @@ if (!apiUrl) {
 }
 
 const nextConfig: NextConfig = {
+  // O selo "N" do Next em desenvolvimento cobre a barra inferior do app.
+  devIndicators: false,
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiUrl.replace(/\/$/, '')}/api/:path*` }];
   },

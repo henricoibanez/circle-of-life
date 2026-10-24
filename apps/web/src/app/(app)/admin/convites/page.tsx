@@ -1,6 +1,8 @@
 'use client';
 
-import Link from 'next/link';
+import { Header } from '@/components/header';
+import { inputCls } from '@/components/primitives';
+import { Button } from '@/components/ui/button';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
@@ -53,12 +55,9 @@ export default function InvitesAdminPage() {
   const valid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
 
   return (
-    <main className="mx-auto max-w-2xl space-y-5 px-4 py-8">
-      <div>
-        <Link href="/" className="text-sm text-primary">← Voltar</Link>
-        <h1 className="mt-2 text-2xl font-bold">Convites</h1>
-        <p className="text-sm text-muted">Só quem você convidar consegue entrar, com a conta Google do e-mail convidado.</p>
-      </div>
+    <>
+      <Header title="Convites" sub="Só quem você convidar consegue entrar" />
+      <div className="space-y-5 px-4 pb-8">
 
       <form
         className="flex gap-2"
@@ -75,11 +74,11 @@ export default function InvitesAdminPage() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           placeholder="E-mail da pessoa"
-          className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 placeholder:text-muted/70 focus:border-primary focus:outline-none"
+          className={inputCls}
         />
-        <button disabled={!valid || busy} className="rounded-xl bg-primary px-4 py-2.5 font-semibold text-onprimary disabled:opacity-40">
+        <Button type="submit" disabled={!valid || busy}>
           Convidar
-        </button>
+        </Button>
       </form>
 
       {message && (
@@ -122,6 +121,7 @@ export default function InvitesAdminPage() {
           </div>
         ))}
       </section>
-    </main>
+      </div>
+    </>
   );
 }

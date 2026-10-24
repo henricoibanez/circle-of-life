@@ -20,15 +20,15 @@ export function HealthStatus() {
   }, []);
 
   if (offline) return <p className="text-red-600">Não foi possível falar com a API.</p>;
-  if (!health) return <p className="opacity-60">Verificando…</p>;
+  if (!health) return <p className="text-muted">Verificando…</p>;
 
   return (
-    <ul className="divide-y divide-black/10 rounded-2xl border border-black/10 bg-white">
+    <ul className="divide-y divide-line rounded-2xl border border-line bg-surface shadow-soft">
       {(Object.keys(LABELS) as (keyof Health)[]).map(k => (
         <li key={k} className="flex items-center gap-3 px-4 py-3">
           <span className={`h-2.5 w-2.5 rounded-full ${health[k]?.ok ? 'bg-green-600' : 'bg-red-600'}`} />
           <span className="flex-1">{LABELS[k]}</span>
-          <span className="text-sm opacity-70">{health[k]?.ok ? 'Funcionando' : (health[k]?.erro ?? 'Fora do ar')}</span>
+          <span className="text-sm text-muted">{health[k]?.ok ? 'Funcionando' : (health[k]?.erro ?? 'Fora do ar')}</span>
         </li>
       ))}
     </ul>

@@ -238,6 +238,10 @@ async function main() {
     }
   }
 
+  // Constantes compartilhadas (áreas, paletas…) usadas pela API e pelo site.
+  const shared = spawnSync('pnpm --silent --filter @circle/shared build', { cwd: ROOT, shell: true, encoding: 'utf8' });
+  if (shared.status !== 0) fail(`Não foi possível compilar o pacote compartilhado:\n${shared.stdout}${shared.stderr}`);
+
   await startPostgres();
   await prepareDatabase();
   await startStorage();
