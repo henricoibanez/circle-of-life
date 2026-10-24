@@ -152,6 +152,39 @@ async function startPostgres() {
   log('banco', `PostgreSQL no ar na porta ${db.port || 5432} (banco "${dbName}")`);
 }
 
+/** Roda um script da API até o fim (ex.: migrations), mostrando a saída. */
+function apiScript(script: string, label: string) {
+  const result = spawnSync(`pnpm --silent --filter @circle/api ${script}`, {
+    cwd: ROOT,
+    env: { ...process.env, PRISMA_HIDE_UPDATE_MESSAGE: 'true' },
+    shell: true,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim();
+  if (result.status !== 0) {
+    log('banco', output);
+    fail(`Falhou: ${label}.`);
+  }
+  return output;
+}
+
+/** Deixa o banco pronto: código do Prisma gerado, migrations aplicadas e, se vazio, dados de exemplo. */
+async function prepareDatabase() {
+  apiScript('db:generate', 'gerar o código de acesso ao banco');
+  const migrate = apiScript('db:deploy', 'aplicar as migrations');
+  const applied = migrate.match(/following migration\(s\) have been applied/) ? 'novas migrations aplicadas' : 'nada novo';
+  log('banco', `Migrations: ${applied}`);
+
+  const client = postgres!.getPgClient(dbName, '127.0.0.1');
+  await client.connect();
+  const { rows } = await client.query<{ n: string }>('select count(*) as n from users');
+  await client.end();
+  if (rows[0]?.n === '0') {
+    log('banco', 'Banco vazio: criando os dados de exemplo (seed)…');
+    log('banco', apiScript('db:seed', 'criar os dados de exemplo').split(/\r?\n/).filter(l => l.includes('✓')).join('\n'));
+  }
+}
+
 async function startStorage() {
   const dir = join(LOCAL, 'storage');
   mkdirSync(dir, { recursive: true });
@@ -206,6 +239,7 @@ async function main() {
   }
 
   await startPostgres();
+  await prepareDatabase();
   await startStorage();
   await startMail();
 

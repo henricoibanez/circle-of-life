@@ -8,6 +8,9 @@
   "scripts": {
     "setup:local": "tsx scripts/setup-local.ts",
     "dev": "tsx scripts/dev.ts",
+    "db:studio": "pnpm --filter @circle/api db:studio",
+    "db:seed": "pnpm --filter @circle/api db:seed",
+    "db:reset": "pnpm --filter @circle/api db:reset",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck"
   },

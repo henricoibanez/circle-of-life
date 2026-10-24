@@ -1,0 +1,96 @@
+// Modelo de dados do Circle of Life.
+// A referência completa (todas as tabelas previstas) está em docs/plano.md.
+// Mudanças aqui só valem depois de uma migration: pnpm --filter @circle/api db:migrate
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Enums ----------
+
+enum UserRole {
+  member
+  admin
+}
+
+/// Paleta de cores escolhida no perfil (as 6 do protótipo).
+enum Palette {
+  natureza
+  serenity
+  soft
+  dourado
+  mindful
+  premium
+}
+
+/// Aparência: seguir o sistema, clara ou escura.
+enum ThemeMode {
+  auto
+  light
+  dark
+}
+
+/// Quem vê posts e stories: "Todo mundo", "Somente amigos" ou "Privado".
+enum Visibility {
+  publico
+  amigos
+  privado
+}
+
+// ---------- Usuários e convites ----------
+
+model User {
+  id                    String     @id @default(cuid())
+  email                 String     @unique
+  googleId              String?    @unique
+  role                  UserRole   @default(member)
+  name                  String
+  /// Aparece no perfil como "ID: @handle".
+  handle                String     @unique
+  bio                   String     @default("")
+  /// Foto do perfil (ligada à tabela de arquivos na etapa 7).
+  photoFileId           String?    @unique
+  palette               Palette    @default(natureza)
+  randomTheme           Boolean    @default(false)
+  themeMode             ThemeMode  @default(auto)
+  defaultPostVisibility Visibility @default(publico)
+  timezone              String     @default("America/Sao_Paulo")
+  /// Tudo que a pessoa já ganhou de XP (cópia rápida da soma do extrato, etapa 6).
+  xpTotal               Int        @default(0)
+  /// XP gasto comprando trilhas. XP disponível = xpTotal - xpSpent.
+  xpSpent               Int        @default(0)
+  /// Usuários criados pelo seed para o login de desenvolvimento.
+  isTestUser            Boolean    @default(false)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  invitesSent     Invite[] @relation("InvitedBy")
+  invitesAccepted Invite[] @relation("AcceptedBy")
+
+  @@map("users")
+}
+
+/// Convite de acesso (só administradores convidam). O link enviado por
+/// e-mail leva o token; aqui guardamos apenas o "resumo" (hash) dele,
+/// para que um vazamento do banco não exponha convites válidos.
+model Invite {
+  id             String    @id @default(cuid())
+  email          String
+  tokenHash      String    @unique
+  invitedById    String
+  invitedBy      User      @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  acceptedUserId String?
+  acceptedUser   User?     @relation("AcceptedBy", fields: [acceptedUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now())
+
+  @@index([email])
+  @@map("invites")
+}

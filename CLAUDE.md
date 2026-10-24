@@ -215,6 +215,10 @@ pnpm install       # instala as bibliotecas (o PostgreSQL vem junto, pelo npm)
 pnpm setup:local   # uma vez: baixa SeaweedFS e Mailpit para .local/bin (conferidos por SHA-256)
 pnpm dev           # sobe tudo (banco, storage, e-mail, api e web); Ctrl+C desliga
 pnpm typecheck     # confere os tipos de todos os apps
+pnpm db:studio     # abre uma tela no navegador para ver as tabelas do banco
+pnpm db:seed       # recria os dados de exemplo (usuários de teste etc.)
+pnpm db:reset      # apaga o banco local inteiro e recria (migrations + seed)
+pnpm --filter @circle/api db:migrate --name descricao   # cria uma migration nova (com o banco ligado)
 ```
 
 - Na primeira vez, o `pnpm dev` cria o `.env` a partir do `.env.example` e cria o banco em `.local/postgres`.

@@ -13,6 +13,9 @@ allowBuilds:
   '@embedded-postgres/darwin-arm64': true
   # Confere o programa do esbuild (usado pelo tsx para rodar scripts TypeScript).
   esbuild: true
+  # Prisma: confere a versão do Node e baixa o motor que aplica as migrations.
+  prisma: true
+  '@prisma/engines': true
   # Vem junto com o @nestjs/cli, mas não usamos (a API compila com o tsc).
   '@swc/core': false
 
