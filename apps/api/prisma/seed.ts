@@ -73,6 +73,13 @@ async function main() {
   await seedMaslow(prisma, henrico);
   await seedNecrologio(prisma, henrico);
   await seedDreams(prisma, henrico);
+  const late = await prisma.task.findFirst({ where: { userId: henrico, title: { startsWith: 'Lição de casa' } } });
+  if (late) {
+    await prisma.task.update({ where: { id: late.id }, data: { overdueNotifiedAt: new Date() } });
+    await prisma.notification.create({
+      data: { userId: henrico, type: 'tarefa_atrasada', title: 'Tarefa atrasada', body: `“${late.title}” passou do prazo.`, link: '/board', refId: late.id },
+    });
+  }
 
   console.log(`✓ Seed concluído: ${USERS.length} usuários de teste, 1 convite pendente (convidado@teste.local) e o backlog do Henrico (${backlog.initiatives} iniciativas, ${backlog.epics} épicos, ${backlog.tasks} tarefas, sprints 10 a 12) e os exercícios de reflexão.`);
 }

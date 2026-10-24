@@ -85,6 +85,9 @@ model User {
   maslowNotes     MaslowNote[]
   necrologio      Necrologio?
   dreams          Dream[]
+  notifications   Notification[] @relation("NotificationsReceived")
+  notified        Notification[] @relation("NotificationsCaused")
+  pushSubscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -445,4 +448,57 @@ model Dream {
 
   @@index([userId])
   @@map("dreams")
+}
+
+// ---------- Notificações ----------
+
+enum NotificationType {
+  amizade_pedido
+  amizade_aceita
+  curtida
+  curtida_story
+  comentario
+  tarefa_atrasada
+  trilha_baixada
+  trilha_aprovada
+  trilha_recusada
+  trilha_pendente
+  grupo_entrada
+  grupo_trilha
+}
+
+/// Notificação do sino (e, se ativado, também enviada ao celular).
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation("NotificationsReceived", fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String           @default("")
+  /// Tela para onde a notificação leva.
+  link      String
+  /// Quem causou (curtiu, comentou…), se houver.
+  actorId   String?
+  actor     User?            @relation("NotificationsCaused", fields: [actorId], references: [id], onDelete: Cascade)
+  /// O que gerou (tarefa, post…), para agrupar e evitar repetidas.
+  refId     String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+/// Aparelho que aceitou receber notificações no celular (Web Push).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@map("push_subscriptions")
 }

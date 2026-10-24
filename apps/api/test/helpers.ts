@@ -42,7 +42,7 @@ export async function prepareTestDatabase() {
 /** Sobe a API de verdade (mesmos módulos e configurações), ligada ao banco de testes. */
 export async function startApi(env: Record<string, string> = {}) {
   await prepareTestDatabase();
-  Object.assign(process.env, { DATABASE_URL: TEST_DATABASE_URL, API_PORT: '0' }, env);
+  Object.assign(process.env, { DATABASE_URL: TEST_DATABASE_URL, API_PORT: '0', DISABLE_SCHEDULE: 'true' }, env);
   // Carregados só agora (require) para que leiam as variáveis acima.
   const { AppModule } = require('../src/app.module') as typeof import('../src/app.module.js');
   const { setupApp } = require('../src/app.setup') as typeof import('../src/app.setup.js');

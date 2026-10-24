@@ -45,6 +45,15 @@ export const envSchema = z.object({
   /** Credenciais do login com Google. Sem elas, o botão do Google fica desativado. */
   GOOGLE_CLIENT_ID: z.string().optional().default(''),
   GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
+
+  // ---------- Notificações ----------
+  /** Chaves do Web Push (notificações no celular). Sem elas, só o sino do app funciona. Gere com: pnpm push:keys */
+  VAPID_PUBLIC_KEY: z.string().optional().default(''),
+  VAPID_PRIVATE_KEY: z.string().optional().default(''),
+  /** Contato do responsável pelo app, exigido pelo Web Push (ex.: mailto:voce@exemplo.com). */
+  VAPID_SUBJECT: z.string().optional().default('mailto:nao-responda@circleoflife.local'),
+  /** A partir de que hora (no fuso da pessoa) o aviso de tarefas atrasadas é enviado. */
+  OVERDUE_HOUR: z.coerce.number().int().min(0).max(23).default(8),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConditionalModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { BacklogModule } from './backlog/backlog.module';
 import { AppConfigModule } from './config/config.module';
@@ -11,6 +12,7 @@ import { RodaModule } from './exercises/roda.module';
 import { HealthController } from './health/health.controller';
 import { InvitesModule } from './invites/invites.module';
 import { MailModule } from './mail/mail.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StorageModule } from './storage/storage.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -24,6 +26,9 @@ import { XpModule } from './xp/xp.module';
     StorageModule,
     MailModule,
     XpModule,
+    // Tarefas agendadas (ex.: aviso de atrasadas). Desligadas nos testes automáticos.
+    ...(process.env.DISABLE_SCHEDULE === 'true' ? [] : [ScheduleModule.forRoot()]),
+    NotificationsModule,
     UploadsModule,
     AuthModule,
     // Login de teste: só existe em desenvolvimento.

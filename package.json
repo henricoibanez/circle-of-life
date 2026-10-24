@@ -14,7 +14,8 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm --filter @circle/api test",
-    "stop": "tsx scripts/stop.ts"
+    "stop": "tsx scripts/stop.ts",
+    "push:keys": "pnpm --filter @circle/api exec web-push generate-vapid-keys"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

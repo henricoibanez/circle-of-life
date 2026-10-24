@@ -218,6 +218,7 @@ pnpm stop          # desliga o ambiente local se o terminal do pnpm dev foi fech
 pnpm typecheck     # confere os tipos de todos os apps
 pnpm test          # testes automáticos da API (precisa do pnpm dev ligado; usa o banco circle_of_life_test)
 pnpm db:studio     # abre uma tela no navegador para ver as tabelas do banco
+pnpm push:keys     # gera as chaves VAPID das notificações no celular (copie para o .env)
 pnpm db:seed       # recria os dados de exemplo (usuários de teste etc.)
 pnpm db:reset      # apaga o banco local inteiro e recria (migrations + seed)
 pnpm --filter @circle/api db:migrate --name descricao   # cria uma migration nova (com o banco ligado)

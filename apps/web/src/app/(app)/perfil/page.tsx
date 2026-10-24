@@ -3,8 +3,9 @@
 import { PALETTES, type PaletteId } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Art, Leaves } from '@/components/art';
+import { Bell } from '@/components/bell';
 import { ConfirmSheet } from '@/components/confirm';
 import { useGoBack } from '@/components/header';
 import { Icon, type IconName } from '@/components/icon';
@@ -16,6 +17,7 @@ import { api, ApiError, logout, type Me } from '@/lib/api';
 import { tint } from '@/lib/color';
 import { useMe } from '@/lib/me';
 import { since } from '@/lib/time';
+import { disablePush, enablePush, pushActive, pushSupported } from '@/lib/notifications';
 import { uploadImage } from '@/lib/upload';
 import { HealthStatus } from '../health-status';
 
@@ -68,9 +70,7 @@ export default function PerfilPage() {
           <h1 className="text-[28px] font-bold leading-tight tracking-tight">Meu Perfil</h1>
           <p className="text-sm text-muted">Sua jornada, seu progresso, sua vida.</p>
         </div>
-        <Link href="/notificacoes" aria-label="Notificações" className="relative grid h-10 w-10 place-items-center">
-          <Icon n="bell" className="h-6 w-6" />
-        </Link>
+        <Bell />
         <IconBtn n="settings" label="Configurações" onClick={() => document.getElementById('temas')?.scrollIntoView({ behavior: 'smooth' })} />
       </header>
 
@@ -284,6 +284,8 @@ export default function PerfilPage() {
           <Seg items={VISIBILITY} value={prefs.defaultPostVisibility} onChange={defaultPostVisibility => setPrefs({ defaultPostVisibility })} />
         </Card>
 
+        <PushCard />
+
         <Card className="space-y-2 p-4">
           <h2 className="font-semibold">Estado do sistema</h2>
           <HealthStatus />
@@ -406,5 +408,48 @@ function ProfileForm({ onClose }: { onClose: () => void }) {
         </Field>
       </div>
     </Sheet>
+  );
+}
+
+/** Ligar ou desligar as notificações neste aparelho (Web Push). */
+function PushCard() {
+  const toast = useToast();
+  const [on, setOn] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    pushActive().then(setOn);
+  }, []);
+  if (!pushSupported()) return null;
+  const toggle = async () => {
+    setBusy(true);
+    try {
+      if (on) await disablePush();
+      else await enablePush();
+      setOn(!on);
+      toast(on ? 'Notificações desligadas neste aparelho' : 'Notificações ligadas neste aparelho');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível mudar as notificações.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card className="flex items-center gap-3 p-4">
+      <Icon n="bell" className="h-6 w-6 text-primary" />
+      <div className="flex-1">
+        <p className="text-sm font-semibold">Notificações no celular</p>
+        <p className="text-xs text-muted">Avisos de tarefas atrasadas, curtidas e comentários, mesmo com o app fechado. No iPhone, adicione o app à tela inicial antes.</p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={Boolean(on)}
+        aria-label="Notificações no celular"
+        disabled={busy || on === null}
+        onClick={toggle}
+        className={`h-7 w-12 shrink-0 rounded-full p-0.5 transition disabled:opacity-50 ${on ? 'bg-primary' : 'bg-line'}`}
+      >
+        <span className={`block h-6 w-6 rounded-full bg-white shadow transition ${on ? 'translate-x-5' : ''}`} />
+      </button>
+    </Card>
   );
 }
