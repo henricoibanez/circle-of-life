@@ -76,6 +76,8 @@ model User {
   epics           Epic[]
   tasks           Task[]
   sprints         Sprint[]
+  xpEvents        XpEvent[]
+  activity        ActivityEvent[]
 
   @@map("users")
 }
@@ -256,4 +258,52 @@ model Sprint {
 
   @@unique([userId, number])
   @@map("sprints")
+}
+
+// ---------- XP e atividade ----------
+
+/// Motivo de cada lançamento no extrato de XP (regras provisórias em packages/shared/src/xp.ts).
+enum XpReason {
+  task
+  check
+  epic
+  iniciativa
+  sprint
+  roda
+  sonho
+  post
+  story
+  comentario
+  trilha_download
+  trilha_compra
+}
+
+/// Extrato de XP: cada ganho (+), estorno (-) e gasto. O total fica copiado em User.xpTotal / xpSpent.
+model XpEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    XpReason
+  /// O que gerou o lançamento (tarefa, épico, sprint, dia do post…).
+  refId     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, reason, refId])
+  @@map("xp_events")
+}
+
+/// "Atividade recente" do perfil.
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  icon      String
+  text      String
+  /// Tela para onde o item leva (ex.: /board).
+  link      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("activity_events")
 }

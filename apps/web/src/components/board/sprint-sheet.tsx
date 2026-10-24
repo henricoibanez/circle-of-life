@@ -3,8 +3,8 @@
 import { SPRINT_DAYS, type BacklogDto } from '@circle/shared';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useCelebrate } from '@/components/celebrate';
 import { Sheet } from '@/components/sheet';
-import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { useBacklog } from '@/lib/backlog';
 import { fmtShort, useCloseSprint, useSprints } from '@/lib/sprints';
@@ -17,7 +17,7 @@ export function SprintSheet({ onClose }: { onClose: () => void }) {
   const { data: sprints } = useSprints();
   const { data } = useBacklog();
   const close = useCloseSprint();
-  const toast = useToast();
+  const celebrate = useCelebrate();
   const [confirm, setConfirm] = useState(false);
   if (!sprints || !data) return null;
 
@@ -30,11 +30,14 @@ export function SprintSheet({ onClose }: { onClose: () => void }) {
   const finish = async () => {
     const r = await close.mutateAsync();
     onClose();
-    toast(
-      `Sprint ${r.closed.number} concluída: ${r.done} ${r.done === 1 ? 'tarefa entregue' : 'tarefas entregues'}${
+    celebrate({
+      icon: 'flag',
+      title: `Sprint ${r.closed.number} concluída`,
+      text: `${r.done} ${r.done === 1 ? 'tarefa entregue' : 'tarefas entregues'}${
         r.open ? `, ${r.open} ${r.open === 1 ? 'voltou' : 'voltaram'} ao backlog` : ''
-      }`,
-    );
+      }.`,
+      xp: r.xp.gained,
+    });
   };
 
   return (

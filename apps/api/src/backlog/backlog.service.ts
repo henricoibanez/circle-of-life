@@ -1,8 +1,10 @@
-import { STATUS_LABEL, type TaskStatus } from '@circle/shared';
+import { INITIATIVE_MIN_TASKS, STATUS_LABEL, type TaskStatus } from '@circle/shared';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SprintsService } from '../sprints/sprints.service';
+import { ActivityService } from '../xp/activity.service';
+import { XpService } from '../xp/xp.service';
 import type { CreateEpicDto, CreateInitiativeDto, CreateTaskDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
 import { parseDay, toEpicDto, toInitiativeDto, toTaskDto } from './mappers';
 
@@ -23,6 +25,8 @@ export class BacklogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sprints: SprintsService,
+    private readonly xp: XpService,
+    private readonly activity: ActivityService,
   ) {}
 
   /** Backlog completo, em listas simples (o site monta a cascata e os filtros). */
@@ -57,9 +61,22 @@ export class BacklogService {
     return t;
   }
 
-  /** Uma iniciativa concluída que ganha épico ou tarefa nova (ou reaberta) deixa de estar concluída. */
+  /**
+   * Uma iniciativa concluída que ganha épico ou tarefa nova (ou reaberta) deixa
+   * de estar concluída — e o XP da conclusão sai junto. Devolve o XP tirado.
+   */
   private async reopenInitiative(initiativeId: string, tx: Tx) {
-    await tx.initiative.updateMany({ where: { id: initiativeId, completedAt: { not: null } }, data: { completedAt: null } });
+    const i = await tx.initiative.findUnique({ where: { id: initiativeId } });
+    if (!i?.completedAt) return 0;
+    await tx.initiative.update({ where: { id: initiativeId }, data: { completedAt: null } });
+    return this.xp.revoke(tx, i.userId, 'iniciativa', i.id);
+  }
+
+  /** Tira o XP de tarefas, épicos e iniciativa antes de excluí-los (senão daria para "fabricar" XP). */
+  private async revokeAll(tx: Tx, userId: string, ids: { tasks?: string[]; epics?: string[]; initiatives?: string[] }) {
+    for (const id of ids.tasks ?? []) await this.xp.revoke(tx, userId, 'task', id);
+    for (const id of ids.epics ?? []) await this.xp.revoke(tx, userId, 'epic', id);
+    for (const id of ids.initiatives ?? []) await this.xp.revoke(tx, userId, 'iniciativa', id);
   }
 
   // ---------- Iniciativas ----------
@@ -82,10 +99,18 @@ export class BacklogService {
 
   async deleteInitiative(userId: string, id: string) {
     await this.initiative(userId, id);
-    await this.prisma.initiative.delete({ where: { id } });
+    await this.prisma.$transaction(async tx => {
+      const epics = await tx.epic.findMany({ where: { initiativeId: id }, select: { id: true } });
+      const tasks = await tx.task.findMany({ where: { epic: { initiativeId: id } }, select: { id: true } });
+      await this.revokeAll(tx, userId, { tasks: tasks.map(t => t.id), epics: epics.map(e => e.id), initiatives: [id] });
+      await tx.initiative.delete({ where: { id } });
+    });
   }
 
-  /** Concluir: só quando tem épicos e todos estão encerrados. */
+  /**
+   * Concluir: só quando tem épicos e todos estão encerrados. Vira conquista.
+   * Rende XP só se tiver mais de INITIATIVE_MIN_TASKS tarefas concluídas.
+   */
   async completeInitiative(userId: string, id: string) {
     const i = await this.initiative(userId, id);
     if (i.completedAt) throw new ConflictException('Essa iniciativa já está concluída.');
@@ -93,14 +118,22 @@ export class BacklogService {
     if (!epics.length || epics.some(e => !e.closedAt)) {
       throw new BadRequestException('Para concluir a iniciativa, encerre antes todos os épicos dela.');
     }
-    const done = await this.prisma.task.count({ where: { epic: { initiativeId: id }, status: 'done' } });
-    const updated = await this.prisma.initiative.update({ where: { id }, data: { completedAt: new Date() } });
-    return { initiative: toInitiativeDto(updated), doneTasks: done };
+    return this.prisma.$transaction(async tx => {
+      const done = await tx.task.count({ where: { epic: { initiativeId: id }, status: 'done' } });
+      const updated = await tx.initiative.update({ where: { id }, data: { completedAt: new Date() } });
+      const gained = done > INITIATIVE_MIN_TASKS ? await this.xp.grant(tx, userId, 'iniciativa', id) : 0;
+      await this.activity.add(tx, userId, 'target', `Você concluiu a iniciativa “${i.title}”`, '/quadro?aba=conquistas');
+      return { initiative: toInitiativeDto(updated), doneTasks: done, xp: await this.xp.change(tx, userId, gained) };
+    });
   }
 
   async reopenInitiativeById(userId: string, id: string) {
     await this.initiative(userId, id);
-    return toInitiativeDto(await this.prisma.initiative.update({ where: { id }, data: { completedAt: null } }));
+    return this.prisma.$transaction(async tx => {
+      const gained = await this.reopenInitiative(id, tx);
+      const i = await tx.initiative.findUniqueOrThrow({ where: { id } });
+      return { initiative: toInitiativeDto(i), xp: await this.xp.change(tx, userId, gained) };
+    });
   }
 
   /** Duplica a iniciativa com todos os épicos e tarefas (tudo volta para o backlog, sem anexos nem histórico). */
@@ -144,10 +177,14 @@ export class BacklogService {
 
   async deleteEpic(userId: string, id: string) {
     await this.epic(userId, id);
-    await this.prisma.epic.delete({ where: { id } });
+    await this.prisma.$transaction(async tx => {
+      const tasks = await tx.task.findMany({ where: { epicId: id }, select: { id: true } });
+      await this.revokeAll(tx, userId, { tasks: tasks.map(t => t.id), epics: [id] });
+      await tx.epic.delete({ where: { id } });
+    });
   }
 
-  /** Encerrar: só quando tem tarefas e todas estão prontas. */
+  /** Encerrar: só quando tem tarefas e todas estão prontas. Vira conquista e rende XP. */
   async closeEpic(userId: string, id: string) {
     const e = await this.epic(userId, id);
     if (e.closedAt) throw new ConflictException('Esse épico já está encerrado.');
@@ -155,16 +192,20 @@ export class BacklogService {
     if (!tasks.length || tasks.some(t => t.status !== 'done')) {
       throw new BadRequestException('Para encerrar o épico, todas as tarefas dele precisam estar prontas.');
     }
-    const updated = await this.prisma.epic.update({ where: { id }, data: { closedAt: new Date() } });
-    return { epic: toEpicDto(updated), doneTasks: tasks.length };
+    return this.prisma.$transaction(async tx => {
+      const updated = await tx.epic.update({ where: { id }, data: { closedAt: new Date() } });
+      const gained = await this.xp.grant(tx, userId, 'epic', id);
+      await this.activity.add(tx, userId, 'trophy', `Você encerrou o épico “${e.title}”`, '/quadro?aba=conquistas');
+      return { epic: toEpicDto(updated), doneTasks: tasks.length, xp: await this.xp.change(tx, userId, gained) };
+    });
   }
 
   async reopenEpic(userId: string, id: string) {
     const e = await this.epic(userId, id);
     return this.prisma.$transaction(async tx => {
       const updated = await tx.epic.update({ where: { id }, data: { closedAt: null } });
-      await this.reopenInitiative(e.initiativeId, tx);
-      return toEpicDto(updated);
+      const lost = (await this.xp.revoke(tx, userId, 'epic', id)) + (await this.reopenInitiative(e.initiativeId, tx));
+      return { epic: toEpicDto(updated), xp: await this.xp.change(tx, userId, lost) };
     });
   }
 
@@ -235,7 +276,10 @@ export class BacklogService {
 
   async deleteTask(userId: string, id: string) {
     await this.task(userId, id);
-    await this.prisma.task.delete({ where: { id } });
+    await this.prisma.$transaction(async tx => {
+      await this.revokeAll(tx, userId, { tasks: [id] });
+      await tx.task.delete({ where: { id } });
+    });
   }
 
   async duplicateTask(userId: string, id: string) {
@@ -270,13 +314,18 @@ export class BacklogService {
   /**
    * Muda o status de uma tarefa (Backlog, A Fazer, Fazendo, Pronto):
    * - entrar no quadro liga a tarefa à sprint atual; voltar ao backlog desliga;
-   * - "Pronto" marca a data de conclusão; sair de "Pronto" reabre o épico e a iniciativa, se estavam encerrados;
+   * - "Pronto" marca a data de conclusão e rende XP; sair de "Pronto" tira o XP e
+   *   reabre o épico e a iniciativa, se estavam encerrados (tirando o XP deles também);
    * - cada mudança fica no histórico da tarefa.
    */
   async moveTask(userId: string, id: string, status: TaskStatus) {
     const t = await this.task(userId, id);
-    if (t.status === status) return { task: toTaskDto(t), from: status };
+    if (t.status === status) {
+      const same = await this.prisma.task.findUniqueOrThrow({ where: { id }, include: { checklist: { select: { done: true } } } });
+      return { task: toTaskDto(same), from: status, xp: await this.xp.change(this.prisma, userId, 0) };
+    }
     return this.prisma.$transaction(async tx => {
+      let gained = 0;
       const onBoard = status !== 'backlog';
       const sprint = onBoard ? await this.sprints.current(userId, tx) : null;
       const updated = await tx.task.update({
@@ -290,12 +339,20 @@ export class BacklogService {
         },
         include: { checklist: { select: { done: true } } },
       });
-      if (t.status === 'done') {
-        const epic = await tx.epic.findUniqueOrThrow({ where: { id: t.epicId } });
-        if (epic.closedAt) await tx.epic.update({ where: { id: epic.id }, data: { closedAt: null } });
-        await this.reopenInitiative(epic.initiativeId, tx);
+      if (status === 'done') {
+        gained += await this.xp.grant(tx, userId, 'task', id);
+        await this.activity.add(tx, userId, 'checkSq', `Você concluiu “${t.title}”`, '/board');
       }
-      return { task: toTaskDto(updated), from: t.status };
+      if (t.status === 'done') {
+        gained += await this.xp.revoke(tx, userId, 'task', id);
+        const epic = await tx.epic.findUniqueOrThrow({ where: { id: t.epicId } });
+        if (epic.closedAt) {
+          await tx.epic.update({ where: { id: epic.id }, data: { closedAt: null } });
+          gained += await this.xp.revoke(tx, userId, 'epic', epic.id);
+        }
+        gained += await this.reopenInitiative(epic.initiativeId, tx);
+      }
+      return { task: toTaskDto(updated), from: t.status, xp: await this.xp.change(tx, userId, gained) };
     });
   }
 }

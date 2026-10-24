@@ -1,9 +1,9 @@
 'use client';
 
-import type { AreaId, BacklogDto, EpicDto, InitiativeDto, TaskDto, TaskStatus } from '@circle/shared';
+import type { AreaId, BacklogDto, EpicDto, InitiativeDto, TaskDto, TaskStatus, XpChange } from '@circle/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/toasts';
-import { api, ApiError } from './api';
+import { api, ApiError, type Me } from './api';
 
 export const BACKLOG_KEY = ['backlog'];
 
@@ -35,10 +35,11 @@ export function useBacklogActions() {
   const toast = useToast();
   const mutation = useMutation({
     mutationFn: ({ path, method, body }: { path: string; method: string; body?: Body }) => api<any>(path, { method, body }),
-    onSuccess: () => {
+    onSuccess: (data: { xp?: XpChange } | undefined) => {
+      // Ações que mexem no XP devolvem os totais novos: o número aparece atualizado na hora.
+      if (data?.xp) qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: data.xp!.total, disponivel: data.xp!.disponivel } });
       qc.invalidateQueries({ queryKey: BACKLOG_KEY });
       qc.invalidateQueries({ queryKey: ['sprints'] });
-      qc.invalidateQueries({ queryKey: ['me'] });
     },
     onError: e => {
       qc.invalidateQueries({ queryKey: BACKLOG_KEY });
@@ -53,14 +54,14 @@ export function useBacklogActions() {
     updateInitiative: (id: string, b: Body) => run(`/initiatives/${id}`, 'PATCH', b) as Promise<InitiativeDto>,
     deleteInitiative: (id: string) => run(`/initiatives/${id}`, 'DELETE'),
     duplicateInitiative: (id: string) => run(`/initiatives/${id}/duplicate`) as Promise<InitiativeDto>,
-    completeInitiative: (id: string) => run(`/initiatives/${id}/complete`) as Promise<{ initiative: InitiativeDto; doneTasks: number }>,
+    completeInitiative: (id: string) => run(`/initiatives/${id}/complete`) as Promise<{ initiative: InitiativeDto; doneTasks: number; xp: XpChange }>,
     reopenInitiative: (id: string) => run(`/initiatives/${id}/reopen`),
 
     createEpic: (b: Body) => run('/epics', 'POST', b) as Promise<EpicDto>,
     updateEpic: (id: string, b: Body) => run(`/epics/${id}`, 'PATCH', b) as Promise<EpicDto>,
     deleteEpic: (id: string) => run(`/epics/${id}`, 'DELETE'),
     duplicateEpic: (id: string) => run(`/epics/${id}/duplicate`) as Promise<EpicDto>,
-    closeEpic: (id: string) => run(`/epics/${id}/close`) as Promise<{ epic: EpicDto; doneTasks: number }>,
+    closeEpic: (id: string) => run(`/epics/${id}/close`) as Promise<{ epic: EpicDto; doneTasks: number; xp: XpChange }>,
     reopenEpic: (id: string) => run(`/epics/${id}/reopen`),
 
     createTask: (b: Body) => run('/tasks', 'POST', b) as Promise<TaskDto>,
@@ -72,7 +73,10 @@ export function useBacklogActions() {
       qc.setQueryData<BacklogDto>(BACKLOG_KEY, b =>
         b && { ...b, tasks: b.tasks.map(t => (t.id === id ? { ...t, status, archivedAt: null, doneAt: status === 'done' ? new Date().toISOString() : null } : t)) },
       );
-      return run(`/tasks/${id}/move`, 'POST', { status }) as Promise<{ task: TaskDto; from: TaskStatus }>;
+      return (run(`/tasks/${id}/move`, 'POST', { status }) as Promise<{ task: TaskDto; from: TaskStatus; xp: XpChange }>).then(r => {
+        if (r.xp.gained > 0) toast(`Tarefa concluída, +${r.xp.gained} XP`);
+        return r;
+      });
     },
   };
 }

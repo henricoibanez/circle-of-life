@@ -44,8 +44,8 @@ export class GoogleUnavailableModule {}
 @Module({
   imports: [
     SessionModule,
-    ConditionalModule.registerWhen(GoogleLoginModule, googleOn),
-    ConditionalModule.registerWhen(GoogleUnavailableModule, env => !googleOn(env)),
+    ConditionalModule.registerWhen(GoogleLoginModule, googleOn, { debug: false }),
+    ConditionalModule.registerWhen(GoogleUnavailableModule, env => !googleOn(env), { debug: false }),
   ],
   exports: [SessionModule],
 })

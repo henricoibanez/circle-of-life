@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { EpicCard, TaskLine } from '@/components/backlog/backlog-items';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
+import { useCelebrate } from '@/components/celebrate';
 import { Icon } from '@/components/icon';
 import { Bar, Card, Empty, IconBtn, inputCls, Seg, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
@@ -23,6 +24,16 @@ export default function BacklogPage() {
   const { openActions } = useSheets();
   const toast = useToast();
   const router = useRouter();
+  const celebrate = useCelebrate();
+  const completeInitiative = (id: string) =>
+    actions.completeInitiative(id).then(r =>
+      celebrate({
+        icon: 'target',
+        title: `Iniciativa concluída: ${r.initiative.title}`,
+        text: `${r.doneTasks} ${r.doneTasks === 1 ? 'tarefa entregue' : 'tarefas entregues'} em todos os épicos.`,
+        xp: r.xp.gained,
+      }),
+    );
   const [tab, setTab] = useState<Tab>('ini');
   const [q, setQ] = useState('');
   const [search, setSearch] = useState(false);
@@ -63,7 +74,7 @@ export default function BacklogPage() {
       canComplete && {
         icon: 'trophy',
         label: 'Concluir iniciativa',
-        run: () => actions.completeInitiative(i.id).then(r => toast(`Iniciativa concluída: ${r.initiative.title}`)),
+        run: () => completeInitiative(i.id),
       },
       i.completedAt && { icon: 'undo', label: 'Reabrir iniciativa', run: () => actions.reopenInitiative(i.id) },
       { icon: 'share', label: 'Publicar como trilha', run: () => toast('Publicar trilha: chega na etapa 15') },
@@ -161,7 +172,7 @@ export default function BacklogPage() {
                           <Button
                             className="ml-auto px-3 py-2"
                             disabled={actions.busy}
-                            onClick={() => actions.completeInitiative(i.id).then(r => toast(`Iniciativa concluída: ${r.initiative.title}`))}
+                            onClick={() => completeInitiative(i.id)}
                           >
                             <Icon n="trophy" className="h-4 w-4" />
                             Concluir iniciativa

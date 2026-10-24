@@ -2,6 +2,7 @@
 
 import { AREA, type BacklogDto, type EpicDto, type TaskDto } from '@circle/shared';
 import { useState } from 'react';
+import { useCelebrate } from '@/components/celebrate';
 import { Icon } from '@/components/icon';
 import { Bar, IconBtn, Prio, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
@@ -68,6 +69,7 @@ export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: Backl
   const sheets = useBacklogSheets();
   const { openActions } = useSheets();
   const toast = useToast();
+  const celebrate = useCelebrate();
   const [open, setOpen] = useState(Boolean(nested && !e.closedAt));
   const [all, setAll] = useState(false);
   const ts = epicTasks(data, e.id);
@@ -77,7 +79,7 @@ export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: Backl
 
   const close = async () => {
     const r = await actions.closeEpic(e.id);
-    toast(`Épico encerrado: ${r.epic.title}`);
+    celebrate({ icon: 'trophy', title: `Épico concluído: ${r.epic.title}`, text: `${r.doneTasks} tarefas entregues.`, xp: r.xp.gained });
   };
 
   return (

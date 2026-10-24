@@ -2,6 +2,8 @@ import { SPRINT_DAYS, type SprintDto } from '@circle/shared';
 import { Injectable } from '@nestjs/common';
 import type { Prisma, Sprint } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivityService } from '../xp/activity.service';
+import { XpService } from '../xp/xp.service';
 
 type Tx = Prisma.TransactionClient;
 
@@ -19,7 +21,11 @@ export const toSprintDto = (s: Sprint): SprintDto => ({
 
 @Injectable()
 export class SprintsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly xp: XpService,
+    private readonly activity: ActivityService,
+  ) {}
 
   /** Sprint em andamento da pessoa. Se ainda não existir nenhuma, cria a Sprint 1 começando agora. */
   async current(userId: string, tx: Tx = this.prisma): Promise<Sprint> {
@@ -42,7 +48,7 @@ export class SprintsService {
    * - tarefas prontas saem do quadro (arquivadas; vão para os relatórios);
    * - tarefas em A Fazer ou Fazendo voltam para o backlog, com registro no histórico;
    * - a sprint vai para o histórico com "prontas/total" e abre-se a próxima.
-   * `full` diz se a sprint terminou com todas as tarefas prontas.
+   * `full` diz se a sprint terminou com todas as tarefas prontas (só assim rende XP).
    */
   async close(userId: string) {
     return this.prisma.$transaction(async tx => {
@@ -69,7 +75,17 @@ export class SprintsService {
       const next = await tx.sprint.create({
         data: { userId, number: sprint.number + 1, startAt: now, plannedEnd: plannedEnd(now) },
       });
-      return { closed: toSprintDto(closed), next: toSprintDto(next), done: done.length, open: open.length, full: board.length > 0 && open.length === 0 };
+      const full = board.length > 0 && open.length === 0;
+      const gained = full ? await this.xp.grant(tx, userId, 'sprint', sprint.id) : 0;
+      await this.activity.add(tx, userId, 'flag', `Você encerrou a sprint ${sprint.number} (${done.length}/${board.length})`, '/board');
+      return {
+        closed: toSprintDto(closed),
+        next: toSprintDto(next),
+        done: done.length,
+        open: open.length,
+        full,
+        xp: await this.xp.change(tx, userId, gained),
+      };
     });
   }
 }
