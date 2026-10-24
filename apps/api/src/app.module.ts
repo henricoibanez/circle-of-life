@@ -9,6 +9,7 @@ import { InvitesModule } from './invites/invites.module';
 import { MailModule } from './mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StorageModule } from './storage/storage.module';
+import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
 import { XpModule } from './xp/xp.module';
 
@@ -19,6 +20,7 @@ import { XpModule } from './xp/xp.module';
     StorageModule,
     MailModule,
     XpModule,
+    UploadsModule,
     AuthModule,
     // Login de teste: só existe em desenvolvimento.
     ConditionalModule.registerWhen(DevAuthModule, env => env.NODE_ENV === 'development', { debug: false }),

@@ -40,6 +40,7 @@ export function useBacklogActions() {
       if (data?.xp) qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: data.xp!.total, disponivel: data.xp!.disponivel } });
       qc.invalidateQueries({ queryKey: BACKLOG_KEY });
       qc.invalidateQueries({ queryKey: ['sprints'] });
+      qc.invalidateQueries({ queryKey: ['task'] });
     },
     onError: e => {
       qc.invalidateQueries({ queryKey: BACKLOG_KEY });

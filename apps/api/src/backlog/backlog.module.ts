@@ -4,11 +4,15 @@ import type { User } from '../generated/prisma/client';
 import { SprintsController } from '../sprints/sprints.controller';
 import { SprintsService } from '../sprints/sprints.service';
 import { BacklogService } from './backlog.service';
-import { CreateEpicDto, CreateInitiativeDto, CreateTaskDto, MoveTaskDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
+import { AttachDto, ChecklistItemDto, CreateEpicDto, CreateInitiativeDto, CreateTaskDto, MoveTaskDto, UpdateChecklistItemDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
+import { TaskDetailService } from './task-detail.service';
 
 @Controller()
 class BacklogController {
-  constructor(private readonly backlog: BacklogService) {}
+  constructor(
+    private readonly backlog: BacklogService,
+    private readonly detail: TaskDetailService,
+  ) {}
 
   /** Backlog completo da pessoa logada. */
   @Get('backlog')
@@ -88,6 +92,31 @@ class BacklogController {
   duplicateTask(@CurrentUser() u: User, @Param('id') id: string) {
     return this.backlog.duplicateTask(u.id, id);
   }
+  @Get('tasks/:id')
+  taskDetail(@CurrentUser() u: User, @Param('id') id: string) {
+    return this.detail.detail(u.id, id);
+  }
+  @Post('tasks/:id/checklist')
+  addItem(@CurrentUser() u: User, @Param('id') id: string, @Body() dto: ChecklistItemDto) {
+    return this.detail.addItem(u.id, id, dto.text);
+  }
+  @Patch('tasks/:id/checklist/:itemId')
+  updateItem(@CurrentUser() u: User, @Param('id') id: string, @Param('itemId') itemId: string, @Body() dto: UpdateChecklistItemDto) {
+    return this.detail.updateItem(u.id, id, itemId, dto);
+  }
+  @Delete('tasks/:id/checklist/:itemId')
+  deleteItem(@CurrentUser() u: User, @Param('id') id: string, @Param('itemId') itemId: string) {
+    return this.detail.deleteItem(u.id, id, itemId);
+  }
+  @Post('tasks/:id/attachments')
+  attach(@CurrentUser() u: User, @Param('id') id: string, @Body() dto: AttachDto) {
+    return this.detail.attach(u.id, id, dto.fileId);
+  }
+  @Delete('tasks/:id/attachments/:attId')
+  @HttpCode(204)
+  detach(@CurrentUser() u: User, @Param('id') id: string, @Param('attId') attId: string) {
+    return this.detail.detach(u.id, id, attId);
+  }
   @Post('tasks/:id/move')
   moveTask(@CurrentUser() u: User, @Param('id') id: string, @Body() dto: MoveTaskDto) {
     return this.backlog.moveTask(u.id, id, dto.status);
@@ -96,7 +125,7 @@ class BacklogController {
 
 @Module({
   controllers: [BacklogController, SprintsController],
-  providers: [BacklogService, SprintsService],
+  providers: [BacklogService, SprintsService, TaskDetailService],
   exports: [BacklogService, SprintsService],
 })
 export class BacklogModule {}

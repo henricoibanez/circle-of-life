@@ -78,6 +78,7 @@ model User {
   sprints         Sprint[]
   xpEvents        XpEvent[]
   activity        ActivityEvent[]
+  files           File[]
 
   @@map("users")
 }
@@ -211,6 +212,7 @@ model Task {
   updatedAt         DateTime        @updatedAt
   checklist         ChecklistItem[]
   logs              TaskLog[]
+  attachments       TaskAttachment[]
 
   @@index([userId, status])
   @@index([epicId])
@@ -306,4 +308,56 @@ model ActivityEvent {
 
   @@index([userId, createdAt])
   @@map("activity_events")
+}
+
+// ---------- Arquivos (storage S3) ----------
+
+/// Para que o arquivo serve (define o limite de tamanho e a pasta no storage).
+enum FilePurpose {
+  avatar
+  dream
+  task
+  post
+  story
+  group
+  trilha
+}
+
+enum FileStatus {
+  /// URL de envio criada, mas o navegador ainda não confirmou o envio.
+  pending
+  ready
+}
+
+/// Arquivo guardado no storage. O banco guarda só a referência (key); o arquivo vai direto do navegador para o storage.
+model File {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Caminho no bucket: users/{userId}/{purpose}/{id}.{ext}
+  key        String          @unique
+  /// Nome original (ex.: foto.jpg).
+  name       String
+  mime       String
+  size       Int
+  purpose    FilePurpose
+  status     FileStatus      @default(pending)
+  createdAt  DateTime        @default(now())
+  attachment TaskAttachment?
+
+  @@index([userId, status])
+  @@map("files")
+}
+
+/// Imagem anexada a uma tarefa.
+model TaskAttachment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fileId    String   @unique
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_attachments")
 }

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
 import { useSheets } from '@/components/sheet';
 import { EpicForm, InitiativeForm, TaskForm } from './forms';
+import { TaskDetail } from './task-detail';
 
 /** Atalhos para abrir os formulários do backlog e a confirmação de exclusão de qualquer tela. */
 export function useBacklogSheets() {
@@ -15,6 +16,7 @@ export function useBacklogSheets() {
     openSheet(close => <EpicForm {...p} onClose={close} onNeedInitiative={() => openInitiative()} />);
   const openTask = (p: { id?: string; epicId?: string; title?: string; status?: 'backlog' | 'todo' } = {}) =>
     openSheet(close => <TaskForm {...p} onClose={close} onNeedEpic={() => openEpic()} />);
+  const openTaskDetail = (id: string) => openSheet(close => <TaskDetail id={id} onClose={close} />);
   const confirmDelete = (title: string, text: ReactNode, run: () => Promise<unknown>) =>
     openSheet(close => (
       <ConfirmSheet title={title} confirm="Excluir" danger onConfirm={run} onClose={close}>
@@ -22,5 +24,5 @@ export function useBacklogSheets() {
       </ConfirmSheet>
     ));
 
-  return { openInitiative, openEpic, openTask, confirmDelete };
+  return { openInitiative, openEpic, openTask, openTaskDetail, confirmDelete };
 }

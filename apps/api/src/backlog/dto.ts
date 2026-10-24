@@ -53,3 +53,14 @@ export class UpdateTaskDto {
 export class MoveTaskDto {
   @IsIn(STATUSES, { message: 'status inválido' }) status!: (typeof STATUSES)[number];
 }
+
+export class ChecklistItemDto {
+  @IsString({ message: 'escreva o item' }) @MinLength(1, { message: 'escreva o item' }) @MaxLength(200, { message: 'o item pode ter até 200 caracteres' }) text!: string;
+}
+export class UpdateChecklistItemDto {
+  @IsOptional() @IsBoolean() done?: boolean;
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(200) text?: string;
+}
+export class AttachDto {
+  @IsString({ message: 'envie a imagem antes de anexar' }) fileId!: string;
+}

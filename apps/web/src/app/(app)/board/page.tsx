@@ -48,7 +48,7 @@ export default function BoardPage() {
   const late = data ? data.tasks.filter(t => !t.archivedAt && isLate(t)) : [];
   const epicOf = (t: TaskDto) => data?.epics.find(e => e.id === t.epicId);
 
-  const openTask = (id: string) => sheets.openTask({ id });
+  const openTask = (id: string) => sheets.openTaskDetail(id);
   const setStatus = (id: string, status: TaskStatus) => actions.moveTask(id, status);
 
   const overCol = (x: number, y: number) => (document.elementFromPoint(x, y)?.closest('[data-col]') as HTMLElement | null)?.dataset.col ?? null;
@@ -103,7 +103,7 @@ export default function BoardPage() {
     openActions(t.title, [
       ...COLS.filter(c => c.id !== t.status).map(c => ({ icon: 'chevR' as const, label: `Mover para ${c.label}`, run: () => setStatus(t.id, c.id) })),
       { icon: 'backlog', label: 'Voltar para o backlog', run: () => setStatus(t.id, 'backlog') },
-      { icon: 'edit', label: 'Editar', run: () => openTask(t.id) },
+      { icon: 'edit', label: 'Editar', run: () => sheets.openTask({ id: t.id }) },
     ]);
 
   const areaFilter = () =>

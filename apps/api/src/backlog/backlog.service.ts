@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SprintsService } from '../sprints/sprints.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { ActivityService } from '../xp/activity.service';
 import { XpService } from '../xp/xp.service';
 import type { CreateEpicDto, CreateInitiativeDto, CreateTaskDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
@@ -27,7 +28,14 @@ export class BacklogService {
     private readonly sprints: SprintsService,
     private readonly xp: XpService,
     private readonly activity: ActivityService,
+    private readonly uploads: UploadsService,
   ) {}
+
+  /** Apaga do storage as imagens anexadas às tarefas que vão ser excluídas. */
+  private async removeAttachments(userId: string, where: Prisma.TaskWhereInput) {
+    const files = await this.prisma.taskAttachment.findMany({ where: { task: { ...where, userId } }, select: { fileId: true } });
+    for (const f of files) await this.uploads.remove(userId, f.fileId).catch(() => undefined);
+  }
 
   /** Backlog completo, em listas simples (o site monta a cascata e os filtros). */
   async all(userId: string) {
@@ -99,6 +107,7 @@ export class BacklogService {
 
   async deleteInitiative(userId: string, id: string) {
     await this.initiative(userId, id);
+    await this.removeAttachments(userId, { epic: { initiativeId: id } });
     await this.prisma.$transaction(async tx => {
       const epics = await tx.epic.findMany({ where: { initiativeId: id }, select: { id: true } });
       const tasks = await tx.task.findMany({ where: { epic: { initiativeId: id } }, select: { id: true } });
@@ -177,6 +186,7 @@ export class BacklogService {
 
   async deleteEpic(userId: string, id: string) {
     await this.epic(userId, id);
+    await this.removeAttachments(userId, { epicId: id });
     await this.prisma.$transaction(async tx => {
       const tasks = await tx.task.findMany({ where: { epicId: id }, select: { id: true } });
       await this.revokeAll(tx, userId, { tasks: tasks.map(t => t.id), epics: [id] });
@@ -276,6 +286,7 @@ export class BacklogService {
 
   async deleteTask(userId: string, id: string) {
     await this.task(userId, id);
+    await this.removeAttachments(userId, { id });
     await this.prisma.$transaction(async tx => {
       await this.revokeAll(tx, userId, { tasks: [id] });
       await tx.task.delete({ where: { id } });

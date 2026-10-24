@@ -31,7 +31,7 @@ export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
       >
         {done && <Icon n="check" className="h-3.5 w-3.5" sw={3} />}
       </button>
-      <button onClick={() => sheets.openTask({ id: t.id })} className="min-w-0 flex-1 text-left">
+      <button onClick={() => sheets.openTaskDetail(t.id)} className="min-w-0 flex-1 text-left">
         <span className={`block text-[15px] leading-snug ${done ? 'text-ink/60' : ''}`}>{t.title}</span>
         {(t.status === 'todo' || t.status === 'doing') && (
           <span className="text-[11px] font-semibold text-blue-600">{t.status === 'doing' ? 'Fazendo agora' : 'Na sprint'}</span>
@@ -45,6 +45,7 @@ export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
             t.status === 'backlog'
               ? { icon: 'board', label: 'Puxar para a sprint', run: () => actions.moveTask(t.id, 'todo').then(() => toast('Tarefa na sprint atual')) }
               : !done && { icon: 'backlog', label: 'Voltar para o backlog', run: () => actions.moveTask(t.id, 'backlog') },
+            { icon: 'checkSq', label: 'Abrir detalhes', run: () => sheets.openTaskDetail(t.id) },
             { icon: 'edit', label: 'Editar', run: () => sheets.openTask({ id: t.id }) },
             { icon: 'copy', label: 'Duplicar', run: () => actions.duplicateTask(t.id).then(() => toast('Tarefa duplicada')) },
             {
