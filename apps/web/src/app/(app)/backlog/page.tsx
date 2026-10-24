@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { EpicCard, TaskLine } from '@/components/backlog/backlog-items';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { useCelebrate } from '@/components/celebrate';
+import { PublishSheet } from '@/components/trilhas/trilha-sheets';
 import { Icon } from '@/components/icon';
 import { Bar, Card, Empty, IconBtn, inputCls, Seg, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
@@ -21,7 +22,7 @@ export default function BacklogPage() {
   const { data } = useBacklog();
   const actions = useBacklogActions();
   const sheets = useBacklogSheets();
-  const { openActions } = useSheets();
+  const { openActions, openSheet } = useSheets();
   const toast = useToast();
   const router = useRouter();
   const celebrate = useCelebrate();
@@ -77,7 +78,7 @@ export default function BacklogPage() {
         run: () => completeInitiative(i.id),
       },
       i.completedAt && { icon: 'undo', label: 'Reabrir iniciativa', run: () => actions.reopenInitiative(i.id) },
-      { icon: 'share', label: 'Publicar como trilha', run: () => toast('Publicar trilha: chega na etapa 15') },
+      { icon: 'share', label: 'Publicar como trilha', run: () => openSheet(close => <PublishSheet initiativeId={i.id} onClose={close} />) },
       {
         icon: 'trash',
         label: 'Excluir iniciativa',

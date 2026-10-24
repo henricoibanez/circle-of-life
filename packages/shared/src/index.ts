@@ -5,3 +5,4 @@ export * from './theme';
 export * from './backlog';
 export * from './xp';
 export * from './exercises';
+export * from './trilhas';
