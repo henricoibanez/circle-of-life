@@ -23,7 +23,7 @@ const INITIATIVES = [
   { key: 'i4', title: 'Ser útil para alguém', description: 'Transbordar o que aprendi', areas: ['sociedade'] },
 ] as const;
 
-const EPICS: { key: string; ini: string; title: string; area: string; description: string; tasks: T[] }[] = [
+const EPICS: { key: string; ini: string; title: string; area: string; description: string; closedDaysAgo?: number; tasks: T[] }[] = [
   {
     key: 'e1', ini: 'i1', title: 'Casamento', area: 'amor', description: 'Construir uma relação sólida e duradoura',
     tasks: [
@@ -57,7 +57,7 @@ const EPICS: { key: string; ini: string; title: string; area: string; descriptio
     ],
   },
   {
-    key: 'e4', ini: 'i2', title: 'Gaita de boca', area: 'lazer', description: 'Tocar uma música inteira',
+    key: 'e4', ini: 'i2', title: 'Gaita de boca', area: 'lazer', description: 'Tocar uma música inteira', closedDaysAgo: 1,
     tasks: [
       ['Bands, casa 01', 'done', 'baixa', { done: 20, archived: true }],
       ['Bands, casa 03', 'done', 'baixa', { done: 15, archived: true }],
@@ -106,7 +106,16 @@ export async function seedBacklog(prisma: PrismaClient, userId: string) {
   let count = 0;
   for (const [position, e] of EPICS.entries()) {
     const epic = await prisma.epic.create({
-      data: { userId, initiativeId: ini[e.ini]!, title: e.title, area: e.area as never, description: e.description, position, createdAt: ago(35) },
+      data: {
+        userId,
+        initiativeId: ini[e.ini]!,
+        title: e.title,
+        area: e.area as never,
+        description: e.description,
+        position,
+        createdAt: ago(35),
+        closedAt: e.closedDaysAgo !== undefined ? ago(e.closedDaysAgo) : null,
+      },
     });
     for (const [tPos, [title, status, priority, o = {}]] of e.tasks.entries()) {
       const doneAt = status === 'done' ? ago(o.done ?? 3, 8 + (((o.done ?? 3) * 3) % 12)) : null;

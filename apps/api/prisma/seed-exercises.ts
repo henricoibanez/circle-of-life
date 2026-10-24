@@ -30,3 +30,20 @@ const NECRO = '<h1>Meu legado</h1><p>Se um dia eu partir, quero que lembrem de m
 export async function seedNecrologio(prisma: PrismaClient, userId: string) {
   await prisma.necrologio.create({ data: { userId, html: NECRO } });
 }
+
+const DREAMS: [text: string, area: string, doneDaysAgo?: number][] = [
+  ['Ver a aurora boreal com a minha esposa', 'amor'],
+  ['Ler a Ilíada e a Odisseia inteiras', 'intelectual'],
+  ['Morar numa casa com quintal', 'financas'],
+  ['Tocar gaita numa roda de amigos', 'lazer', 10],
+  ['Viagem de 15 dias pelo Nordeste', 'lazer', 80],
+  ['Reserva de emergência de 6 meses', 'financas', 120],
+  ['Natal com a família inteira reunida', 'familia', 300],
+  ['Retiro espiritual de 3 dias', 'espiritualidade', 200],
+];
+
+export async function seedDreams(prisma: PrismaClient, userId: string) {
+  await prisma.dream.createMany({
+    data: DREAMS.map(([text, area, done], position) => ({ userId, text, area: area as never, position, doneAt: done ? ago(done) : null })),
+  });
+}

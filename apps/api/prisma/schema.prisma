@@ -84,6 +84,7 @@ model User {
   maslowChecks    MaslowCheck[]
   maslowNotes     MaslowNote[]
   necrologio      Necrologio?
+  dreams          Dream[]
 
   @@map("users")
 }
@@ -428,4 +429,20 @@ model Necrologio {
   updatedAt DateTime @updatedAt
 
   @@map("necrologios")
+}
+
+/// Sonho do Quadro de visualização (até 10 abertos). "Realizei" marca doneAt.
+model Dream {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text        String
+  area        Area
+  imageFileId String?   @unique
+  doneAt      DateTime?
+  position    Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@map("dreams")
 }

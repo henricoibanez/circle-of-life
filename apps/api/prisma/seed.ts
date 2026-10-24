@@ -17,7 +17,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { config as loadEnv } from 'dotenv';
 import { PrismaClient, type Prisma } from '../src/generated/prisma/client';
 import { seedBacklog } from './seed-backlog';
-import { seedMaslow, seedNecrologio, seedRoda } from './seed-exercises';
+import { seedDreams, seedMaslow, seedNecrologio, seedRoda } from './seed-exercises';
 
 loadEnv({ path: resolve(__dirname, '../../../.env'), quiet: true });
 
@@ -72,6 +72,7 @@ async function main() {
   await seedRoda(prisma, henrico);
   await seedMaslow(prisma, henrico);
   await seedNecrologio(prisma, henrico);
+  await seedDreams(prisma, henrico);
 
   console.log(`✓ Seed concluído: ${USERS.length} usuários de teste, 1 convite pendente (convidado@teste.local) e o backlog do Henrico (${backlog.initiatives} iniciativas, ${backlog.epics} épicos, ${backlog.tasks} tarefas, sprints 10 a 12) e os exercícios de reflexão.`);
 }

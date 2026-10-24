@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { BacklogModule } from './backlog/backlog.module';
 import { AppConfigModule } from './config/config.module';
 import { DevAuthModule } from './dev-auth/dev-auth.module';
+import { DreamsModule } from './exercises/dreams.module';
 import { MaslowModule } from './exercises/maslow.module';
 import { NecrologioModule } from './exercises/necrologio.module';
 import { RodaModule } from './exercises/roda.module';
@@ -33,6 +34,7 @@ import { XpModule } from './xp/xp.module';
     RodaModule,
     MaslowModule,
     NecrologioModule,
+    DreamsModule,
   ],
   controllers: [HealthController],
 })

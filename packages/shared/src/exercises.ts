@@ -14,3 +14,19 @@ export type RodaDto = {
 export const rodaAvg = (s: RodaScores) => AREA_IDS.reduce((x, a) => x + (s[a] ?? 0), 0) / AREA_IDS.length;
 
 export const emptyScores = (): RodaScores => Object.fromEntries(AREA_IDS.map(a => [a, 0])) as RodaScores;
+
+/** Máximo de sonhos abertos no Quadro de visualização. */
+export const MAX_OPEN_DREAMS = 10;
+
+export type DreamDto = { id: string; text: string; area: AreaId; imageUrl: string | null; imageFileId: string | null; doneAt: string | null; createdAt: string };
+
+/** Minhas conquistas: épicos encerrados e iniciativas concluídas, por área da vida. */
+export type ConquistasDto = {
+  areas: { area: AreaId; epics: number; initiatives: number }[];
+  /** Tarefas concluídas / total (anel do topo da tela). */
+  tasks: { done: number; total: number };
+};
+export type AreaConquistasDto = {
+  epics: { id: string; title: string; closedAt: string }[];
+  initiatives: { id: string; title: string; completedAt: string }[];
+};
