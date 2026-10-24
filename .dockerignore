@@ -1,0 +1,12 @@
+# O que NÃO vai para dentro da imagem Docker.
+**/node_modules
+**/dist
+**/dist-test
+**/.next
+.local
+referencia
+.git
+.env
+.env.*
+!.env.example
+apps/api/src/generated

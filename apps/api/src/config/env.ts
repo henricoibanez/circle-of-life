@@ -40,6 +40,12 @@ export const envSchema = z.object({
   COOKIE_DOMAIN: z.string().optional(),
   /** "invite": só entra quem foi convidado. "open": qualquer conta Google (futuro). */
   SIGNUP_MODE: z.enum(['invite', 'open']).default('invite'),
+  /** E-mails (separados por vírgula) que entram sem convite e viram administradores. Use para o primeiro acesso em produção. */
+  ADMIN_EMAILS: z
+    .string()
+    .optional()
+    .default('')
+    .transform(v => v.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)),
   /** Validade do convite em dias. */
   INVITE_DAYS: z.coerce.number().int().positive().default(7),
   /** Credenciais do login com Google. Sem elas, o botão do Google fica desativado. */

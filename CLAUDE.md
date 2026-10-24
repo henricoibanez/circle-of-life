@@ -14,7 +14,7 @@ Este arquivo é lido pelo Claude no início de toda sessão. Ele explica o que �
 
 Um **app de celular que também funciona no computador**. Nesta versão (beta) ele é um aplicativo web instalável (PWA): a pessoa abre no navegador, pode "instalar" na tela inicial do celular e recebe notificações. O layout é pensado primeiro para o celular. **Depois do beta, o app irá para a App Store e o Google Play**; por isso, evite soluções que só funcionem no navegador quando houver alternativa equivalente.
 
-**Acesso só por convite** nesta versão: apenas participantes do Sprint da Vida entram. **Só administradores convidam**: o admin digita o e-mail, a pessoa recebe o convite e entra com a conta Google daquele e-mail. Convites feitos por participantes comuns (ex.: "Convidar pelo WhatsApp") ficam para o futuro. No futuro, qualquer pessoa poderá se cadastrar (Google, cadastro próprio etc.). Por isso, o login deve ser feito de um jeito que permita acrescentar outras formas de entrada depois.
+**Acesso só por convite** nesta versão: apenas participantes do Sprint da Vida entram. **Só administradores convidam**: o admin digita o e-mail, a pessoa recebe o convite e entra com a conta Google daquele e-mail. Os e-mails listados na variável `ADMIN_EMAILS` entram sem convite e viram administradores (é assim que o primeiro admin entra em produção). Convites feitos por participantes comuns (ex.: "Convidar pelo WhatsApp") ficam para o futuro. No futuro, qualquer pessoa poderá se cadastrar (Google, cadastro próprio etc.). Por isso, o login deve ser feito de um jeito que permita acrescentar outras formas de entrada depois.
 
 ## Idioma
 

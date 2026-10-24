@@ -10,7 +10,7 @@ describe('Login e convites (ambiente de desenvolvimento)', () => {
   let memberId: string;
 
   before(async () => {
-    api = await startApi({ NODE_ENV: 'development', GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '' });
+    api = await startApi({ NODE_ENV: 'development', GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '', ADMIN_EMAILS: 'Dona@Gmail.com, membro@teste.local' });
     const admin = await api.prisma.user.create({
       data: { email: 'admin@teste.local', name: 'Admin Teste', handle: 'adminteste', role: 'admin', isTestUser: true },
     });
@@ -200,6 +200,17 @@ describe('Login e convites (ambiente de desenvolvimento)', () => {
       assert.ok('user' in result && result.user.id === memberId);
       const user = await api.prisma.user.findUnique({ where: { id: memberId } });
       assert.equal(user!.googleId, 'g-membro');
+    });
+    test('ADMIN_EMAILS: entra sem convite e vira administrador', async () => {
+      const result = await api.app.get(AuthService).loginWithGoogle(google('dona@gmail.com'));
+      assert.ok('user' in result);
+      assert.equal(result.user.role, 'admin');
+    });
+
+    test('ADMIN_EMAILS: conta que já existia passa a ser administradora', async () => {
+      const result = await api.app.get(AuthService).loginWithGoogle(google('membro@teste.local'));
+      assert.ok('user' in result);
+      assert.equal(result.user.role, 'admin');
     });
   });
 });
