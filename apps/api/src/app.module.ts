@@ -14,6 +14,7 @@ import { InvitesModule } from './invites/invites.module';
 import { MailModule } from './mail/mail.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SocialModule } from './social/social.module';
 import { StorageModule } from './storage/storage.module';
 import { TrilhasModule } from './trilhas/trilhas.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -42,6 +43,7 @@ import { XpModule } from './xp/xp.module';
     NecrologioModule,
     DreamsModule,
     TrilhasModule,
+    SocialModule,
   ],
   controllers: [HealthController],
 })

@@ -91,6 +91,9 @@ model User {
   trilhas         Trilha[]            @relation("TrilhasAuthored")
   trilhaFavorites TrilhaFavorite[]
   trilhaAcquisitions TrilhaAcquisition[]
+  friendRequestsSent     Friendship[]  @relation("FriendRequestsSent")
+  friendRequestsReceived Friendship[]  @relation("FriendRequestsReceived")
+  groupMemberships       GroupMember[]
 
   @@map("users")
 }
@@ -549,6 +552,7 @@ model Trilha {
   epics              TrilhaEpic[]
   favorites          TrilhaFavorite[]
   acquisitions       TrilhaAcquisition[]
+  groups             GroupTrilha[]
 
   @@index([status])
   @@index([rootId])
@@ -600,4 +604,75 @@ model TrilhaAcquisition {
   @@id([userId, trilhaId])
   @@index([rootId])
   @@map("trilha_acquisitions")
+}
+
+// ---------- Amigos e grupos ----------
+
+enum FriendshipStatus {
+  pending
+  accepted
+}
+
+/// Amizade: pedido de requester para addressee; vira "accepted" quando aceito.
+model Friendship {
+  id          String           @id @default(cuid())
+  requesterId String
+  requester   User             @relation("FriendRequestsSent", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User             @relation("FriendRequestsReceived", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      FriendshipStatus @default(pending)
+  createdAt   DateTime         @default(now())
+  acceptedAt  DateTime?
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+  @@map("friendships")
+}
+
+enum GroupRole {
+  admin
+  member
+}
+
+/// Grupo criado por um usuário: pessoas interessadas num assunto e trilhas prontas.
+model Group {
+  id          String        @id @default(cuid())
+  name        String
+  description String
+  area        Area
+  icon        String        @default("users")
+  art         String        @default("lake")
+  coverFileId String?       @unique
+  createdById String?
+  createdAt   DateTime      @default(now())
+  members     GroupMember[]
+  trilhas     GroupTrilha[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  groupId  String
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     GroupRole @default(member)
+  joinedAt DateTime  @default(now())
+
+  @@id([groupId, userId])
+  @@index([userId])
+  @@map("group_members")
+}
+
+/// Trilha aprovada que o administrador do grupo colocou no grupo.
+model GroupTrilha {
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  trilhaId  String
+  trilha    Trilha   @relation(fields: [trilhaId], references: [id], onDelete: Cascade)
+  addedById String
+  addedAt   DateTime @default(now())
+
+  @@id([groupId, trilhaId])
+  @@map("group_trilhas")
 }

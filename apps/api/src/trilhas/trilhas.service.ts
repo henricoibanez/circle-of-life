@@ -102,6 +102,13 @@ export class TrilhasService {
     return { ...(await this.toDto(t, user, ctx.favs, ctx.roots)), epics: epics.map(e => ({ id: e.id, title: e.title, area: e.area, tasks: e.tasks.map(x => x.title) })) };
   }
 
+  /** Trilhas aprovadas com esses ids (usado na página do grupo). */
+  async approvedByIds(user: User, ids: string[]) {
+    const items = await this.prisma.trilha.findMany({ where: { id: { in: ids }, status: 'aprovada' }, include: this.include, orderBy: { title: 'asc' } });
+    const ctx = await this.context(user);
+    return Promise.all(items.map(t => this.toDto(t, user, ctx.favs, ctx.roots)));
+  }
+
   async mine(user: User) {
     const ctx = await this.context(user);
     const [published, acquired] = await Promise.all([
