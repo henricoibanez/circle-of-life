@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { BacklogModule } from './backlog/backlog.module';
 import { AppConfigModule } from './config/config.module';
 import { DevAuthModule } from './dev-auth/dev-auth.module';
+import { RodaModule } from './exercises/roda.module';
 import { HealthController } from './health/health.controller';
 import { InvitesModule } from './invites/invites.module';
 import { MailModule } from './mail/mail.module';
@@ -27,6 +28,7 @@ import { XpModule } from './xp/xp.module';
     UsersModule,
     InvitesModule,
     BacklogModule,
+    RodaModule,
   ],
   controllers: [HealthController],
 })

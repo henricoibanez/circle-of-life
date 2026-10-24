@@ -79,6 +79,8 @@ model User {
   xpEvents        XpEvent[]
   activity        ActivityEvent[]
   files           File[]
+  rodaScores      RodaScore[]
+  rodaSnapshots   RodaSnapshot[]
 
   @@map("users")
 }
@@ -360,4 +362,31 @@ model TaskAttachment {
 
   @@index([taskId])
   @@map("task_attachments")
+}
+
+// ---------- Exercícios de reflexão ----------
+
+/// Nota atual (0 a 10) de cada área da Roda da Vida.
+model RodaScore {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area      Area
+  score     Int
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, area])
+  @@map("roda_scores")
+}
+
+/// "Registrar avaliação de hoje": foto das 10 notas num dia (a evolução aparece nos relatórios).
+model RodaSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// { "lazer": 6, "amor": 7, … }
+  scores    Json
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("roda_snapshots")
 }
