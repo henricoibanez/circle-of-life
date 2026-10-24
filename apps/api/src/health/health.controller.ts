@@ -1,4 +1,5 @@
 import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
+import { Public } from '../common/decorators';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 
@@ -15,6 +16,7 @@ export class HealthController {
     private readonly storage: StorageService,
   ) {}
 
+  @Public()
   @Get()
   async check() {
     const [banco, storage] = await Promise.all([

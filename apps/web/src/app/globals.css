@@ -1,13 +1,68 @@
 @import 'tailwindcss';
 
-/* O tema completo do protótipo (paletas, modo escuro, fontes) entra na etapa 3. */
+/*
+ * Tema do protótipo (referencia/prototipo/circle-of-life.html).
+ * As cores são guardadas como "R G B" em variáveis, igual ao protótipo,
+ * e viram cores do Tailwind no bloco @theme (bg-primary, text-muted…).
+ */
+
 :root {
   --bg: 250 250 247;
+  --surface: 255 255 255;
+  --sunk: 243 244 240;
   --ink: 24 28 22;
-  --p: 94 135 60;
+  --muted: 110 116 106;
+  --line: 233 235 228;
+  --onp: 255 255 255;
+  --p: var(--pl);
+  --a: 124 77 222;
+  color-scheme: light;
+}
+
+/* As 6 paletas: --pl é a cor principal no modo claro, --pd no escuro. */
+:root,
+[data-palette='natureza'] { --pl: 94 135 60; --pd: 150 196 108; }
+[data-palette='serenity'] { --pl: 52 106 184; --pd: 128 170 232; }
+[data-palette='soft'] { --pl: 200 88 88; --pd: 238 150 145; }
+[data-palette='dourado'] { --pl: 186 132 24; --pd: 232 190 88; }
+[data-palette='mindful'] { --pl: 124 77 222; --pd: 176 150 242; }
+[data-palette='premium'] { --pl: 30 30 30; --pd: 222 186 92; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: 16 18 15; --surface: 26 29 25; --sunk: 34 38 33;
+    --ink: 236 238 232; --muted: 152 158 147; --line: 46 51 44;
+    --onp: 18 20 16; --p: var(--pd); --a: 172 142 245;
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: 16 18 15; --surface: 26 29 25; --sunk: 34 38 33;
+  --ink: 236 238 232; --muted: 152 158 147; --line: 46 51 44;
+  --onp: 18 20 16; --p: var(--pd); --a: 172 142 245;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-primary: rgb(var(--p));
+  --color-accent: rgb(var(--a));
+  --color-onprimary: rgb(var(--onp));
+  --color-bg: rgb(var(--bg));
+  --color-surface: rgb(var(--surface));
+  --color-sunk: rgb(var(--sunk));
+  --color-ink: rgb(var(--ink));
+  --color-muted: rgb(var(--muted));
+  --color-line: rgb(var(--line));
+  --shadow-soft: 0 1px 2px rgb(var(--ink) / 0.04), 0 4px 16px rgb(var(--ink) / 0.05);
 }
 
 body {
   background: rgb(var(--bg));
   color: rgb(var(--ink));
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--p));
+  outline-offset: 2px;
 }

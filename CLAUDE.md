@@ -215,6 +215,7 @@ pnpm install       # instala as bibliotecas (o PostgreSQL vem junto, pelo npm)
 pnpm setup:local   # uma vez: baixa SeaweedFS e Mailpit para .local/bin (conferidos por SHA-256)
 pnpm dev           # sobe tudo (banco, storage, e-mail, api e web); Ctrl+C desliga
 pnpm typecheck     # confere os tipos de todos os apps
+pnpm test          # testes automáticos da API (precisa do pnpm dev ligado; usa o banco circle_of_life_test)
 pnpm db:studio     # abre uma tela no navegador para ver as tabelas do banco
 pnpm db:seed       # recria os dados de exemplo (usuários de teste etc.)
 pnpm db:reset      # apaga o banco local inteiro e recria (migrations + seed)
@@ -226,6 +227,8 @@ pnpm --filter @circle/api db:migrate --name descricao   # cria uma migration nov
 - Ferramentas: Node 24, pnpm 12 (instalado para o usuário com `npm i -g pnpm`), TypeScript 6 (a versão que o Nest CLI suporta). A API compila com o `tsc` (o SWC não funciona nesta máquina por permissão de pasta).
 - Versões das bibliotecas são **fixas** (sem `^`). Prefira versões publicadas há pelo menos duas semanas, **exceto correções de segurança**: rode `pnpm audit` ao adicionar ou atualizar bibliotecas.
 - O pnpm só deixa rodar scripts de instalação dos pacotes listados em `allowBuilds` no `pnpm-workspace.yaml`. Confira o que o script faz antes de liberar um novo.
+- Testes da API: `node:test` do próprio Node, sobre o código compilado pelo `tsc` (o Nest precisa dos metadados de tipos que só o `tsc` gera). Ficam em `apps/api/test/*.spec.ts`; cada arquivo roda num processo separado. Toda regra de negócio nova ganha teste.
+- Rotas da API: toda rota exige login por padrão (guarda global). Use `@Public()` para abrir e `@AdminOnly()` para restringir a administradores. Pegue o usuário com `@CurrentUser()`.
 - Para desligar o ambiente fora do terminal, encerre **só os processos desta pasta** (por PID), nunca todos os `node.exe` do computador.
 - O `next dev` gera o `apps/web/AGENTS.md`, que aponta para a documentação do Next.js instalada em `node_modules/next/dist/docs/`. Consulte essa documentação antes de usar APIs do Next.js.
 

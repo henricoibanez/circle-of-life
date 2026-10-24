@@ -11,6 +11,7 @@ node_modules/
 
 # Saídas de build
 dist/
+dist-test/
 .next/
 out/
 *.tsbuildinfo

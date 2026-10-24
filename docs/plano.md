@@ -554,7 +554,7 @@ Todos com prefixo `/api`, respostas em JSON, mensagens de erro em português. To
 | POST | `/auth/logout` | Sai da conta. |
 | GET | `/auth/dev/users` | **Só development.** Lista usuários de teste. |
 | POST | `/auth/dev/login` | **Só development.** Entra como um usuário de teste. |
-| GET | `/invites/:token` | Público. Valida o convite e mostra para qual e-mail é. |
+| GET | `/invites/check/:token` | Público. Valida o convite e mostra para qual e-mail é. |
 | GET | `/invites` | **Admin.** Convites enviados. |
 | POST | `/invites` | **Admin.** `{ email }` → cria convite e envia e-mail. |
 | DELETE | `/invites/:id` | **Admin.** Cancela convite não usado. |

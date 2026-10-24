@@ -3,13 +3,12 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { setupApp } from './app.setup';
 import type { Env } from './config/env';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // Todas as rotas ficam em /api/... (o site repassa /api/* para cá).
-  app.setGlobalPrefix('api');
-  app.enableShutdownHooks();
+  setupApp(app);
 
   const port = app.get(ConfigService<Env, true>).get('API_PORT');
   await app.listen(port);
