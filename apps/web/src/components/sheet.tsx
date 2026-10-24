@@ -48,7 +48,7 @@ export function Sheet({
   );
 }
 
-export type Action = { icon: IconName; label: string; run: () => void; danger?: boolean } | false | null | undefined;
+export type Action = { icon: IconName; label: string; run: () => void; danger?: boolean } | false | null | undefined | '';
 
 /** Lista de ações (menu "⋮"), como a ActionSheet do protótipo. */
 export function ActionSheet({ title, actions, onClose }: { title: ReactNode; actions: Action[]; onClose: () => void }) {
@@ -56,7 +56,7 @@ export function ActionSheet({ title, actions, onClose }: { title: ReactNode; act
     <Sheet title={title} onClose={onClose}>
       <div className="-mx-1 divide-y divide-line">
         {actions.filter(Boolean).map(a => {
-          const action = a as Exclude<Action, false | null | undefined>;
+          const action = a as Exclude<Action, false | null | undefined | ''>;
           return (
             <button
               key={action.label}

@@ -72,6 +72,10 @@ model User {
 
   invitesSent     Invite[] @relation("InvitedBy")
   invitesAccepted Invite[] @relation("AcceptedBy")
+  initiatives     Initiative[]
+  epics           Epic[]
+  tasks           Task[]
+  sprints         Sprint[]
 
   @@map("users")
 }
@@ -93,4 +97,163 @@ model Invite {
 
   @@index([email])
   @@map("invites")
+}
+
+// ---------- Backlog: Iniciativa > Épico > Tarefa ----------
+
+enum Area {
+  lazer
+  amor
+  financas
+  familia
+  intelectual
+  espiritualidade
+  sociedade
+  saude
+  emocional
+  profissional
+}
+
+/// Backlog → A Fazer → Fazendo → Pronto. O quadro mostra só os três últimos.
+enum TaskStatus {
+  backlog
+  todo
+  doing
+  done
+}
+
+enum Priority {
+  alta
+  media
+  baixa
+}
+
+/// De onde veio a iniciativa.
+enum InitiativeSource {
+  manual
+  trilha
+  ia
+  duplicada
+}
+
+/// Objetivo estratégico de alto nível (ex.: "Vida longa e próspera").
+model Initiative {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String           @default("")
+  areas       Area[]
+  /// "Objetivo Master".
+  isMaster    Boolean          @default(false)
+  source      InitiativeSource @default(manual)
+  /// Trilha de origem (loja ou grupo), quando importada.
+  trilhaId    String?
+  /// Concluída (todos os épicos encerrados) = conquista.
+  completedAt DateTime?
+  position    Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  epics       Epic[]
+
+  @@index([userId])
+  @@map("initiatives")
+}
+
+/// Conjunto de entregas relacionadas, dentro de uma iniciativa. Tem uma área da vida.
+model Epic {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  initiativeId String
+  initiative   Initiative @relation(fields: [initiativeId], references: [id], onDelete: Cascade)
+  title        String
+  description  String     @default("")
+  area         Area
+  /// Encerrado (todas as tarefas prontas) = conquista.
+  closedAt     DateTime?
+  position     Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  tasks        Task[]
+
+  @@index([userId])
+  @@index([initiativeId])
+  @@map("epics")
+}
+
+/// Ação específica e executável, dentro de um épico. A área é a do épico.
+model Task {
+  id                String          @id @default(cuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  epicId            String
+  epic              Epic            @relation(fields: [epicId], references: [id], onDelete: Cascade)
+  title             String
+  description       String          @default("")
+  status            TaskStatus      @default(backlog)
+  priority          Priority        @default(media)
+  /// "Previsão de entrega" (só a data).
+  dueDate           DateTime?       @db.Date
+  doneAt            DateTime?
+  /// Saiu do quadro ao encerrar a sprint (vai para os relatórios).
+  archivedAt        DateTime?
+  /// Sprint em que a tarefa entrou no quadro / foi entregue.
+  sprintId          String?
+  sprint            Sprint?         @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  /// Quando o aviso de "tarefa atrasada" já foi enviado.
+  overdueNotifiedAt DateTime?
+  /// Ordem dentro da coluna do quadro.
+  position          Int             @default(0)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  checklist         ChecklistItem[]
+  logs              TaskLog[]
+
+  @@index([userId, status])
+  @@index([epicId])
+  @@map("tasks")
+}
+
+model ChecklistItem {
+  id       String  @id @default(cuid())
+  taskId   String
+  task     Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  text     String
+  done     Boolean @default(false)
+  position Int     @default(0)
+
+  @@index([taskId])
+  @@map("checklist_items")
+}
+
+/// Histórico da tarefa ("Movida de A Fazer para Fazendo").
+model TaskLog {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_logs")
+}
+
+/// Sprint de 14 dias. Sempre existe uma em andamento (closedAt vazio) por usuário.
+model Sprint {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  number     Int
+  startAt    DateTime
+  /// startAt + 13 dias (14 dias no total).
+  plannedEnd DateTime
+  closedAt   DateTime?
+  /// Preenchidos ao encerrar: "prontas/total".
+  doneCount  Int?
+  totalCount Int?
+  tasks      Task[]
+
+  @@unique([userId, number])
+  @@map("sprints")
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConditionalModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { BacklogModule } from './backlog/backlog.module';
 import { AppConfigModule } from './config/config.module';
 import { DevAuthModule } from './dev-auth/dev-auth.module';
 import { HealthController } from './health/health.controller';
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
     ConditionalModule.registerWhen(DevAuthModule, env => env.NODE_ENV === 'development'),
     UsersModule,
     InvitesModule,
+    BacklogModule,
   ],
   controllers: [HealthController],
 })

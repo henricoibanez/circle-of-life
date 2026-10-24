@@ -99,3 +99,14 @@ export async function mailpitBody(id: string) {
   const res = await fetch(`http://127.0.0.1:${port}/api/v1/message/${id}`);
   return ((await res.json()) as { Text: string }).Text;
 }
+
+/** Cria um usuário de teste e devolve um cliente HTTP já logado como ele. */
+export async function loginAs(api: Awaited<ReturnType<typeof startApi>>, handle: string, extra: { role?: 'admin' | 'member' } = {}) {
+  const user = await api.prisma.user.create({
+    data: { email: `${handle}@teste.local`, name: handle, handle, isTestUser: true, role: extra.role ?? 'member' },
+  });
+  const c = client(api.url);
+  const res = await c.request('POST', '/auth/dev/login', { userId: user.id });
+  if (res.status !== 204) throw new Error(`login de teste falhou: ${res.status}`);
+  return { user, c };
+}

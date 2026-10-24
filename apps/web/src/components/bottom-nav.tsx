@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Icon, type IconName } from './icon';
 import { Sheet, useSheets } from './sheet';
 import { useToast } from './toasts';
+import { useBacklogSheets } from './backlog/use-backlog-sheets';
 
 const TABS: { href: string; icon: IconName; label: string }[] = [
   { href: '/feed', icon: 'home', label: 'Feed' },
@@ -63,11 +64,12 @@ export function BottomNav() {
 /** Folha do botão "+": escolher o que criar. */
 export function AddSheet({ onClose }: { onClose: () => void }) {
   const toast = useToast();
-  const opts: { n: IconName; title: string; d: string; bg: string; ic: string; stage: number }[] = [
-    { n: 'target', title: 'Nova Iniciativa', d: 'Objetivo estratégico de alto nível', bg: 'bg-primary/5', ic: 'bg-primary text-onprimary', stage: 4 },
-    { n: 'layersArea', title: 'Novo Épico', d: 'Conjunto de entregáveis relacionados', bg: 'bg-accent/5', ic: 'bg-accent text-white', stage: 4 },
-    { n: 'checkSq', title: 'Nova Tarefa', d: 'Ação específica e executável', bg: 'bg-sunk/60', ic: 'bg-emerald-600 text-white', stage: 4 },
-    { n: 'edit', title: 'Novo post', d: 'Compartilhar algo no feed', bg: 'bg-sunk/60', ic: 'bg-ink text-bg', stage: 17 },
+  const sheets = useBacklogSheets();
+  const opts: { n: IconName; title: string; d: string; bg: string; ic: string; open: () => void }[] = [
+    { n: 'target', title: 'Nova Iniciativa', d: 'Objetivo estratégico de alto nível', bg: 'bg-primary/5', ic: 'bg-primary text-onprimary', open: () => sheets.openInitiative() },
+    { n: 'layersArea', title: 'Novo Épico', d: 'Conjunto de entregáveis relacionados', bg: 'bg-accent/5', ic: 'bg-accent text-white', open: () => sheets.openEpic() },
+    { n: 'checkSq', title: 'Nova Tarefa', d: 'Ação específica e executável', bg: 'bg-sunk/60', ic: 'bg-emerald-600 text-white', open: () => sheets.openTask() },
+    { n: 'edit', title: 'Novo post', d: 'Compartilhar algo no feed', bg: 'bg-sunk/60', ic: 'bg-ink text-bg', open: () => toast('Novo post: chega na etapa 17') },
   ];
   return (
     <Sheet title="Adicionar" onClose={onClose} footer={<Button variant="line" className="flex-1" onClick={onClose}>Cancelar</Button>}>
@@ -77,7 +79,7 @@ export function AddSheet({ onClose }: { onClose: () => void }) {
             key={o.title}
             onClick={() => {
               onClose();
-              toast(`${o.title}: chega na etapa ${o.stage}`);
+              o.open();
             }}
             className={`flex w-full items-center gap-4 rounded-2xl border border-line p-4 text-left hover:border-primary/40 ${o.bg}`}
           >

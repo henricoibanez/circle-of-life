@@ -16,6 +16,7 @@ import { resolve } from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { config as loadEnv } from 'dotenv';
 import { PrismaClient, type Prisma } from '../src/generated/prisma/client';
+import { seedBacklog } from './seed-backlog';
 
 loadEnv({ path: resolve(__dirname, '../../../.env'), quiet: true });
 
@@ -65,7 +66,9 @@ async function main() {
     },
   });
 
-  console.log(`✓ Seed concluído: ${USERS.length} usuários de teste e 1 convite pendente (convidado@teste.local).`);
+  const backlog = await seedBacklog(prisma, created['henrico@teste.local']!);
+
+  console.log(`✓ Seed concluído: ${USERS.length} usuários de teste, 1 convite pendente (convidado@teste.local) e o backlog do Henrico (${backlog.initiatives} iniciativas, ${backlog.epics} épicos, ${backlog.tasks} tarefas, sprints 10 a 12).`);
 }
 
 main()
