@@ -29,7 +29,7 @@ export function BottomNav() {
         key={t.href}
         href={t.href}
         aria-current={on ? 'page' : undefined}
-        className={`mx-1 flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-2 text-[12px] font-medium ${on ? 'bg-primary/10 text-primary' : 'text-ink/70'}`}
+        className={`mx-1 flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-2 text-[0.75rem] font-medium ${on ? 'bg-primary/10 text-primary' : 'text-ink/70'}`}
       >
         <Icon n={t.icon} className="h-6 w-6" sw={1.7} />
         {t.label}
@@ -40,16 +40,16 @@ export function BottomNav() {
   return (
     <nav
       className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-2"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}
     >
-      <div className="pointer-events-auto mx-auto flex max-w-2xl items-center rounded-[28px] border border-line/80 bg-surface/95 px-1 py-1.5 shadow-soft backdrop-blur-md">
+      <div className="pointer-events-auto mx-auto flex max-w-2xl items-center rounded-[1.75rem] border border-line/80 bg-surface/95 px-1 py-1.5 shadow-soft backdrop-blur-md">
         {tab(TABS[0]!)}
         {tab(TABS[1]!)}
         <div className="flex flex-1 justify-center">
           <button
             onClick={() => openSheet(close => <AddSheet onClose={close} />)}
             aria-label="Adicionar"
-            className="-mt-7 grid h-[60px] w-[60px] place-items-center rounded-full bg-primary text-onprimary shadow-lg shadow-primary/30 ring-[5px] ring-bg"
+            className="-mt-7 grid h-[3.75rem] w-[3.75rem] place-items-center rounded-full bg-primary text-onprimary shadow-lg shadow-primary/30 ring-[0.3125rem] ring-bg"
           >
             <Icon n="plus" className="h-8 w-8" sw={2.2} />
           </button>
@@ -87,7 +87,7 @@ export function AddSheet({ onClose }: { onClose: () => void }) {
               <Icon n={o.n} />
             </span>
             <span>
-              <span className="block text-[17px] font-semibold">{o.title}</span>
+              <span className="block text-[1.0625rem] font-semibold">{o.title}</span>
               <span className="block text-sm text-muted">{o.d}</span>
             </span>
           </button>

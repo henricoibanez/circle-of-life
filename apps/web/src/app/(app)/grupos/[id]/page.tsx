@@ -98,12 +98,12 @@ export default function GrupoPage() {
         <div className="overflow-hidden rounded-3xl text-white shadow-soft" style={{ background: `linear-gradient(120deg, ${mix(color, '#000', 0.78)}, ${mix(color, '#000', 0.55)})` }}>
           <GroupCover g={g} className="h-36 w-full" />
           <div className="p-4">
-            <p className="flex flex-wrap items-center gap-2 text-[21px] font-semibold">
+            <p className="flex flex-wrap items-center gap-2 text-[1.3125rem] font-semibold">
               {g.name}
-              {g.admin && <span className="rounded-md border border-white/20 bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold">Administrador</span>}
+              {g.admin && <span className="rounded-md border border-white/20 bg-white/15 px-1.5 py-0.5 text-[0.625rem] font-semibold">Administrador</span>}
             </p>
-            {g.description && <p className="mt-1 text-[14px] text-white/85">{g.description}</p>}
-            <p className="mt-3 flex items-center gap-3 text-[12px] text-white/85">
+            {g.description && <p className="mt-1 text-[0.875rem] text-white/85">{g.description}</p>}
+            <p className="mt-3 flex items-center gap-3 text-[0.75rem] text-white/85">
               <span className="inline-flex items-center gap-1">
                 <Icon n="users" className="h-4 w-4" />
                 {g.members === 1 ? '1 membro' : `${g.members} membros`}
@@ -124,9 +124,9 @@ export default function GrupoPage() {
 
         <section>
           <div className="mb-2 flex items-center">
-            <h2 className="flex-1 text-[17px] font-semibold">Trilhas do grupo</h2>
+            <h2 className="flex-1 text-[1.0625rem] font-semibold">Trilhas do grupo</h2>
             {g.admin && (
-              <Button variant="aline" className="rounded-full px-3 py-1.5 text-[12px]" onClick={() => openSheet(close => <AddTrilhaSheet group={g} onClose={close} />)}>
+              <Button variant="aline" className="rounded-full px-3 py-1.5 text-[0.75rem]" onClick={() => openSheet(close => <AddTrilhaSheet group={g} onClose={close} />)}>
                 <Icon n="plus" className="h-4 w-4" />
                 Adicionar
               </Button>
@@ -168,8 +168,8 @@ export default function GrupoPage() {
         {g.member && (
           <section className="space-y-3">
             <div className="flex items-center">
-              <h2 className="flex-1 text-[17px] font-semibold">Posts do grupo</h2>
-              <Button variant="aline" className="rounded-full px-3 py-1.5 text-[12px]" onClick={() => newPost(undefined, g.id)}>
+              <h2 className="flex-1 text-[1.0625rem] font-semibold">Posts do grupo</h2>
+              <Button variant="aline" className="rounded-full px-3 py-1.5 text-[0.75rem]" onClick={() => newPost(undefined, g.id)}>
                 <Icon n="plus" className="h-4 w-4" />
                 Criar post
               </Button>
@@ -185,7 +185,7 @@ export default function GrupoPage() {
         )}
 
         <section>
-          <h2 className="mb-2 text-[17px] font-semibold">Membros</h2>
+          <h2 className="mb-2 text-[1.0625rem] font-semibold">Membros</h2>
           <Card className="divide-y divide-line">
             {g.memberList.map(m => (
               <div key={m.id} className="flex items-center gap-3 p-3.5">

@@ -21,7 +21,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 px-4 py-10 text-center">
-      <p className="text-[30px] tracking-tight">
+      <p className="text-[1.875rem] tracking-tight">
         <span className="font-semibold text-primary">Circle</span> <span className="text-muted">of</span>{' '}
         <span className="font-semibold text-primary">Life</span>
       </p>

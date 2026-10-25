@@ -97,8 +97,8 @@ export default function NotificacoesPage() {
                     <Icon n={icon} />
                   </span>
                   <button onClick={() => open(n)} className="min-w-0 flex-1 text-left">
-                    <p className={`text-[15px] leading-snug ${n.read ? '' : 'font-semibold'}`}>{n.title}</p>
-                    {n.body && <p className="mt-0.5 text-[13px] text-muted">{n.body}</p>}
+                    <p className={`text-[0.9375rem] leading-snug ${n.read ? '' : 'font-semibold'}`}>{n.title}</p>
+                    {n.body && <p className="mt-0.5 text-[0.8125rem] text-muted">{n.body}</p>}
                     <p className="mt-1 text-xs text-muted">{since(n.createdAt)}</p>
                   </button>
                   {!n.read && <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" aria-label="Não lida" />}

@@ -122,7 +122,7 @@ export function Logo({ className = 'w-9 h-9' }: { className?: string }) {
 }
 
 /** "Circle of Life" escrito como no protótipo. */
-export function Wordmark({ className = 'text-[24px]' }: { className?: string }) {
+export function Wordmark({ className = 'text-[1.5rem]' }: { className?: string }) {
   return (
     <p className={`tracking-tight ${className}`}>
       <span className="font-semibold text-primary">Circle</span> <span className="font-normal text-muted">of</span>{' '}

@@ -87,7 +87,7 @@ export default function AnalisePage() {
                   <span style={{ color: s.color }}>
                     <Icon n={s.icon} className="h-7 w-7" sw={1.7} />
                   </span>
-                  <span className="flex min-h-[26px] items-center text-[11px] font-medium leading-tight">{s.label}</span>
+                  <span className="flex min-h-[1.625rem] items-center text-[0.6875rem] font-medium leading-tight">{s.label}</span>
                   <span className={`grid h-5 w-5 place-items-center rounded-full border-2 ${on ? 'border-primary bg-primary text-onprimary' : 'border-line'}`}>
                     {on && <Icon n="check" className="h-3 w-3" sw={3} />}
                   </span>
@@ -103,7 +103,7 @@ export default function AnalisePage() {
         <div className="space-y-3 rounded-3xl border border-accent/10 bg-accent/[.05] p-3">
           <div className="flex flex-wrap items-center gap-3 px-1 pt-1">
             <Icon n="sparkles" className="h-7 w-7 text-accent" />
-            <div className="min-w-[150px] flex-1">
+            <div className="min-w-[9.375rem] flex-1">
               <p className="font-semibold text-accent">{busy ? 'Analisando seus dados…' : a.example ? 'Exemplo de relatório' : 'Análise concluída pela IA'}</p>
               <p className="text-xs text-muted">{a.example ? 'Gere o seu relatório para ver a análise com os seus dados.' : `Última atualização: ${fmtWhen(a.createdAt)}`}</p>
             </div>
@@ -120,14 +120,14 @@ export default function AnalisePage() {
             <h2 className="text-lg font-semibold">Relatório da sua vida</h2>
             <div className="mt-2 flex gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold text-accent">Visão geral</p>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink/80">{a.visao}</p>
+                <p className="text-[0.9375rem] font-semibold text-accent">Visão geral</p>
+                <p className="mt-1 text-[0.8125rem] leading-relaxed text-ink/80">{a.visao}</p>
               </div>
               <div className="flex shrink-0 flex-col items-center">
                 <Ring pct={a.geral / 100} size={96} stroke={8} color="rgb(var(--a))" track="rgb(var(--a) / .15)">
                   <span className="text-2xl font-semibold text-accent">{a.geral}%</span>
                 </Ring>
-                <p className="mt-1.5 text-center text-[11px] leading-tight text-muted">
+                <p className="mt-1.5 text-center text-[0.6875rem] leading-tight text-muted">
                   Índice de alinhamento
                   <br />
                   geral
@@ -135,7 +135,7 @@ export default function AnalisePage() {
               </div>
             </div>
 
-            <p className="mb-2 mt-5 text-[15px] font-semibold text-accent">Análise por área da vida</p>
+            <p className="mb-2 mt-5 text-[0.9375rem] font-semibold text-accent">Análise por área da vida</p>
             <div className="divide-y divide-line rounded-2xl border border-line">
               {a.areas.map(x => {
                 const tg = ANALYSIS_TAGS[analysisTag(x.pct)];
@@ -145,25 +145,25 @@ export default function AnalisePage() {
                     <AreaIcon id={x.area} size="w-9 h-9" icon="w-4 h-4" />
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-2">
-                        <span className="text-[14px] font-semibold">{AREA[x.area].name}</span>
+                        <span className="text-[0.875rem] font-semibold">{AREA[x.area].name}</span>
                         <Tag c={tg[1]}>{tg[0]}</Tag>
                       </p>
-                      <p className="mt-1 text-[12.5px] leading-snug text-ink/75">{x.texto}</p>
+                      <p className="mt-1 text-[0.7813rem] leading-snug text-ink/75">{x.texto}</p>
                     </div>
-                    <div className="flex w-[72px] shrink-0 flex-col items-center">
+                    <div className="flex w-[4.5rem] shrink-0 flex-col items-center">
                       <Ring pct={x.pct / 100} size={50} stroke={4} color={rc}>
-                        <span className="text-[13px] font-semibold" style={{ color: rc }}>
+                        <span className="text-[0.8125rem] font-semibold" style={{ color: rc }}>
                           {x.pct}%
                         </span>
                       </Ring>
-                      <span className="mt-1 text-center text-[10px] leading-tight text-muted">{alignmentLabel(x.pct)}</span>
+                      <span className="mt-1 text-center text-[0.625rem] leading-tight text-muted">{alignmentLabel(x.pct)}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <p className="mb-2 mt-5 flex items-center gap-2 text-[15px] font-semibold text-accent">
+            <p className="mb-2 mt-5 flex items-center gap-2 text-[0.9375rem] font-semibold text-accent">
               <Icon n="sparkles" className="h-4 w-4" />
               Principais insights da IA
             </p>
@@ -175,8 +175,8 @@ export default function AnalisePage() {
                     <span style={{ color: c }}>
                       <Icon n={ic} className="h-6 w-6" />
                     </span>
-                    <p className="mt-1.5 text-[12px] font-semibold leading-snug">{x.titulo}</p>
-                    <p className="mt-1 text-[11px] leading-snug text-muted">{x.texto}</p>
+                    <p className="mt-1.5 text-[0.75rem] font-semibold leading-snug">{x.titulo}</p>
+                    <p className="mt-1 text-[0.6875rem] leading-snug text-muted">{x.texto}</p>
                   </div>
                 );
               })}
@@ -201,10 +201,10 @@ export default function AnalisePage() {
         <button
           disabled={busy || !sel.length}
           onClick={run}
-          className="w-full rounded-[22px] py-4 text-center text-white disabled:opacity-50"
+          className="w-full rounded-[1.375rem] py-4 text-center text-white disabled:opacity-50"
           style={{ background: 'linear-gradient(90deg, #7c4dde, #9d6bf0)' }}
         >
-          <span className="flex items-center justify-center gap-2 text-[17px] font-semibold">
+          <span className="flex items-center justify-center gap-2 text-[1.0625rem] font-semibold">
             <Icon n="sparkles" />
             {busy ? 'Gerando relatório…' : 'Gerar novo relatório'}
           </span>
@@ -254,7 +254,7 @@ function SuggestionCard({ s, reportId, index, imported }: { s: AnalysisSuggestio
   };
 
   const Box = ({ on }: { on: boolean }) => (
-    <span className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border-2 ${on ? 'border-primary bg-primary text-onprimary' : 'border-line'}`}>
+    <span className={`grid h-[1.125rem] w-[1.125rem] shrink-0 place-items-center rounded-full border-2 ${on ? 'border-primary bg-primary text-onprimary' : 'border-line'}`}>
       {on && <Icon n="check" className="h-3 w-3" sw={3} />}
     </span>
   );
@@ -270,7 +270,7 @@ function SuggestionCard({ s, reportId, index, imported }: { s: AnalysisSuggestio
             {s.iniciativa.titulo}
             {imported && <Tag c="#16a34a">Importada</Tag>}
           </p>
-          <p className="mt-0.5 text-[12.5px] text-muted">{s.iniciativa.descricao}</p>
+          <p className="mt-0.5 text-[0.7813rem] text-muted">{s.iniciativa.descricao}</p>
           <div className="mt-1.5 flex gap-1">
             {s.iniciativa.areas.map(ar => (
               <AreaIcon key={ar} id={ar} size="w-6 h-6" icon="w-3.5 h-3.5" />
@@ -281,15 +281,15 @@ function SuggestionCard({ s, reportId, index, imported }: { s: AnalysisSuggestio
       <div className="divide-y divide-line border-t border-line">
         {s.epicos.map((e, i) => (
           <div key={i} className="px-3 py-2">
-            <button className="flex w-full items-center gap-2.5 py-1 text-left text-[13.5px] font-semibold" onClick={() => setEpic(i, !marks[i]!.on)} aria-pressed={marks[i]!.on}>
+            <button className="flex w-full items-center gap-2.5 py-1 text-left text-[0.8438rem] font-semibold" onClick={() => setEpic(i, !marks[i]!.on)} aria-pressed={marks[i]!.on}>
               <Box on={marks[i]!.on} />
               <span className="flex-1">{e.titulo}</span>
               <Tag c={AREA[e.area].color}>Épico</Tag>
             </button>
-            <ul className="ml-[26px]">
+            <ul className="ml-[1.625rem]">
               {e.tarefas.map((t, k) => (
                 <li key={k}>
-                  <button className="flex w-full items-center gap-2.5 py-1.5 text-left text-[13px]" onClick={() => setTask(i, k)} aria-pressed={marks[i]!.tasks[k]}>
+                  <button className="flex w-full items-center gap-2.5 py-1.5 text-left text-[0.8125rem]" onClick={() => setTask(i, k)} aria-pressed={marks[i]!.tasks[k]}>
                     <Box on={marks[i]!.tasks[k]!} />
                     <span className={marks[i]!.tasks[k] ? '' : 'text-muted line-through'}>{t}</span>
                   </button>

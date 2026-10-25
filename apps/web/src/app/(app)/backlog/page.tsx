@@ -132,17 +132,17 @@ export default function BacklogPage() {
                     </span>
                     <button className="min-w-0 flex-1 text-left" onClick={() => toggle(i.id)} aria-expanded={opened}>
                       <p className="flex flex-wrap items-center gap-2">
-                        <span className="text-[20px] font-semibold leading-tight">{i.title}</span>
+                        <span className="text-[1.25rem] font-semibold leading-tight">{i.title}</span>
                         {i.isMaster ? <Tag>Objetivo Master</Tag> : <Tag c="#6b7280">Iniciativa</Tag>}
                         {i.completedAt && <Tag c="#16a34a">Concluída</Tag>}
                       </p>
-                      {i.description && <p className="mt-1 text-[15px] text-muted">{i.description}</p>}
+                      {i.description && <p className="mt-1 text-[0.9375rem] text-muted">{i.description}</p>}
                     </button>
                     <IconBtn n="moreV" label="Opções da iniciativa" className="-mr-1 h-8 w-8 text-muted" onClick={() => initiativeMenu(i)} />
                   </div>
-                  <button onClick={() => toggle(i.id)} className="mt-3 flex w-full items-center gap-3 pl-[60px]">
+                  <button onClick={() => toggle(i.id)} className="mt-3 flex w-full items-center gap-3 pl-[3.75rem]">
                     <span className="whitespace-nowrap text-sm text-muted">Progresso geral</span>
-                    <div className="min-w-[48px] flex-1">
+                    <div className="min-w-[3rem] flex-1">
                       <Bar pct={pr.pct} className="h-2" />
                     </div>
                     <span className="text-sm tabular-nums text-muted">{Math.round(pr.pct * 100)}%</span>
@@ -150,12 +150,12 @@ export default function BacklogPage() {
                   </button>
                   {opened && (
                     <div className="relative mt-4 pl-6">
-                      <span className="absolute -top-2 bottom-8 left-[23px] w-px bg-line" />
+                      <span className="absolute -top-2 bottom-8 left-[1.4375rem] w-px bg-line" />
                       <div className="space-y-3">
                         {ie.map((e, idx) => (
                           <div key={e.id} className="relative">
-                            <span className="absolute -left-[1px] top-9 h-px w-5 bg-line" />
-                            <span className="absolute left-[-5px] top-[33px] h-2.5 w-2.5 rounded-full bg-line" />
+                            <span className="absolute -left-[0.0625rem] top-9 h-px w-5 bg-line" />
+                            <span className="absolute left-[-5px] top-[2.0625rem] h-2.5 w-2.5 rounded-full bg-line" />
                             <div className="ml-5">
                               <EpicCard e={e} data={data} nested={idx === 0} />
                             </div>
@@ -244,7 +244,7 @@ function Header(p: {
     <header className="sticky z-20 bg-bg/90 px-4 pb-3 pt-4 backdrop-blur-md" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
       <div className="flex items-start gap-2">
         <div className="flex-1">
-          <h1 className="text-[32px] font-bold leading-none tracking-tight">Backlog</h1>
+          <h1 className="text-[2rem] font-bold leading-none tracking-tight">Backlog</h1>
           <p className="mt-1.5 text-muted">Sua visão completa em cascata</p>
         </div>
         <IconBtn n="search" label="Buscar" box className="rounded-full" onClick={p.onSearch} />
@@ -265,7 +265,7 @@ function Header(p: {
             <button
               key={id}
               onClick={() => p.setTab?.(id)}
-              className={`rounded-2xl px-5 py-2.5 text-[15px] font-medium transition ${p.tab === id ? 'bg-primary text-onprimary' : 'bg-sunk text-ink/80'}`}
+              className={`rounded-2xl px-5 py-2.5 text-[0.9375rem] font-medium transition ${p.tab === id ? 'bg-primary text-onprimary' : 'bg-sunk text-ink/80'}`}
             >
               {l}
             </button>

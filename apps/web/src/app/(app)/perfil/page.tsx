@@ -67,7 +67,7 @@ export default function PerfilPage() {
       <header className="sticky z-20 flex items-start gap-2 bg-bg/90 px-4 pb-2 pt-4 backdrop-blur-md" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
         <IconBtn n="arrowL" label="Voltar" className="-ml-2" onClick={goBack} />
         <div className="flex-1">
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight">Meu Perfil</h1>
+          <h1 className="text-[1.75rem] font-bold leading-tight tracking-tight">Meu Perfil</h1>
           <p className="text-sm text-muted">Sua jornada, seu progresso, sua vida.</p>
         </div>
         <Bell />
@@ -89,14 +89,14 @@ export default function PerfilPage() {
               </button>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 text-[22px] font-semibold leading-tight">
+              <p className="flex items-center gap-1.5 text-[1.375rem] font-semibold leading-tight">
                 {me.name}
                 <span className="text-primary">
                   <Icon n="verified" className="h-5 w-5" />
                 </span>
               </p>
               {me.googleConnected && (
-                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-[12px] font-medium">
+                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-[0.75rem] font-medium">
                   <Icon n="google" className="h-3.5 w-3.5" />
                   Conectado com Google
                   <span className="text-primary">
@@ -104,8 +104,8 @@ export default function PerfilPage() {
                   </span>
                 </span>
               )}
-              <p className="mt-2 truncate text-[13px] text-muted">{me.email}</p>
-              <p className="text-[13px] text-muted">ID: @{me.handle}</p>
+              <p className="mt-2 truncate text-[0.8125rem] text-muted">{me.email}</p>
+              <p className="text-[0.8125rem] text-muted">ID: @{me.handle}</p>
             </div>
           </div>
           {me.bio && (
@@ -128,8 +128,8 @@ export default function PerfilPage() {
             ['XP disponível', me.xp.disponivel, 'gem', 'text-accent'],
           ].map(([l, n, ic, c]) => (
             <div key={l as string}>
-              <p className="text-[13px] text-muted">{l}</p>
-              <p className="mt-0.5 text-[22px] font-semibold">{(n as number).toLocaleString('pt-BR')}</p>
+              <p className="text-[0.8125rem] text-muted">{l}</p>
+              <p className="mt-0.5 text-[1.375rem] font-semibold">{(n as number).toLocaleString('pt-BR')}</p>
               <span className={`mt-0.5 inline-block ${c}`}>
                 <Icon n={ic as IconName} className="h-5 w-5" fill="currentColor" sw={1} />
               </span>
@@ -147,10 +147,10 @@ export default function PerfilPage() {
           <div className="mt-3 flex items-center gap-4">
             <div className="flex shrink-0 flex-col items-center">
               <Ring pct={overall} size={122} stroke={10}>
-                <span className="text-[30px] font-semibold">{Math.round(overall * 100)}%</span>
+                <span className="text-[1.875rem] font-semibold">{Math.round(overall * 100)}%</span>
               </Ring>
               <p className="mt-2 text-sm">Faltam {100 - Math.round(overall * 100)}%</p>
-              <p className="text-[11px] text-muted">para 100% de utilização</p>
+              <p className="text-[0.6875rem] text-muted">para 100% de utilização</p>
             </div>
             <div className="min-w-0 flex-1 space-y-3">
               {TOOLS.map(t => (
@@ -159,7 +159,7 @@ export default function PerfilPage() {
                     <Icon n={t.n} className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex text-[12.5px]">
+                    <span className="flex text-[0.7813rem]">
                       <span className="flex-1 truncate">{t.l}</span>
                       <span className="tabular-nums">{Math.round((usage?.[t.key] ?? 0) * 100)}%</span>
                     </span>
@@ -184,7 +184,7 @@ export default function PerfilPage() {
                 <span className="grid h-10 w-10 place-items-center rounded-full" style={{ background: tint(t.c, 0.12), color: t.c }}>
                   <Icon n={t.n} />
                 </span>
-                <span className="text-[11px] leading-tight">{t.l}</span>
+                <span className="text-[0.6875rem] leading-tight">{t.l}</span>
               </Link>
             ))}
           </div>
@@ -198,7 +198,7 @@ export default function PerfilPage() {
                 <span className="text-primary">
                   <Icon n={r.icon} />
                 </span>
-                <span className="flex-1 text-[13px] text-ink/85">{r.text}</span>
+                <span className="flex-1 text-[0.8125rem] text-ink/85">{r.text}</span>
                 <span className="text-xs text-muted">{since(r.createdAt)}</span>
                 <Icon n="chevR" className="h-4 w-4 text-muted" />
               </Link>
@@ -218,7 +218,7 @@ export default function PerfilPage() {
                   key={p.id}
                   onClick={() => setPrefs({ palette: p.id as PaletteId, randomTheme: false })}
                   aria-pressed={on}
-                  className="flex w-[62px] shrink-0 flex-col items-center gap-1.5"
+                  className="flex w-[3.875rem] shrink-0 flex-col items-center gap-1.5"
                 >
                   <span className={`relative h-14 w-14 overflow-hidden rounded-full ${on ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''}`}>
                     <Art v={p.art} c={p.c} className="h-full w-full" />
@@ -228,7 +228,7 @@ export default function PerfilPage() {
                       </span>
                     )}
                   </span>
-                  <span className="text-center text-[11px] leading-tight">
+                  <span className="text-center text-[0.6875rem] leading-tight">
                     {p.name}
                     <br />
                     {p.sub}
@@ -236,17 +236,17 @@ export default function PerfilPage() {
                 </button>
               );
             })}
-            <button onClick={() => setPrefs({ randomTheme: true })} aria-pressed={prefs.randomTheme} className="flex w-[62px] shrink-0 flex-col items-center gap-1.5">
+            <button onClick={() => setPrefs({ randomTheme: true })} aria-pressed={prefs.randomTheme} className="flex w-[3.875rem] shrink-0 flex-col items-center gap-1.5">
               <span
                 className={`grid h-14 w-14 place-items-center rounded-full ${prefs.randomTheme ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''}`}
                 style={{ background: 'conic-gradient(#5e873c,#346ab8,#7c4dde,#c85858,#ba8418,#5e873c)' }}
               >
                 <span className="h-11 w-11 rounded-full bg-surface" />
               </span>
-              <span className="text-center text-[11px] leading-tight">
+              <span className="text-center text-[0.6875rem] leading-tight">
                 Aleatório
                 <br />
-                <span className="text-[9px] text-muted">muda a cada 2 min</span>
+                <span className="text-[0.5625rem] text-muted">muda a cada 2 min</span>
               </span>
             </button>
           </div>

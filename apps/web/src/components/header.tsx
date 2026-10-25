@@ -11,7 +11,7 @@ export function InfoSheet({ k, onClose }: { k: string; onClose: () => void }) {
   const [title, paragraphs] = INFO[k] ?? ['', []];
   return (
     <Sheet title={title} onClose={onClose}>
-      <div className="space-y-3 text-[15px] leading-relaxed text-ink/85">
+      <div className="space-y-3 text-[0.9375rem] leading-relaxed text-ink/85">
         {paragraphs.map((p, i) => (
           <p key={i}>{p}</p>
         ))}
@@ -49,8 +49,8 @@ export function Header({
       <div className="flex items-center gap-3">
         <div className="w-11">{back && <IconBtn n="arrowL" label="Voltar" box onClick={goBack} />}</div>
         <div className="min-w-0 flex-1 text-center">
-          <h1 className="text-[22px] font-bold leading-tight tracking-tight">{title}</h1>
-          {sub && <p className="mt-0.5 text-[13px] text-muted">{sub}</p>}
+          <h1 className="text-[1.375rem] font-bold leading-tight tracking-tight">{title}</h1>
+          {sub && <p className="mt-0.5 text-[0.8125rem] text-muted">{sub}</p>}
         </div>
         <div className="flex w-11 justify-end">
           {right || (info && <IconBtn n="info" label="Sobre esta tela" onClick={() => openSheet(close => <InfoSheet k={info} onClose={close} />)} />)}

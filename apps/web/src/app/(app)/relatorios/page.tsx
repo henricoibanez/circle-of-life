@@ -49,7 +49,7 @@ export default function RelatoriosPage() {
                 <div key={a.id} className="flex items-center gap-3 p-3.5">
                   <AreaIcon id={a.id} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-semibold">{a.name}</p>
+                    <p className="text-[0.9375rem] font-semibold">{a.name}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <div className="flex-1">
                         <Bar pct={all.length ? n / all.length : 0} color={a.color} />
@@ -61,7 +61,7 @@ export default function RelatoriosPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold tabular-nums">{roda?.scores[a.id] ?? 0}/10</p>
-                    <p className="text-[11px] text-muted">na roda</p>
+                    <p className="text-[0.6875rem] text-muted">na roda</p>
                   </div>
                 </div>
               );
@@ -129,11 +129,11 @@ function Stat({ n, l, ic, c, d }: { n: number; l: string; ic: IconName; c: strin
       <span className="inline-block" style={{ color: c }}>
         <Icon n={ic} className="h-7 w-7" />
       </span>
-      <p className="mt-1 text-[28px] font-semibold leading-tight" style={{ color: c }}>
+      <p className="mt-1 text-[1.75rem] font-semibold leading-tight" style={{ color: c }}>
         {n}
       </p>
-      <p className="text-[12px] text-muted">{l}</p>
-      {d && <p className="mt-1 text-[10px] text-muted">{d}</p>}
+      <p className="text-[0.75rem] text-muted">{l}</p>
+      {d && <p className="mt-1 text-[0.625rem] text-muted">{d}</p>}
     </div>
   );
 }
@@ -179,8 +179,8 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
     <>
       <div className="flex items-center gap-2">
         <div className="flex-1">
-          <h2 className="text-[17px] font-semibold">Resumo geral</h2>
-          <p className="text-[13px] text-muted">Visão geral do seu desenvolvimento</p>
+          <h2 className="text-[1.0625rem] font-semibold">Resumo geral</h2>
+          <p className="text-[0.8125rem] text-muted">Visão geral do seu desenvolvimento</p>
         </div>
         <select aria-label="Período" value={days} onChange={e => setDays(Number(e.target.value))} className="rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium">
           <option value={7}>Últimos 7 dias</option>
@@ -200,7 +200,7 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
           <Ring pct={rate} size={112} stroke={14} color="rgb(var(--a))" track="rgb(var(--a) / .15)">
             <span>
               <span className="block text-2xl font-semibold text-accent">{Math.round(rate * 100)}%</span>
-              <span className="block text-[9px] leading-tight text-muted">
+              <span className="block text-[0.5625rem] leading-tight text-muted">
                 de tarefas
                 <br />
                 concluídas
@@ -225,13 +225,13 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
           ] as const
         ).map(([t, list]) => (
           <Card key={t} className="p-3">
-            <p className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold">
+            <p className="mb-2 flex items-center gap-1.5 text-[0.8125rem] font-semibold">
               <Icon n="chart" className="h-4 w-4 text-accent" />
               {t}
             </p>
             <div className="space-y-2">
               {list.map(({ a, n }, i) => (
-                <div key={a.id} className="flex items-center gap-2 text-[12px]">
+                <div key={a.id} className="flex items-center gap-2 text-[0.75rem]">
                   <span className="w-3 text-muted">{i + 1}</span>
                   <AreaIcon id={a.id} size="w-6 h-6" icon="w-3.5 h-3.5" />
                   <span className="flex-1 truncate">{a.name}</span>
@@ -239,7 +239,7 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
                 </div>
               ))}
             </div>
-            <button onClick={() => setTab('area')} className="mt-3 w-full rounded-xl bg-accent/5 py-2 text-[12px] font-semibold text-accent">
+            <button onClick={() => setTab('area')} className="mt-3 w-full rounded-xl bg-accent/5 py-2 text-[0.75rem] font-semibold text-accent">
               Ver todas as áreas
             </button>
           </Card>
@@ -250,7 +250,7 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
           <Donut parts={parts} size={96} />
           <div className="min-w-0 flex-1 space-y-1.5">
             {parts.map(p => (
-              <div key={p.label} className="flex items-center gap-2 text-[12px]">
+              <div key={p.label} className="flex items-center gap-2 text-[0.75rem]">
                 <span className="h-2.5 w-2.5 rounded-sm" style={{ background: p.c }} />
                 <span className="flex-1 truncate">{p.label}</span>
                 <span className="tabular-nums">{Math.round((p.v / done.length) * 100)}%</span>
@@ -258,19 +258,19 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
             ))}
           </div>
           <div className="w-[34%] shrink-0 rounded-2xl bg-accent/5 p-3">
-            <p className="flex items-center gap-1 text-[12px] font-semibold text-accent">
+            <p className="flex items-center gap-1 text-[0.75rem] font-semibold text-accent">
               <Icon n="sparkles" className="h-3.5 w-3.5" />
               Insight
             </p>
-            <p className="mt-1 text-[11px] leading-snug text-ink/75">
+            <p className="mt-1 text-[0.6875rem] leading-snug text-ink/75">
               Suas entregas vieram mais de “{parts[0]!.label}”. Que tal olhar para {least[0]!.a.name.toLowerCase()}?
             </p>
           </div>
         </Card>
       )}
       <Card className="p-3">
-        <p className="text-[13px] font-semibold">Desempenho por dia da semana</p>
-        <p className="text-[11px] text-muted">Onde você mais se engaja</p>
+        <p className="text-[0.8125rem] font-semibold">Desempenho por dia da semana</p>
+        <p className="text-[0.6875rem] text-muted">Onde você mais se engaja</p>
         <div className="mt-2 flex h-24 items-end gap-1.5">
           {byDay.map((n, i) => (
             <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
@@ -278,7 +278,7 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
                 className="w-full rounded-t-md"
                 style={{ height: `${Math.max(6, (n / maxD) * 100)}%`, background: n === maxD && n ? 'rgb(var(--a))' : 'rgb(var(--a) / .3)' }}
               />
-              <span className="text-[10px] text-muted">{WD[i]}</span>
+              <span className="text-[0.625rem] text-muted">{WD[i]}</span>
             </div>
           ))}
         </div>
@@ -292,7 +292,7 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
           <p className="text-xs text-muted">No período selecionado</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {topEp.map(({ e, n }) => (
-              <span key={e.id} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-[12px]">
+              <span key={e.id} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-[0.75rem]">
                 <span style={{ color: AREA[e.area].color }}>
                   <Icon n={AREA[e.area].icon} className="h-4 w-4" />
                 </span>
@@ -349,7 +349,7 @@ function Entregas({ data }: { data: BacklogDto }) {
             <div key={t.id} className="flex items-center gap-3 p-3">
               <AreaIcon id={ep?.area} size="w-9 h-9" icon="w-4 h-4" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-medium">{t.title}</p>
+                <p className="truncate text-[0.9375rem] font-medium">{t.title}</p>
                 <p className="truncate text-xs text-muted">{ep?.title}</p>
               </div>
               <span className="text-xs tabular-nums text-muted">{fmtDay(t.doneAt!)}</span>

@@ -25,7 +25,7 @@ export function AreaWatermark({ areas, className = '' }: { areas: AreaId[]; clas
       {areas.map(a => (
         // Mesmo ícone colorido da Roda da Vida, sobre fundo branco, com 75% de opacidade.
         <span key={a} className="rounded-full bg-white opacity-75">
-          <AreaIcon id={a} size="w-9 h-9" icon="w-[18px] h-[18px]" />
+          <AreaIcon id={a} size="w-9 h-9" icon="w-[1.125rem] h-[1.125rem]" />
         </span>
       ))}
     </span>
@@ -50,8 +50,8 @@ export function StoryRow({ onNewPost }: { onNewPost: () => void }) {
 
   return (
     <div className="no-bar flex gap-3 overflow-x-auto px-4 pb-3 pt-2">
-      <button onClick={onNewPost} className="flex w-[72px] shrink-0 flex-col items-center gap-1.5">
-        <span className="grid h-[66px] w-[66px] place-items-center rounded-2xl border border-line bg-surface shadow-soft">
+      <button onClick={onNewPost} className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5">
+        <span className="grid h-[4.125rem] w-[4.125rem] place-items-center rounded-2xl border border-line bg-surface shadow-soft">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-onprimary">
             <Icon n="plus" sw={2.5} />
           </span>
@@ -59,18 +59,18 @@ export function StoryRow({ onNewPost }: { onNewPost: () => void }) {
         <span className="text-xs">Criar post</span>
       </button>
       {me && hydrated && (
-        <div className="relative flex w-[72px] shrink-0 flex-col items-center gap-1.5">
+        <div className="relative flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5">
           <button
             onClick={() => (mine ? open(me.id) : newStory())}
             aria-label={mine ? 'Ver seu story' : 'Publicar story'}
-            className={`grid h-[66px] w-[66px] place-items-center rounded-full ring-offset-2 ring-offset-bg ${mine ? 'ring-2 ring-primary/40' : 'ring-2 ring-line'}`}
+            className={`grid h-[4.125rem] w-[4.125rem] place-items-center rounded-full ring-offset-2 ring-offset-bg ${mine ? 'ring-2 ring-primary/40' : 'ring-2 ring-line'}`}
           >
             <Avatar name={me.name} photo={me.photoUrl} size="w-full h-full text-lg" />
           </button>
           <button
             onClick={newStory}
             aria-label="Novo story"
-            className="absolute right-0.5 top-[46px] grid h-6 w-6 place-items-center rounded-full bg-primary text-onprimary ring-2 ring-bg"
+            className="absolute right-0.5 top-[2.875rem] grid h-6 w-6 place-items-center rounded-full bg-primary text-onprimary ring-2 ring-bg"
           >
             <Icon n="plus" className="h-3.5 w-3.5" sw={3} />
           </button>
@@ -78,8 +78,8 @@ export function StoryRow({ onNewPost }: { onNewPost: () => void }) {
         </div>
       )}
       {others.map(g => (
-        <button key={g.author.id} onClick={() => open(g.author.id)} className="flex w-[72px] shrink-0 flex-col items-center gap-1.5">
-          <span className={`grid h-[66px] w-[66px] place-items-center rounded-full ring-offset-2 ring-offset-bg ${g.allSeen ? 'ring-2 ring-line' : 'ring-[3px] ring-primary'}`}>
+        <button key={g.author.id} onClick={() => open(g.author.id)} className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5">
+          <span className={`grid h-[4.125rem] w-[4.125rem] place-items-center rounded-full ring-offset-2 ring-offset-bg ${g.allSeen ? 'ring-2 ring-line' : 'ring-[0.1875rem] ring-primary'}`}>
             <Avatar name={g.author.name} photo={g.author.photoUrl} size="w-full h-full text-lg" />
           </span>
           <span className={`w-full truncate text-center text-xs ${g.allSeen ? 'text-muted' : ''}`}>{g.author.name.split(' ')[0]}</span>
@@ -170,7 +170,7 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
             <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 to-transparent px-3 pb-8" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)' }}>
               <div className="flex gap-1">
                 {g.stories.map((x, i) => (
-                  <span key={x.id} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/35">
+                  <span key={x.id} className="h-[0.1875rem] flex-1 overflow-hidden rounded-full bg-white/35">
                     <span className="block h-full bg-white" style={{ width: `${i < si ? 100 : i === si ? pct * 100 : 0}%` }} />
                   </span>
                 ))}
@@ -231,8 +231,8 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
             />
             <AreaWatermark areas={s.areas} className="absolute bottom-4 right-4" />
           </div>
-          <div className="flex items-center gap-3 px-4 pt-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)' }}>
-            <p className="min-w-0 flex-1 text-[15px] leading-snug">{s.caption}</p>
+          <div className="flex items-center gap-3 px-4 pt-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.875rem)' }}>
+            <p className="min-w-0 flex-1 text-[0.9375rem] leading-snug">{s.caption}</p>
             {g.mine ? (
               <button
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-sm font-semibold"

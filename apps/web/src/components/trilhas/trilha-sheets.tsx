@@ -26,7 +26,7 @@ export function Cover({ t, className }: { t: Pick<TrilhaDto, 'art' | 'color' | '
         <Art v={t.art} c={t.color} className="h-full w-full" />
       )}
       {t.coverText && (
-        <p className="absolute inset-0 grid place-items-center whitespace-pre-line text-center font-serif text-[17px] leading-tight tracking-wide text-white" style={{ textShadow: '0 1px 6px rgba(0,0,0,.4)' }}>
+        <p className="absolute inset-0 grid place-items-center whitespace-pre-line text-center font-serif text-[1.0625rem] leading-tight tracking-wide text-white" style={{ textShadow: '0 1px 6px rgba(0,0,0,.4)' }}>
           {t.coverText}
         </p>
       )}
@@ -127,7 +127,7 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
         {STATUS_TAG[t.status] && <Tag c={STATUS_TAG[t.status]![1]}>{t.mine && t.status === 'pendente' ? 'Em análise' : STATUS_TAG[t.status]![0]}</Tag>}
         <span className="text-xs text-muted">por {t.author ? `${t.author.name} (@${t.author.handle})` : 'Circle of Life'}</span>
       </div>
-      <p className="text-[15px] text-ink/80">{t.description}</p>
+      <p className="text-[0.9375rem] text-ink/80">{t.description}</p>
       {t.rejectionReason && t.status === 'recusada' && (
         <p className="mt-3 rounded-xl bg-red-500/5 px-3 py-2 text-sm text-red-700">Motivo da recusa: {t.rejectionReason}</p>
       )}
@@ -155,7 +155,7 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
           </p>
           <ul className="mt-1 divide-y divide-line">
             {ep.tasks.map((task, i) => (
-              <li key={i} className="flex items-center gap-3 py-2.5 text-[15px]">
+              <li key={i} className="flex items-center gap-3 py-2.5 text-[0.9375rem]">
                 <span className="h-5 w-5 shrink-0 rounded-full border-2 border-line" />
                 {task}
               </li>

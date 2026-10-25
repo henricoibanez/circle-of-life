@@ -39,7 +39,7 @@ export function LoginScreen() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-8 px-4 py-10">
       <div className="text-center">
-        <p className="text-[34px] tracking-tight">
+        <p className="text-[2.125rem] tracking-tight">
           <span className="font-semibold text-primary">Circle</span> <span className="text-muted">of</span>{' '}
           <span className="font-semibold text-primary">Life</span>
         </p>
@@ -88,7 +88,7 @@ export function LoginScreen() {
                     <span className="block text-sm font-medium">{u.name}</span>
                     <span className="block truncate text-xs text-muted">{u.email}</span>
                   </span>
-                  {u.role === 'admin' && <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">Admin</span>}
+                  {u.role === 'admin' && <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[0.6875rem] font-semibold text-primary">Admin</span>}
                   {busy === u.id && <span className="text-xs text-muted">Entrando…</span>}
                 </button>
               </li>

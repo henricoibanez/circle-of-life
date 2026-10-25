@@ -66,14 +66,14 @@ function Quadro() {
             <div className="flex items-center gap-3 rounded-3xl bg-accent/[.07] p-5">
               <TrophyArt className="w-20 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="text-[17px] font-semibold">Você está evoluindo!</p>
+                <p className="text-[1.0625rem] font-semibold">Você está evoluindo!</p>
                 <p className="mt-1 text-sm text-muted">Cada conquista te aproxima da vida que você deseja viver.</p>
               </div>
               <Ring pct={pct} size={96} stroke={8} color="rgb(var(--a))" track="rgb(var(--a) / .15)">
                 <span className="text-xl font-semibold text-accent">{Math.round(pct * 100)}%</span>
               </Ring>
             </div>
-            <h2 className="text-[17px] font-semibold">Minhas conquistas por área da vida</h2>
+            <h2 className="text-[1.0625rem] font-semibold">Minhas conquistas por área da vida</h2>
             {conq.areas
               .filter(x => x.epics + x.initiatives > 0)
               .map(x => {
@@ -87,15 +87,15 @@ function Quadro() {
                   >
                     <AreaIcon id={x.area} size="w-12 h-12" icon="w-6 h-6" />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[16px] font-semibold leading-tight">{a.name}</span>
-                      <span className="block text-[13px] leading-snug text-muted">{a.tag}</span>
-                      <span className="mt-1.5 block text-[13px] font-medium" style={{ color: a.color }}>
+                      <span className="block text-[1rem] font-semibold leading-tight">{a.name}</span>
+                      <span className="block text-[0.8125rem] leading-snug text-muted">{a.tag}</span>
+                      <span className="mt-1.5 block text-[0.8125rem] font-medium" style={{ color: a.color }}>
                         {n} {n === 1 ? 'conquista' : 'conquistas'}
                       </span>
                     </span>
                     <span className="flex gap-1.5">
                       {[a.art, 'forest' as const, 'sun' as const].map((art, i) => (
-                        <Media key={i} m={{ art, c: a.color }} className={`h-12 w-12 rounded-xl ${i === 2 ? 'hidden min-[420px]:block' : ''}`} />
+                        <Media key={i} m={{ art, c: a.color }} className={`h-12 w-12 rounded-xl ${i === 2 ? 'hidden min-[26.25rem]:block' : ''}`} />
                       ))}
                     </span>
                     <Icon n="chevR" className="h-4 w-4 text-muted" />
@@ -129,7 +129,7 @@ function Quadro() {
               {open.length < MAX_OPEN_DREAMS && (
                 <button
                   onClick={() => openDream()}
-                  className="grid min-h-[200px] place-items-center rounded-3xl border-2 border-dashed border-line text-muted hover:border-primary/40 hover:text-primary"
+                  className="grid min-h-[12.5rem] place-items-center rounded-3xl border-2 border-dashed border-line text-muted hover:border-primary/40 hover:text-primary"
                 >
                   <span className="flex flex-col items-center gap-1.5 text-sm font-semibold">
                     <span className="grid h-11 w-11 place-items-center rounded-full bg-primary/10 text-primary">
@@ -154,7 +154,7 @@ function Quadro() {
                     <button key={d.id} onClick={() => openDream(d)} className="flex w-full items-center gap-3 p-3 text-left">
                       <Media m={d.imageUrl ? { src: d.imageUrl } : { art: AREA[d.area].art, c: AREA[d.area].color }} className="h-11 w-11 rounded-xl" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-medium">{d.text}</span>
+                        <span className="block truncate text-[0.9375rem] font-medium">{d.text}</span>
                         <span className="block text-xs text-muted">Realizado em {new Date(d.doneAt!).toLocaleDateString('pt-BR')}</span>
                       </span>
                     </button>
@@ -317,7 +317,7 @@ function AreaConquistas({ area, onClose }: { area: AreaId; onClose: () => void }
           <h3 className="mb-2 font-semibold">Iniciativas concluídas</h3>
           <div className="mb-4 space-y-1.5">
             {data.initiatives.map(i => (
-              <p key={i.id} className="flex items-center gap-2 text-[15px]">
+              <p key={i.id} className="flex items-center gap-2 text-[0.9375rem]">
                 <Icon n="target" className="h-4 w-4 text-primary" />
                 {i.title}
               </p>
@@ -330,7 +330,7 @@ function AreaConquistas({ area, onClose }: { area: AreaId; onClose: () => void }
           <h3 className="mb-2 font-semibold">Épicos encerrados</h3>
           <div className="space-y-1.5">
             {data.epics.map(e => (
-              <p key={e.id} className="flex items-center gap-2 text-[15px]">
+              <p key={e.id} className="flex items-center gap-2 text-[0.9375rem]">
                 <Icon n="trophy" className="h-4 w-4" style={{ color: a.color }} />
                 {e.title}
               </p>

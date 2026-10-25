@@ -62,7 +62,7 @@ export function Donut({ parts, size = 110 }: { parts: { v: number; c: string }[]
   const tot = parts.reduce((x, p) => x + p.v, 0) || 1;
   let acc = 0;
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} className="shrink-0 -rotate-90" aria-hidden="true">
+    <svg viewBox="0 0 100 100" width={size / 16 + 'rem'} height={size / 16 + 'rem'} className="shrink-0 -rotate-90" aria-hidden="true">
       {parts.map((p, i) => {
         const len = (C * p.v) / tot;
         const el = <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={p.c} strokeWidth="18" strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-acc} />;

@@ -48,7 +48,7 @@ export function ConfirmSheet({
         </>
       }
     >
-      <div className="text-[15px] leading-relaxed text-ink/85">{children}</div>
+      <div className="text-[0.9375rem] leading-relaxed text-ink/85">{children}</div>
     </Sheet>
   );
 }

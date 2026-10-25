@@ -68,7 +68,7 @@ function GruposTab() {
         <Icon n="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar grupos…" className={inputCls + ' pl-10'} />
       </div>
-      <h2 className="text-[17px] font-semibold">Meus grupos</h2>
+      <h2 className="text-[1.0625rem] font-semibold">Meus grupos</h2>
       {mine.map(g => (
         <div key={g.id} className="overflow-hidden rounded-3xl border border-line/80 bg-surface shadow-soft">
           <Link
@@ -78,15 +78,15 @@ function GruposTab() {
           >
             <GroupCover g={g} className="h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-white/80" />
             <div className="min-w-0 flex-1">
-              <p className="flex flex-wrap items-center gap-2 text-[19px] font-semibold">
+              <p className="flex flex-wrap items-center gap-2 text-[1.1875rem] font-semibold">
                 {g.name}
-                {g.admin && <span className="rounded-md border border-white/20 bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold">Administrador</span>}
+                {g.admin && <span className="rounded-md border border-white/20 bg-white/15 px-1.5 py-0.5 text-[0.625rem] font-semibold">Administrador</span>}
               </p>
-              <p className="mt-1 text-[13px] text-white/80">{g.description}</p>
+              <p className="mt-1 text-[0.8125rem] text-white/80">{g.description}</p>
             </div>
-            <p className="shrink-0 self-start text-right text-[12px] text-white/85">{g.members === 1 ? '1 membro' : `${g.members} membros`}</p>
+            <p className="shrink-0 self-start text-right text-[0.75rem] text-white/85">{g.members === 1 ? '1 membro' : `${g.members} membros`}</p>
           </Link>
-          <div className="flex items-center gap-2 px-4 py-3 text-[12px]">
+          <div className="flex items-center gap-2 px-4 py-3 text-[0.75rem]">
             <span className="flex-1">
               <span className="block font-medium">Trilhas</span>
               <span className="text-muted">{g.trilhas === 1 ? '1 trilha' : `${g.trilhas} trilhas`}</span>
@@ -103,7 +103,7 @@ function GruposTab() {
       ))}
       {data && !mine.length && <p className="text-sm text-muted">Você ainda não participa de grupos.</p>}
 
-      <h2 className="text-[17px] font-semibold">Grupos sugeridos</h2>
+      <h2 className="text-[1.0625rem] font-semibold">Grupos sugeridos</h2>
       <div className="no-bar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
         {sug.map(g => (
           <div key={g.id} className="w-40 shrink-0 overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-soft">
@@ -127,10 +127,10 @@ function GruposTab() {
               </button>
             </div>
             <Link href={`/grupos/${g.id}`} className="block p-3">
-              <p className="text-[14px] font-semibold leading-tight">{g.name}</p>
-              <p className="text-[11px] text-muted">{g.members === 1 ? '1 membro' : `${g.members} membros`}</p>
-              <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-ink/75">{g.description}</p>
-              <p className="mt-2 inline-flex items-center gap-1 text-[11px]" style={{ color: AREA[g.area].color }}>
+              <p className="text-[0.875rem] font-semibold leading-tight">{g.name}</p>
+              <p className="text-[0.6875rem] text-muted">{g.members === 1 ? '1 membro' : `${g.members} membros`}</p>
+              <p className="mt-1 line-clamp-2 text-[0.6875rem] leading-snug text-ink/75">{g.description}</p>
+              <p className="mt-2 inline-flex items-center gap-1 text-[0.6875rem]" style={{ color: AREA[g.area].color }}>
                 <Icon n={AREA[g.area].icon} className="h-3.5 w-3.5" />
                 {AREA[g.area].name}
               </p>

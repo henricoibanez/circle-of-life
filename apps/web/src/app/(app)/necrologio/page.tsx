@@ -91,7 +91,7 @@ export default function NecrologioPage() {
       onClick={() => cmd(c, v)}
       className="grid h-9 w-9 shrink-0 place-items-center rounded-lg hover:bg-sunk"
     >
-      <Icon n={n} className="h-[18px] w-[18px]" sw={2} />
+      <Icon n={n} className="h-[1.125rem] w-[1.125rem]" sw={2} />
     </button>
   );
 
@@ -111,7 +111,7 @@ export default function NecrologioPage() {
       <div className="space-y-4 px-4 pb-8">
         <div className="relative flex items-center gap-5 overflow-hidden rounded-3xl border border-accent/10 bg-accent/[.07] p-5">
           <div className="relative z-[1] min-w-0 flex-1 pr-20">
-            <p className="text-[17px] font-semibold">Escreva como um amigo contaria a sua vida</p>
+            <p className="text-[1.0625rem] font-semibold">Escreva como um amigo contaria a sua vida</p>
             <p className="mt-1 text-sm text-muted">Imagine que você viveu tudo o que deveria. Mire alto e seja sincero.</p>
             <Button variant="aline" className="mt-3 rounded-full bg-surface/70 px-3 py-1.5" asChild>
               <Link href="/analise">
@@ -177,7 +177,7 @@ export default function NecrologioPage() {
             onMouseUp={sync}
             onBlur={() => !saved && save()}
             data-ph="Comece escrevendo como um amigo descreveria a sua vida…"
-            className="doc min-h-[360px] px-5 py-5 text-[15px] focus:outline-none"
+            className="doc min-h-[22.5rem] px-5 py-5 text-[0.9375rem] focus:outline-none"
             aria-label="Texto do necrológio"
             role="textbox"
             aria-multiline="true"

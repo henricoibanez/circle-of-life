@@ -86,11 +86,11 @@ export default function MaslowPage() {
             <div>
               <p className="mb-2 text-sm font-medium">Progresso geral</p>
               <Ring pct={total} size={112} stroke={9}>
-                <span className="text-[28px] font-semibold">{Math.round(total * 100)}%</span>
+                <span className="text-[1.75rem] font-semibold">{Math.round(total * 100)}%</span>
               </Ring>
             </div>
             <div className="min-w-0 flex-1 pr-6">
-              <p className="text-[17px] font-semibold">Você está no caminho certo!</p>
+              <p className="text-[1.0625rem] font-semibold">Você está no caminho certo!</p>
               <p className="mt-1 text-sm text-muted">
                 Nível atual: <strong style={{ color: current.color }}>{current.short ?? current.name}</strong> · {checks.size} de {MASLOW_ITEM_KEYS.length} itens
               </p>
@@ -119,8 +119,8 @@ export default function MaslowPage() {
                 className="flex w-full items-center gap-2 px-2.5 py-3 text-left"
               >
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: m.color }} />
-                <span className="flex-1 truncate text-[12.5px]">{m.short ?? m.name}</span>
-                <span className="text-[12.5px] tabular-nums">{Math.round(maslowLevelPct(checks, m.id) * 100)}%</span>
+                <span className="flex-1 truncate text-[0.7813rem]">{m.short ?? m.name}</span>
+                <span className="text-[0.7813rem] tabular-nums">{Math.round(maslowLevelPct(checks, m.id) * 100)}%</span>
               </button>
             ))}
           </div>
@@ -142,7 +142,7 @@ export default function MaslowPage() {
                   <Icon n={m.icon} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[17px] font-semibold">{m.name}</span>
+                  <span className="block text-[1.0625rem] font-semibold">{m.name}</span>
                   {isOpen && <span className="block text-sm text-muted">{m.desc}</span>}
                 </span>
                 <span className="font-semibold tabular-nums" style={{ color: m.color }}>
@@ -171,8 +171,8 @@ export default function MaslowPage() {
                                 </span>
                                 <input type="checkbox" className="sr-only" checked={on} onChange={() => toggle(key)} />
                                 <span className="min-w-0 flex-1">
-                                  <span className="block text-[15px] font-medium">{x[0]}</span>
-                                  <span className="block text-[13px] text-muted">{x[1]}</span>
+                                  <span className="block text-[0.9375rem] font-medium">{x[0]}</span>
+                                  <span className="block text-[0.8125rem] text-muted">{x[1]}</span>
                                 </span>
                                 <Tag c={on ? '#16a34a' : '#dc2626'}>{on ? 'Conquistado' : 'Em desenvolvimento'}</Tag>
                               </label>
@@ -221,7 +221,7 @@ export default function MaslowPage() {
                       onChange={e => setNote(e.target.value)}
                       placeholder="Adicionar reflexão sobre esta área"
                       maxLength={1000}
-                      className="flex-1 bg-transparent py-2.5 text-[15px] placeholder:text-ink/60 focus:outline-none"
+                      className="flex-1 bg-transparent py-2.5 text-[0.9375rem] placeholder:text-ink/60 focus:outline-none"
                     />
                     <button type="submit" aria-label="Adicionar reflexão" className="grid h-8 w-8 place-items-center" style={{ color: m.color }}>
                       <Icon n="plus" />

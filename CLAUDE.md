@@ -154,6 +154,7 @@ Cada tela de ferramenta tem um botão "i" com a explicação do exercício (text
 ### Tema visual
 
 - Fontes **Inter** (texto) e **Source Serif 4** (títulos do necrológio e citações), servidas localmente.
+- **Densidade mais compacta que o protótipo** (decisão do dono: mobile first, tudo um pouco menor e mais próximo). Tamanho base do html em 15px e `--spacing` do Tailwind em 0,22rem, em `apps/web/src/app/globals.css`; mexa só nesses dois valores para mudar a densidade do app inteiro. Medidas nas classes sempre em rem (ex.: `text-[0.9375rem]`), nunca em px fixo. No celular, campos de texto ficam com 16px para o iPhone não dar zoom.
 - Cores por variáveis CSS, como no protótipo: `bg`, `surface`, `sunk`, `ink`, `muted`, `line`, `primary`, `accent` (roxo `#7c4dde`), `onprimary`, com versões clara e escura.
 - **6 paletas** para a cor principal: Verde/Natureza (padrão), Azul/Serenity, Vermelho/Soft, Amarelo/Dourado, Roxo/Mindfulness, Preto/Premium (força o modo escuro). Mais o modo **aleatório**, que troca a cada 2 minutos.
 - Componentes **shadcn/ui** devem usar esses mesmos tokens. O resultado precisa ser visualmente igual ao protótipo, não o visual padrão do shadcn.

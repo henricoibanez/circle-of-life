@@ -49,15 +49,15 @@ export default function RodaPage() {
             <div className="flex w-[38%] shrink-0 flex-col items-start">
               <Ring pct={avg / 10} size={118} stroke={8}>
                 <span>
-                  <span className="block text-[28px] font-semibold leading-none">{Math.round(avg * 10)}%</span>
-                  <span className="text-[11px] text-muted">Equilíbrio geral</span>
+                  <span className="block text-[1.75rem] font-semibold leading-none">{Math.round(avg * 10)}%</span>
+                  <span className="text-[0.6875rem] text-muted">Equilíbrio geral</span>
                 </span>
               </Ring>
-              <p className="mt-4 flex items-start gap-1.5 text-[15px] font-medium leading-snug">
+              <p className="mt-4 flex items-start gap-1.5 text-[0.9375rem] font-medium leading-snug">
                 <Icon n="leaf" className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 {data.rated ? 'Você está no caminho certo!' : 'Dê uma nota para cada área.'}
               </p>
-              <p className="mt-1 text-[13px] text-muted">{data.rated ? 'Continue evoluindo em cada área.' : 'Com honestidade, de 0 a 10.'}</p>
+              <p className="mt-1 text-[0.8125rem] text-muted">{data.rated ? 'Continue evoluindo em cada área.' : 'Com honestidade, de 0 a 10.'}</p>
               <Button variant="soft" className="mt-4 px-3 py-2" asChild>
                 <Link href="/analise">
                   <Icon n="chart" className="h-4 w-4" />
@@ -77,8 +77,8 @@ export default function RodaPage() {
               <div key={a.id} className="flex items-center gap-3 py-3">
                 <AreaIcon id={a.id} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-semibold">{a.name}</p>
-                  <p className="truncate text-[13px] text-muted">{a.q}</p>
+                  <p className="text-[0.9375rem] font-semibold">{a.name}</p>
+                  <p className="truncate text-[0.8125rem] text-muted">{a.q}</p>
                   <Slider area={a.id} value={sc[a.id]} onChange={v => setScore(a.id, v)} label={`Nota para ${a.name}`} />
                 </div>
                 <span className="grid h-11 w-11 place-items-center rounded-xl border border-line text-lg font-semibold tabular-nums">{sc[a.id]}</span>
@@ -89,7 +89,7 @@ export default function RodaPage() {
             <Icon n="sparkles" className="h-6 w-6 text-primary" />
             <span className="flex-1">
               <span className="block font-semibold">Me ajude</span>
-              <span className="block text-[13px] text-muted">Me ajude a refletir e responder melhor cada área da minha Roda da Vida</span>
+              <span className="block text-[0.8125rem] text-muted">Me ajude a refletir e responder melhor cada área da minha Roda da Vida</span>
             </span>
             <Icon n="chevR" className="h-4 w-4 text-muted" />
           </button>
@@ -147,7 +147,7 @@ function RodaHelp({ onClose }: { onClose: () => void }) {
       <p className="mt-4 text-sm text-muted">Responda para você mesmo, com honestidade:</p>
       <div className="mt-2 space-y-2">
         {[a.q, ...a.p].map(q => (
-          <p key={q} className="rounded-2xl px-4 py-3 font-serif text-[18px] italic leading-snug" style={{ background: tint(a.color, 0.08) }}>
+          <p key={q} className="rounded-2xl px-4 py-3 font-serif text-[1.125rem] italic leading-snug" style={{ background: tint(a.color, 0.08) }}>
             {q}
           </p>
         ))}
@@ -158,7 +158,7 @@ function RodaHelp({ onClose }: { onClose: () => void }) {
           <span className="grid h-10 w-10 place-items-center rounded-xl border border-line text-lg font-semibold tabular-nums">{score}</span>
         </div>
         <Slider area={a.id} value={score} onChange={v => setScore(a.id, v)} label={`Nota para ${a.name}`} />
-        <div className="mt-1 flex justify-between text-[11px] text-muted">
+        <div className="mt-1 flex justify-between text-[0.6875rem] text-muted">
           {LEGEND.map(l => (
             <span key={l}>{l}</span>
           ))}

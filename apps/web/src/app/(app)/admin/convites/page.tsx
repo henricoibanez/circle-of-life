@@ -99,7 +99,7 @@ export default function InvitesAdminPage() {
                   : `Enviado por ${i.convidadoPor} em ${date(i.criadoEm)} · vale até ${date(i.expiraEm)}`}
               </p>
             </div>
-            <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${STATUS[i.status][1]}`}>{STATUS[i.status][0]}</span>
+            <span className={`rounded-md px-2 py-0.5 text-[0.6875rem] font-semibold ${STATUS[i.status][1]}`}>{STATUS[i.status][0]}</span>
             {i.status !== 'aceito' && (
               <>
                 <button

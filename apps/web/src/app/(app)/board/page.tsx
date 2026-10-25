@@ -127,7 +127,7 @@ export default function BoardPage() {
         }`}
       >
         <div className="flex items-start gap-1">
-          <p className={`flex-1 text-[14px] font-medium leading-snug ${t.status === 'done' ? 'text-ink/70' : ''}`}>{t.title}</p>
+          <p className={`flex-1 text-[0.875rem] font-medium leading-snug ${t.status === 'done' ? 'text-ink/70' : ''}`}>{t.title}</p>
           {t.status === 'done' ? (
             <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary text-onprimary">
               <Icon n="check" className="h-3.5 w-3.5" sw={3} />
@@ -148,7 +148,7 @@ export default function BoardPage() {
         <div className="mt-2">
           <Prio p={t.priority} />
         </div>
-        <div className="mt-2.5 flex items-center gap-1.5 text-[12px] text-muted">
+        <div className="mt-2.5 flex items-center gap-1.5 text-[0.75rem] text-muted">
           {ck.total > 0 && (
             <span className="inline-flex items-center gap-0.5">
               <Icon n="checkSq" className="h-3.5 w-3.5" />
@@ -162,7 +162,7 @@ export default function BoardPage() {
           )}
         </div>
         {t.dueDate && (
-          <p className={`mt-1.5 flex items-center gap-1 text-[11px] ${isLateNow ? 'font-semibold text-red-600' : 'text-muted'}`}>
+          <p className={`mt-1.5 flex items-center gap-1 text-[0.6875rem] ${isLateNow ? 'font-semibold text-red-600' : 'text-muted'}`}>
             <Icon n="calendar" className="h-3 w-3" />
             {fmtDay(t.dueDate + 'T12:00')}
           </p>
@@ -170,7 +170,7 @@ export default function BoardPage() {
         {t.status === 'doing' && ck.total > 0 && (
           <div className="mt-2.5 flex items-center gap-2">
             <Bar pct={ckp} color="#3b82f6" className="h-1" />
-            <span className="text-[11px] tabular-nums text-muted">{Math.round(ckp * 100)}%</span>
+            <span className="text-[0.6875rem] tabular-nums text-muted">{Math.round(ckp * 100)}%</span>
           </div>
         )}
       </article>
@@ -189,7 +189,7 @@ export default function BoardPage() {
             <Icon n="board" className="h-7 w-7" />
           </span>
           <button className="min-w-0 flex-1 text-left" onClick={() => openSheet(close => <SprintSheet onClose={close} />)}>
-            <p className="text-[22px] font-bold leading-tight">Quadro Kanban</p>
+            <p className="text-[1.375rem] font-bold leading-tight">Quadro Kanban</p>
             <p className="flex items-center gap-1 text-sm text-muted">
               {s ? `Sprint ${s.number} • ${fmtShort(s.startAt)} a ${fmtShort(s.plannedEnd)}` : ' '}
               <Icon n="chevD" className="h-4 w-4" />
@@ -264,24 +264,24 @@ export default function BoardPage() {
               <section key={c.id} data-col={c.id} className={`min-h-[60vh] rounded-2xl border border-line/60 p-1.5 transition ${over ? 'bg-primary/5' : 'bg-sunk/40'}`}>
                 <div className="flex items-center gap-1.5 px-1 pt-2">
                   <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: c.c }} />
-                  <h2 className="min-w-0 flex-1 text-[13.5px] font-semibold leading-tight">{c.label}</h2>
+                  <h2 className="min-w-0 flex-1 text-[0.8438rem] font-semibold leading-tight">{c.label}</h2>
                   <span className="rounded-md border border-line bg-surface px-1.5 text-xs tabular-nums">{list.length}</span>
                 </div>
-                <div className="mx-1.5 mb-2.5 mt-2 h-[3px] rounded-full" style={{ background: c.c, opacity: 0.5 }} />
+                <div className="mx-1.5 mb-2.5 mt-2 h-[0.1875rem] rounded-full" style={{ background: c.c, opacity: 0.5 }} />
                 <div className="space-y-2">
                   {list.map(t => renderCard(t))}
                   {over && (
-                    <div className="rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50/60 px-2 py-6 text-center text-[13px] text-blue-600">
+                    <div className="rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50/60 px-2 py-6 text-center text-[0.8125rem] text-blue-600">
                       Solte aqui para mover a tarefa
                     </div>
                   )}
                   {list.length === 0 && !over && (
-                    <p className="px-1 py-6 text-center text-[12px] text-muted">{c.id === 'todo' ? 'Puxe tarefas do backlog' : 'Nada aqui ainda'}</p>
+                    <p className="px-1 py-6 text-center text-[0.75rem] text-muted">{c.id === 'todo' ? 'Puxe tarefas do backlog' : 'Nada aqui ainda'}</p>
                   )}
                 </div>
                 <button
                   onClick={() => sheets.openTask({ status: 'todo' })}
-                  className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-xl py-2.5 text-[13px] font-medium text-primary hover:bg-surface"
+                  className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-xl py-2.5 text-[0.8125rem] font-medium text-primary hover:bg-surface"
                 >
                   <Icon n="plus" className="h-4 w-4" />
                   Nova tarefa

@@ -37,8 +37,8 @@ export function Ring({
   const r = (size - stroke) / 2;
   const C = 2 * Math.PI * r;
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
+    <div className="relative shrink-0" style={{ width: size / 16 + 'rem', height: size / 16 + 'rem' }}>
+      <svg viewBox={'0 0 ' + size + ' ' + size} className="h-full w-full -rotate-90" aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
         <circle
           cx={size / 2}
@@ -76,7 +76,7 @@ export type Priority = keyof typeof PRIO;
 export function Prio({ p, long }: { p: Priority; long?: boolean }) {
   const [label, c] = PRIO[p];
   return (
-    <span className="rounded-md px-2 py-0.5 text-[11px] font-semibold" style={{ color: c, background: tint(c, 0.1) }}>
+    <span className="rounded-md px-2 py-0.5 text-[0.6875rem] font-semibold" style={{ color: c, background: tint(c, 0.1) }}>
       {label}
       {long ? ' prioridade' : ''}
     </span>
@@ -86,7 +86,7 @@ export function Prio({ p, long }: { p: Priority; long?: boolean }) {
 export function Tag({ children, c = 'rgb(var(--p))', className = '' }: { children: ReactNode; c?: string; className?: string }) {
   return (
     <span
-      className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-semibold ${className}`}
+      className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[0.6875rem] font-semibold ${className}`}
       style={{ color: c, background: c.startsWith('#') ? tint(c, 0.12) : 'rgb(var(--p) / .12)' }}
     >
       {children}
@@ -137,7 +137,7 @@ export function Avatar({
     .join('')
     .toUpperCase();
   return (
-    <span className={`${size} inline-flex shrink-0 rounded-full ${ring ? 'p-[3px] ring-2 ring-primary/60 ring-offset-2 ring-offset-bg' : ''}`}>
+    <span className={`${size} inline-flex shrink-0 rounded-full ${ring ? 'p-[0.1875rem] ring-2 ring-primary/60 ring-offset-2 ring-offset-bg' : ''}`}>
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={photo} alt="" className="h-full w-full rounded-full object-cover" />
@@ -216,7 +216,7 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 
 /** Classe dos campos de texto do protótipo. */
 export const inputCls =
-  'w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] placeholder:text-muted/70 focus:border-primary focus:outline-none';
+  'w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[0.9375rem] placeholder:text-muted/70 focus:border-primary focus:outline-none';
 
 /** Estado vazio simples, com mensagem e ação opcional. */
 export function Empty({ children, action }: { children: ReactNode; action?: ReactNode }) {

@@ -21,7 +21,7 @@ export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
   const done = t.status === 'done';
   return (
     <div className="relative flex items-center gap-3 py-3.5">
-      {!last && <span className="absolute bottom-[-14px] left-[11px] top-[38px] w-px bg-line" />}
+      {!last && <span className="absolute bottom-[-14px] left-[0.6875rem] top-[2.375rem] w-px bg-line" />}
       <button
         onClick={() => actions.moveTask(t.id, done ? 'todo' : 'done')}
         aria-label={done ? 'Reabrir tarefa' : 'Concluir tarefa'}
@@ -32,9 +32,9 @@ export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
         {done && <Icon n="check" className="h-3.5 w-3.5" sw={3} />}
       </button>
       <button onClick={() => sheets.openTaskDetail(t.id)} className="min-w-0 flex-1 text-left">
-        <span className={`block text-[15px] leading-snug ${done ? 'text-ink/60' : ''}`}>{t.title}</span>
+        <span className={`block text-[0.9375rem] leading-snug ${done ? 'text-ink/60' : ''}`}>{t.title}</span>
         {(t.status === 'todo' || t.status === 'doing') && (
-          <span className="text-[11px] font-semibold text-blue-600">{t.status === 'doing' ? 'Fazendo agora' : 'Na sprint'}</span>
+          <span className="text-[0.6875rem] font-semibold text-blue-600">{t.status === 'doing' ? 'Fazendo agora' : 'Na sprint'}</span>
         )}
       </button>
       <Prio p={t.priority} />
@@ -92,7 +92,7 @@ export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: Backl
         <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(!open)} aria-expanded={open}>
           {showIni && <p className="truncate text-xs text-muted">{data.initiatives.find(i => i.id === e.initiativeId)?.title}</p>}
           <p className="flex flex-wrap items-center gap-2">
-            <span className="text-[18px] font-semibold">{e.title}</span>
+            <span className="text-[1.125rem] font-semibold">{e.title}</span>
             <Tag c={a.color}>Épico</Tag>
             {e.closedAt && <Tag>Encerrado</Tag>}
           </p>
@@ -101,7 +101,7 @@ export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: Backl
             <span className="whitespace-nowrap text-sm tabular-nums text-muted">
               {pr.done}/{pr.total} tarefas
             </span>
-            <div className="min-w-[48px] flex-1">
+            <div className="min-w-[3rem] flex-1">
               <Bar pct={pr.pct} color={a.color} className="h-2" />
             </div>
             <span className="text-sm tabular-nums text-muted">{Math.round(pr.pct * 100)}%</span>

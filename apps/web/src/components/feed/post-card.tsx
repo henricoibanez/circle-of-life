@@ -82,14 +82,14 @@ export function PostCard({ p }: { p: PostDto }) {
         <IconBtn n="more" label="Opções do post" className="-mr-2 -mt-1 h-9 w-9" onClick={menu} />
       </div>
       {p.title && (
-        <p className="mt-3 flex items-start gap-2 text-[17px] font-semibold">
+        <p className="mt-3 flex items-start gap-2 text-[1.0625rem] font-semibold">
           <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary text-onprimary">
             <Icon n="check" className="h-3 w-3" sw={3} />
           </span>
           {p.title}
         </p>
       )}
-      {p.text && <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-ink/80">{p.text}</p>}
+      {p.text && <p className="mt-2 whitespace-pre-wrap text-[0.9375rem] leading-relaxed text-ink/80">{p.text}</p>}
       {media.length > 0 && (
         <div className={`mt-3 grid gap-2 ${media.length === 1 ? 'grid-cols-1' : media.length === 2 ? 'grid-cols-2' : 'grid-cols-4'}`}>
           {media.slice(0, media.length > 4 ? 3 : 4).map((m, i) => (
@@ -123,7 +123,7 @@ export function PostCard({ p }: { p: PostDto }) {
           <p className="text-xs text-muted">Pontuação recebida</p>
         </div>
       )}
-      <div className="mt-3 flex items-center gap-5 text-[15px]">
+      <div className="mt-3 flex items-center gap-5 text-[0.9375rem]">
         <button onClick={() => actions.like(p).catch(fail)} aria-pressed={p.liked} aria-label="Curtir" className="inline-flex items-center gap-1.5">
           <span className={p.liked ? 'text-red-500' : 'text-ink/70'}>
             <Icon n="heart" className="h-6 w-6" fill={p.liked ? 'currentColor' : 'none'} />
@@ -146,7 +146,7 @@ export function PostCard({ p }: { p: PostDto }) {
           <div className="flex -space-x-2">
             {p.likers.slice(0, 3).map(l => (
               <span key={l.id} className="rounded-full ring-2 ring-surface">
-                <Avatar name={l.name} photo={l.photoUrl} size="w-6 h-6 text-[9px]" />
+                <Avatar name={l.name} photo={l.photoUrl} size="w-6 h-6 text-[0.5625rem]" />
               </span>
             ))}
           </div>
@@ -254,7 +254,7 @@ export function CommentsSheet({ id, onClose }: { id: string; onClose: () => void
               <p className="text-sm font-semibold">
                 {c.mine ? 'Você' : c.author.name} <span className="text-xs font-normal text-muted">{since(c.createdAt)}</span>
               </p>
-              <p className="mt-0.5 whitespace-pre-wrap text-[15px]">{c.text}</p>
+              <p className="mt-0.5 whitespace-pre-wrap text-[0.9375rem]">{c.text}</p>
             </div>
             {c.mine && (
               <IconBtn

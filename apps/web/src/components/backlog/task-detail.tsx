@@ -96,7 +96,7 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
       title={
         <div>
           <p className="leading-snug">{t.title}</p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-normal text-muted">
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] font-normal text-muted">
             {t.status !== 'backlog' && sprints && <span>Sprint {sprints.current.number}</span>}
             {t.status !== 'backlog' && <span>•</span>}
             <Prio p={t.priority} long />
@@ -181,7 +181,7 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
               value={desc ?? t.description}
               onChange={e => onDesc(e.target.value)}
               placeholder="Adicione detalhes e próximos passos"
-              className="mt-1 w-full resize-none bg-transparent text-[15px] leading-relaxed placeholder:text-muted/70 focus:outline-none"
+              className="mt-1 w-full resize-none bg-transparent text-[0.9375rem] leading-relaxed placeholder:text-muted/70 focus:outline-none"
             />
           </div>
           <div>
@@ -216,7 +216,7 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
                   className="h-5 w-5"
                   style={{ accentColor: 'rgb(var(--p))' }}
                 />
-                <span className={`flex-1 text-[15px] ${c.done ? 'text-muted line-through' : ''}`}>{c.text}</span>
+                <span className={`flex-1 text-[0.9375rem] ${c.done ? 'text-muted line-through' : ''}`}>{c.text}</span>
                 <IconBtn
                   n="x"
                   label="Remover item"
@@ -293,8 +293,8 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
         <ol className="relative ml-2 space-y-4 border-l border-line">
           {data.logs.map(l => (
             <li key={l.id} className="relative pl-4">
-              <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
-              <p className="text-[15px]">{l.text}</p>
+              <span className="absolute -left-[0.3125rem] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+              <p className="text-[0.9375rem]">{l.text}</p>
               <p className="text-xs text-muted">{since(l.createdAt)}</p>
             </li>
           ))}

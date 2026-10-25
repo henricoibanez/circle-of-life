@@ -14,6 +14,18 @@
  * TEXTO do protótipo e "accent" é o roxo; para fundos neutros use bg-sunk.
  */
 
+/*
+ * Escala do layout (mais compacta que o protótipo, a pedido do dono).
+ * Tudo no site é medido em "rem" (relativo ao tamanho base do html), então:
+ * - o tamanho base (15px, no bloco html abaixo) diminui textos, ícones e cantos juntos;
+ * - --spacing deixa margens, espaços e alturas um pouco mais próximos.
+ * Para ajustar a densidade do app inteiro, mexa só nesses dois valores.
+ * Evite medidas fixas em px nas classes; use rem (ex.: text-[0.9375rem]).
+ */
+@theme {
+  --spacing: 0.22rem;
+}
+
 /* Modo escuro: escolhido no perfil (data-theme) ou, no automático, pelo sistema. */
 @custom-variant dark {
   &:where([data-theme='dark'], [data-theme='dark'] *) {
@@ -120,6 +132,7 @@
   }
   html {
     @apply font-sans antialiased;
+    font-size: 15px;
     scroll-padding-top: env(safe-area-inset-top, 0px);
   }
   body {
@@ -140,6 +153,14 @@
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;
+  }
+  /* No celular, campos com letra menor que 16px fazem o iPhone dar zoom na tela ao tocar. */
+  @media (pointer: coarse) {
+    input:not([type='range']):not([type='checkbox']):not([type='radio']),
+    textarea,
+    select {
+      font-size: 16px;
+    }
   }
 }
 

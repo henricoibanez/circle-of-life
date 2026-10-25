@@ -29,7 +29,7 @@ export function Sheet({
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className="sheet-in fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[92vh] w-full flex-col rounded-t-[28px] bg-surface outline-none sm:bottom-auto sm:top-1/2 sm:max-w-lg sm:-translate-y-1/2 sm:rounded-[28px]"
+          className="sheet-in fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[92vh] w-full flex-col rounded-t-[1.75rem] bg-surface outline-none sm:bottom-auto sm:top-1/2 sm:max-w-lg sm:-translate-y-1/2 sm:rounded-[1.75rem]"
           style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
           <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line sm:hidden" />
@@ -64,7 +64,7 @@ export function ActionSheet({ title, actions, onClose }: { title: ReactNode; act
                 onClose();
                 action.run();
               }}
-              className={`flex w-full items-center gap-3 px-1 py-3.5 text-left text-[15px] ${action.danger ? 'text-red-600' : ''}`}
+              className={`flex w-full items-center gap-3 px-1 py-3.5 text-left text-[0.9375rem] ${action.danger ? 'text-red-600' : ''}`}
             >
               <Icon n={action.icon} className="h-5 w-5" />
               {action.label}

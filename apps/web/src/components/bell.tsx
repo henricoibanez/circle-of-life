@@ -15,7 +15,7 @@ export function Bell({ className = '' }: { className?: string }) {
     >
       <Icon n="bell" className="h-6 w-6" />
       {count > 0 && (
-        <span className="absolute right-0.5 top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-onprimary">
+        <span className="absolute right-0.5 top-0.5 grid h-[1.125rem] min-w-[1.125rem] place-items-center rounded-full bg-primary px-1 text-[0.625rem] font-bold text-onprimary">
           {count > 99 ? '99+' : count}
         </span>
       )}

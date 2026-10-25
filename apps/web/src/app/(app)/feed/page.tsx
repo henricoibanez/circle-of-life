@@ -48,7 +48,7 @@ function Feed() {
     <>
       <header className="sticky z-20 flex items-center gap-2.5 bg-bg/90 px-4 pb-2 pt-3 backdrop-blur-md" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
         <Logo className="h-10 w-10" />
-        <Wordmark className="flex-1 text-[24px]" />
+        <Wordmark className="flex-1 text-[1.5rem]" />
         <Bell />
       </header>
       <StoryRow onNewPost={() => newPost()} />

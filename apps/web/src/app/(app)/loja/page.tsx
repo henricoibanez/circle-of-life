@@ -62,7 +62,7 @@ export default function LojaPage() {
             <button
               key={c.id}
               onClick={() => setCat(c.id)}
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] ${cat === c.id ? 'border-accent bg-accent/5 text-accent' : 'border-line bg-surface'}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-[0.8125rem] ${cat === c.id ? 'border-accent bg-accent/5 text-accent' : 'border-line bg-surface'}`}
             >
               <span style={{ color: c.color || 'rgb(var(--a))' }}>
                 <Icon n={c.icon} className="h-4 w-4" />
@@ -85,25 +85,25 @@ export default function LojaPage() {
         <div className="relative overflow-hidden rounded-3xl bg-accent/[.06] p-5">
           <StepsArt className="absolute bottom-0 right-0 w-44 opacity-95" />
           <div className="relative max-w-[60%]">
-            <p className="flex items-center gap-1 text-[13px] font-medium text-accent">
+            <p className="flex items-center gap-1 text-[0.8125rem] font-medium text-accent">
               <Icon n="sparkles" className="h-4 w-4" />
               Recomendadas para você
             </p>
-            <p className="mt-1 text-[22px] font-semibold leading-tight">Trilhas feitas para transformar sua vida</p>
-            <p className="mt-1.5 text-[13px] text-muted">Conteúdos práticos, organizados em épicos e tarefas para gerar resultados reais.</p>
+            <p className="mt-1 text-[1.375rem] font-semibold leading-tight">Trilhas feitas para transformar sua vida</p>
+            <p className="mt-1.5 text-[0.8125rem] text-muted">Conteúdos práticos, organizados em épicos e tarefas para gerar resultados reais.</p>
             <Button variant="accent" className="mt-3" onClick={() => setCat('all')}>
               Explorar trilhas
             </Button>
           </div>
         </div>
 
-        <h2 className="text-[17px] font-semibold">Trilhas em destaque</h2>
+        <h2 className="text-[1.0625rem] font-semibold">Trilhas em destaque</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[...reviewQueue, ...visible].map(t => {
             const blurred = t.status === 'pendente' && !t.mine;
             return (
               <div key={t.id} className="relative flex flex-col rounded-2xl border border-line/80 bg-surface p-2 shadow-soft">
-                <div className={blurred ? 'pointer-events-none select-none blur-[3px]' : ''}>
+                <div className={blurred ? 'pointer-events-none select-none blur-[0.1875rem]' : ''}>
                   <div className="relative">
                     <Cover t={t} className="aspect-[4/3] w-full overflow-hidden rounded-xl" />
                     {!blurred && (
@@ -118,14 +118,14 @@ export default function LojaPage() {
                       </button>
                     )}
                   </div>
-                  <p className="mt-2 px-0.5 text-[14px] font-semibold leading-tight">{t.title}</p>
-                  <p className="mt-1 line-clamp-3 px-0.5 text-[11.5px] leading-snug text-muted">{t.description}</p>
+                  <p className="mt-2 px-0.5 text-[0.875rem] font-semibold leading-tight">{t.title}</p>
+                  <p className="mt-1 line-clamp-3 px-0.5 text-[0.7188rem] leading-snug text-muted">{t.description}</p>
                   <div className="mt-2 flex gap-1 px-0.5">
                     {t.areas.slice(0, 4).map(a => (
                       <AreaIcon key={a} id={a} size="w-6 h-6" icon="w-3.5 h-3.5" />
                     ))}
                   </div>
-                  <div className="mt-2 flex items-center gap-2 px-0.5 text-[11px] text-muted">
+                  <div className="mt-2 flex items-center gap-2 px-0.5 text-[0.6875rem] text-muted">
                     <span className="inline-flex items-center gap-1">
                       <Icon n="list" className="h-3.5 w-3.5" />
                       {t.tasksCount} tarefas
@@ -142,11 +142,11 @@ export default function LojaPage() {
                   </div>
                 </div>
                 {blurred && (
-                  <span className="absolute inset-x-2 top-1/3 rounded-xl bg-surface/90 px-2 py-1.5 text-center text-[12px] font-semibold text-amber-700 shadow-soft">
+                  <span className="absolute inset-x-2 top-1/3 rounded-xl bg-surface/90 px-2 py-1.5 text-center text-[0.75rem] font-semibold text-amber-700 shadow-soft">
                     Aguardando aprovação
                   </span>
                 )}
-                <Button variant="aline" className="mt-2.5 py-2 text-[13px]" onClick={() => open(t.id)}>
+                <Button variant="aline" className="mt-2.5 py-2 text-[0.8125rem]" onClick={() => open(t.id)}>
                   {blurred ? 'Revisar' : t.acquired ? 'Importada' : 'Ver detalhes'}
                 </Button>
               </div>
@@ -163,7 +163,7 @@ export default function LojaPage() {
             <p className="font-semibold">Importe para o seu Backlog</p>
             <p className="text-xs text-muted">Ao importar uma trilha, todas as tarefas vão para o seu backlog automaticamente.</p>
           </div>
-          <Button variant="pline" className="rounded-full px-3 py-1.5 text-[12px]" onClick={() => openSheet(close => <InfoSheet k="loja" onClose={close} />)}>
+          <Button variant="pline" className="rounded-full px-3 py-1.5 text-[0.75rem]" onClick={() => openSheet(close => <InfoSheet k="loja" onClose={close} />)}>
             Entenda como funciona
           </Button>
         </div>

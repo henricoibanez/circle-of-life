@@ -32,13 +32,13 @@ export default function MaisPage() {
     <div className="relative overflow-hidden">
       <Leaves className="pointer-events-none absolute -right-10 -top-6 h-64 w-64" />
       <header className="relative px-4 pb-4 pt-5">
-        <h1 className="text-[32px] font-bold tracking-tight">Mais</h1>
+        <h1 className="text-[2rem] font-bold tracking-tight">Mais</h1>
       </header>
       <div className="relative space-y-6 px-4 pb-8">
         <Link href="/perfil" className="flex w-full items-center gap-4 rounded-2xl border border-line/80 bg-surface p-4 text-left shadow-soft">
           <Avatar name={me?.name ?? '?'} photo={me?.photoUrl} size="w-14 h-14 text-lg" />
           <span className="min-w-0 flex-1">
-            <span className="block text-[17px] font-semibold">{me?.name ?? ' '}</span>
+            <span className="block text-[1.0625rem] font-semibold">{me?.name ?? ' '}</span>
             <span className="block text-sm text-muted">{me ? `${me.xp.total.toLocaleString('pt-BR')} XP` : ' '}</span>
           </span>
           <Icon n="chevR" className="h-4 w-4 text-muted" />
