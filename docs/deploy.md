@@ -4,6 +4,19 @@ Este guia explica, passo a passo, como colocar o beta no ar usando só dois serv
 
 O código continua sem nada específico desses serviços: tudo vem de variáveis de ambiente. Trocar de provedor no futuro é trocar variáveis (veja a seção 9).
 
+## Situação atual (25/10/2026)
+
+O beta está no ar:
+
+| Peça | Projeto na Vercel | Endereço |
+|---|---|---|
+| Site | `circle-of-life-app` (Root Directory `apps/web`) | https://circle-of-life-app.vercel.app |
+| API | `circle-of-life` (Root Directory `apps/api`) | https://circle-of-life-three.vercel.app |
+
+Banco e fotos no Supabase (região São Paulo). E-mail desligado. Os commits deste projeto usam o e-mail pessoal do dono (a Vercel só publica commits de autor ligado à conta).
+
+**Na Vercel, a API roda a partir de um arquivo único** (`dist/vercel.cjs`, gerado por `apps/api/scripts/vercel-bundle.mjs`): o carregador de funções da Vercel não aceita os pacotes do Nest 12 separados.
+
 ## 1. As peças
 
 | Peça | O que é | Onde fica |
@@ -56,7 +69,7 @@ A pasta `referencia/` e os arquivos `.env` nunca vão para o GitHub.
 
 | Variável | Valor |
 |---|---|
-| `WEB_URL` | endereço do site (passo 6), ex.: `https://circle-web.vercel.app`. Na primeira vez, coloque o endereço que a Vercel vai dar ao site (`https://circle-web.vercel.app`) e confira depois. |
+| `WEB_URL` | endereço do site (passo 6), ex.: `https://circle-of-life-app.vercel.app`. Na primeira vez, coloque o endereço que a Vercel vai dar ao site (`https://circle-of-life-app.vercel.app`) e confira depois. |
 | `DATABASE_URL` | do passo 3 |
 | `DATABASE_POOL_MAX` | `3` |
 | `S3_ENDPOINT` e `S3_PUBLIC_ENDPOINT` | o Endpoint do passo 4 (os dois iguais) |
@@ -76,13 +89,13 @@ A pasta `referencia/` e os arquivos `.env` nunca vão para o GitHub.
 
 Deixe vazias as variáveis de e-mail (`SMTP_*`): o envio fica desligado.
 
-Teste: `https://circle-api.vercel.app/api/health` deve responder com `"status":"ok"` (e mostra se o banco e o storage estão acessíveis).
+Teste: `https://circle-of-life-three.vercel.app/api/health` deve responder com `"status":"ok"` (e mostra se o banco e o storage estão acessíveis).
 
 ## 6. Site na Vercel (projeto circle-web)
 
 1. **Add New → Project** de novo, o mesmo repositório.
 2. **Project Name**: `circle-web`. **Root Directory**: `apps/web`. **Framework Preset**: Next.js (os comandos estão em `apps/web/vercel.json`).
-3. Variável: `API_INTERNAL_URL` = endereço da API, ex.: `https://circle-api.vercel.app` (sem barra no final).
+3. Variável: `API_INTERNAL_URL` = endereço da API, ex.: `https://circle-of-life-three.vercel.app` (sem barra no final).
 4. **Deploy**. Se o endereço final do site for diferente do que você colocou em `WEB_URL` e `S3_CORS_ORIGINS` na API, corrija lá e publique a API de novo (**Deployments → ⋯ → Redeploy**).
 
 ## 7. Login com Google
@@ -94,7 +107,7 @@ Teste: `https://circle-api.vercel.app/api/health` deve responder com `"status":"
 
 ## 8. Conferência final
 
-- [ ] `https://circle-api.vercel.app/api/health` responde com `"status":"ok"`.
+- [ ] `https://circle-of-life-three.vercel.app/api/health` responde com `"status":"ok"`.
 - [ ] Entrar com o Google usando o e-mail de `ADMIN_EMAILS`.
 - [ ] A tela de login **não** mostra usuários de teste.
 - [ ] Enviar uma foto de perfil (confere o storage).
