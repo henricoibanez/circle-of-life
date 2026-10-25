@@ -293,6 +293,9 @@ importers:
       dotenv:
         specifier: 18.0.6
         version: 18.0.6
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       prisma:
         specifier: 7.10.1
         version: 7.10.1(@types/node@24.19.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3)
