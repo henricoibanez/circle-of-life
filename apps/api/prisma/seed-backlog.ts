@@ -90,6 +90,24 @@ const EPICS: { key: string; ini: string; title: string; area: string; descriptio
   },
 ];
 
+/**
+ * Histórico da tarefa com os mesmos textos que a API grava ("Movida de A Fazer
+ * para Fazendo", "Concluiu “item”"), em datas coerentes com a sprint dela.
+ */
+function history(status: Status, o: NonNullable<T[3]>, doneAt: Date | null, sprintStartDaysAgo: number) {
+  const created = o.created ?? 30;
+  const logs: { text: string; createdAt: Date }[] = [{ text: 'Tarefa criada', createdAt: ago(created) }];
+  if (status === 'backlog') return logs;
+  const planned = Math.min(created - 1, sprintStartDaysAgo);
+  logs.push({ text: 'Movida de Backlog para A Fazer', createdAt: ago(planned, 9) });
+  if (status === 'todo') return logs;
+  const started = doneAt ? Math.max(Math.round((Date.now() - doneAt.getTime()) / DAY) + 1, 0) : Math.max(planned - 2, 1);
+  logs.push({ text: 'Movida de A Fazer para Fazendo', createdAt: ago(Math.min(started, planned), 14) });
+  for (const [text, done] of o.check ?? []) if (done) logs.push({ text: `Concluiu “${text}”`, createdAt: ago(Math.max(started - 1, 1), 18) });
+  if (doneAt) logs.push({ text: 'Movida de Fazendo para Pronto', createdAt: doneAt });
+  return logs;
+}
+
 export async function seedBacklog(prisma: PrismaClient, userId: string) {
   // Sprints 10 e 11 encerradas; a 12 em andamento, começou há 4 dias (como no protótipo).
   const s10 = await prisma.sprint.create({ data: { userId, number: 10, startAt: ago(32, 0), plannedEnd: ago(19, 0), closedAt: ago(19), doneCount: 7, totalCount: 9 } });
@@ -134,7 +152,7 @@ export async function seedBacklog(prisma: PrismaClient, userId: string) {
           archivedAt: o.archived ? (o.done! > 19 ? ago(19) : ago(5)) : null,
           sprintId,
           checklist: { create: (o.check ?? []).map(([text, done], p) => ({ text, done, position: p })) },
-          logs: { create: [{ text: 'Tarefa criada', createdAt: ago(o.created ?? 30) }] },
+          logs: { create: history(status, o, doneAt, sprintId === s10.id ? 32 : sprintId === s11.id ? 18 : 4) },
         },
       });
       count++;

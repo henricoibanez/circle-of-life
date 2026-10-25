@@ -3,6 +3,7 @@
  * Maslow, Necrológio e Quadro de visualização) para o usuário Henrico.
  */
 import type { PrismaClient } from '../src/generated/prisma/client';
+import type { SeedImages } from './seed-images';
 
 const DAY = 86400000;
 const ago = (days: number) => new Date(Date.now() - days * DAY);
@@ -31,19 +32,20 @@ export async function seedNecrologio(prisma: PrismaClient, userId: string) {
   await prisma.necrologio.create({ data: { userId, html: NECRO } });
 }
 
-const DREAMS: [text: string, area: string, doneDaysAgo?: number][] = [
-  ['Ver a aurora boreal com a minha esposa', 'amor'],
-  ['Ler a Ilíada e a Odisseia inteiras', 'intelectual'],
-  ['Morar numa casa com quintal', 'financas'],
-  ['Tocar gaita numa roda de amigos', 'lazer', 10],
-  ['Viagem de 15 dias pelo Nordeste', 'lazer', 80],
-  ['Reserva de emergência de 6 meses', 'financas', 120],
-  ['Natal com a família inteira reunida', 'familia', 300],
-  ['Retiro espiritual de 3 dias', 'espiritualidade', 200],
+const DREAMS: [text: string, area: string, photo: string, doneDaysAgo?: number][] = [
+  ['Ver a aurora boreal com a minha esposa', 'amor', 'dr_aurora'],
+  ['Ler a Ilíada e a Odisseia inteiras', 'intelectual', 'dr_livros'],
+  ['Morar numa casa com quintal', 'financas', 'dr_casa'],
+  ['Tocar gaita numa roda de amigos', 'lazer', 'dr_gaita', 10],
+  ['Viagem de 15 dias pelo Nordeste', 'lazer', 'dr_nordeste', 80],
+  ['Reserva de emergência de 6 meses', 'financas', 'dr_cofre', 120],
+  ['Natal com a família inteira reunida', 'familia', 'dr_natal', 300],
+  ['Retiro espiritual de 3 dias', 'espiritualidade', 'dr_retiro', 200],
 ];
 
-export async function seedDreams(prisma: PrismaClient, userId: string) {
-  await prisma.dream.createMany({
-    data: DREAMS.map(([text, area, done], position) => ({ userId, text, area: area as never, position, doneAt: done ? ago(done) : null })),
-  });
+export async function seedDreams(prisma: PrismaClient, userId: string, images: SeedImages) {
+  for (const [position, [text, area, photo, done]] of DREAMS.entries()) {
+    const imageFileId = await images.put(userId, 'dream', photo);
+    await prisma.dream.create({ data: { userId, text, area: area as never, position, imageFileId, doneAt: done ? ago(done) : null } });
+  }
 }
