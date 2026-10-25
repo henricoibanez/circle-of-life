@@ -5,6 +5,7 @@ import { AnalysisModule } from './analysis/analysis.module';
 import { AuthModule } from './auth/auth.module';
 import { BacklogModule } from './backlog/backlog.module';
 import { AppConfigModule } from './config/config.module';
+import { CronModule } from './cron/cron.module';
 import { DevAuthModule } from './dev-auth/dev-auth.module';
 import { DreamsModule } from './exercises/dreams.module';
 import { MaslowModule } from './exercises/maslow.module';
@@ -50,6 +51,7 @@ import { XpModule } from './xp/xp.module';
     FeedModule,
     StoriesModule,
     AnalysisModule,
+    CronModule,
   ],
   controllers: [HealthController],
 })

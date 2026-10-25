@@ -44,13 +44,15 @@ export class InvitesService {
     const invite = await this.prisma.invite.create({
       data: { email, tokenHash: hashInviteToken(token), invitedById: admin.id, expiresAt: this.expiry() },
     });
+    let emailSent: boolean;
     try {
-      await this.sendEmail(email, token, admin.name);
+      emailSent = await this.sendEmail(email, token, admin.name);
     } catch {
       await this.prisma.invite.delete({ where: { id: invite.id } });
       throw new BadGatewayException('Não foi possível enviar o e-mail do convite. Tente de novo em instantes.');
     }
-    return { id: invite.id, email };
+    // Sem e-mail, o convite vale do mesmo jeito: a pessoa entra com o Google usando este e-mail.
+    return { id: invite.id, email, emailSent };
   }
 
   /** Gera um código novo (o anterior deixa de valer), renova a validade e reenvia. */
@@ -61,7 +63,7 @@ export class InvitesService {
     const token = newInviteToken();
     await this.prisma.invite.update({ where: { id }, data: { tokenHash: hashInviteToken(token), expiresAt: this.expiry() } });
     try {
-      await this.sendEmail(invite.email, token, admin.name);
+      return { emailSent: await this.sendEmail(invite.email, token, admin.name) };
     } catch {
       throw new BadGatewayException('Não foi possível enviar o e-mail do convite. Tente de novo em instantes.');
     }

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install -g pnpm@12.10.1 && cd ../.. && pnpm install --frozen-lockfile --filter \"@circle/api...\"",
+  "buildCommand": "cd ../.. && pnpm --filter @circle/shared build && pnpm --filter @circle/api build && pnpm --filter @circle/api db:deploy",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.js": { "includeFiles": "dist/**", "maxDuration": 60 }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
+  "crons": [{ "path": "/api/cron/daily", "schedule": "0 11 * * *" }]
+}

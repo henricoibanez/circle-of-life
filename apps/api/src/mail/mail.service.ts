@@ -8,25 +8,38 @@ export type Mail = { to: string; subject: string; title: string; paragraphs: str
 /**
  * Envio de e-mails por SMTP (Mailpit localmente). Todos os e-mails usam o
  * mesmo modelo simples: título, parágrafos e um botão opcional.
+ * Sem SMTP_HOST, o envio fica desligado: send() não faz nada e devolve false.
  */
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private readonly transport: Transporter;
+  private readonly transport: Transporter | null;
   private readonly from: string;
 
   constructor(config: ConfigService<Env, true>) {
     const user = config.get('SMTP_USER');
     this.from = config.get('SMTP_FROM');
-    this.transport = createTransport({
-      host: config.get('SMTP_HOST'),
-      port: config.get('SMTP_PORT'),
-      secure: config.get('SMTP_PORT') === 465,
-      auth: user ? { user, pass: config.get('SMTP_PASS') } : undefined,
-    });
+    const host = config.get('SMTP_HOST');
+    this.transport = host
+      ? createTransport({
+          host,
+          port: config.get('SMTP_PORT'),
+          secure: config.get('SMTP_PORT') === 465,
+          auth: user ? { user, pass: config.get('SMTP_PASS') } : undefined,
+        })
+      : null;
   }
 
+  get enabled() {
+    return this.transport !== null;
+  }
+
+  /** Envia o e-mail. Devolve false quando o envio de e-mails está desligado. */
   async send(mail: Mail) {
+    if (!this.transport) {
+      this.logger.log(`E-mail desligado: "${mail.subject}" para ${mail.to} não foi enviado`);
+      return false;
+    }
     await this.transport.sendMail({
       from: this.from,
       to: mail.to,
@@ -35,6 +48,7 @@ export class MailService {
       html: renderHtml(mail),
     });
     this.logger.log(`E-mail "${mail.subject}" enviado para ${mail.to}`);
+    return true;
   }
 }
 

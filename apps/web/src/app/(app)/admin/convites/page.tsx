@@ -38,12 +38,15 @@ export default function InvitesAdminPage() {
   }, []);
   useEffect(load, [load]);
 
-  const run = async (action: () => Promise<unknown>, success: string) => {
+  // Com o e-mail desligado, o convite vale do mesmo jeito: a pessoa entra no site com o Google daquele e-mail.
+  const noEmail = (to: string) => `Convite registrado para ${to}. O envio de e-mails está desligado: avise a pessoa para entrar em ${window.location.origin} com a conta Google desse e-mail.`;
+
+  const run = async (action: () => Promise<unknown>, success: string, to?: string) => {
     setBusy(true);
     setMessage(null);
     try {
-      await action();
-      setMessage({ ok: true, text: success });
+      const r = (await action()) as { emailSent?: boolean } | undefined;
+      setMessage({ ok: true, text: to && r?.emailSent === false ? noEmail(to) : success });
       load();
     } catch (e) {
       setMessage({ ok: false, text: e instanceof ApiError ? e.message : 'Algo deu errado.' });
@@ -64,7 +67,7 @@ export default function InvitesAdminPage() {
         onSubmit={e => {
           e.preventDefault();
           if (!valid) return;
-          run(() => api('/invites', { method: 'POST', body: { email: email.trim() } }), `Convite enviado para ${email.trim()}.`).then(() =>
+          run(() => api('/invites', { method: 'POST', body: { email: email.trim() } }), `Convite enviado para ${email.trim()}.`, email.trim()).then(() =>
             setEmail(''),
           );
         }}
@@ -104,7 +107,7 @@ export default function InvitesAdminPage() {
               <>
                 <button
                   disabled={busy}
-                  onClick={() => run(() => api(`/invites/${i.id}/resend`, { method: 'POST' }), `Convite reenviado para ${i.email}.`)}
+                  onClick={() => run(() => api(`/invites/${i.id}/resend`, { method: 'POST' }), `Convite reenviado para ${i.email}.`, i.email)}
                   className="text-sm font-semibold text-primary disabled:opacity-40"
                 >
                   Reenviar

@@ -177,13 +177,14 @@ O computador do dono **não tem Docker** (a virtualização está desligada e el
 | Serviço | Como roda localmente | Em produção (futuro) |
 |---|---|---|
 | `web` | Next.js no Node | Vercel |
-| `api` | Nest.js no Node | Contêiner Docker num host de contêiner |
+| `api` | Nest.js no Node | **Função da Vercel** (decisão do dono para o beta; ver docs/deploy.md). O Dockerfile continua disponível para um host de contêiner. |
 | `postgres` | PostgreSQL de verdade via pacote npm `embedded-postgres` (dados em `.local/postgres`) | Postgres do Supabase |
 | `storage` | **SeaweedFS** (`weed.exe`, compatível com S3) em `.local/bin` | Storage do Supabase (via protocolo S3) |
 | `mailpit` | **Mailpit** (`mailpit.exe`) em `.local/bin`; caixa de entrada falsa em `http://localhost:8025` | Servidor SMTP real |
 
 - Os programas `.exe` são baixados uma vez, com **versões fixas**, por um script do projeto (`pnpm setup:local`) para a pasta `.local/`, que não vai para o git. Nada é instalado no Windows.
 - O **`docker-compose.yml` também existe** e usa as mesmas variáveis e os mesmos programas (Postgres, SeaweedFS, Mailpit). Ele serve para outros computadores e para a produção, mas **não pode ser testado no computador do dono**; avise isso sempre que mexer nele.
+- **Beta publicado só com Supabase + Vercel** (decisão do dono). Na Vercel a API roda como função: entrada em `apps/api/api/index.js` → `src/serverless.ts`; as tarefas agendadas rodam uma vez por dia pela rota `/api/cron/daily` (protegida por `CRON_SECRET`), com `DISABLE_SCHEDULE=true`. **E-mail desligado** no beta (`SMTP_HOST` vazio): os convites valem pelo login com Google.
 - O MinIO **não é usado**: ele deixou de publicar versões gratuitas em 2025.
 
 - **Login de desenvolvimento**: com `NODE_ENV=development`, a tela de login mostra usuários de teste para entrar com um clique, sem Google. Com qualquer outro valor de `NODE_ENV`, essa rota **não existe** na API (não é só escondida na tela).

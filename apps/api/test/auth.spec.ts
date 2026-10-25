@@ -120,7 +120,9 @@ describe('Login e convites (ambiente de desenvolvimento)', () => {
     assert.equal(item.status, 'pendente');
     assert.equal(item.convidadoPor, 'Admin Teste');
 
-    assert.equal((await c.request('POST', `/invites/${item.id}/resend`)).status, 204);
+    const resent = await c.request('POST', `/invites/${item.id}/resend`);
+    assert.equal(resent.status, 200);
+    assert.equal(resent.body.emailSent, true);
     assert.equal((await client(api.url).request('GET', `/invites/check/${token}`)).status, 404, 'código antigo deixa de valer');
 
     assert.equal((await c.request('DELETE', `/invites/${item.id}`)).status, 204);

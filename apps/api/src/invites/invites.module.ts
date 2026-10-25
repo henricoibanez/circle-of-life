@@ -27,7 +27,7 @@ class InvitesController {
 
   @AdminOnly()
   @Post(':id/resend')
-  @HttpCode(204)
+  @HttpCode(200)
   resend(@Param('id') id: string, @CurrentUser() admin: User) {
     return this.invites.resend(id, admin);
   }

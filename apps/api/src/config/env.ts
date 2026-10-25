@@ -14,6 +14,10 @@ export const envSchema = z.object({
   WEB_URL: z.url(),
 
   DATABASE_URL: z.string().startsWith('postgres', 'deve começar com postgresql://'),
+  /** Máximo de conexões abertas com o banco por instância da API (na Vercel, use um número baixo, ex.: 3). */
+  DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+  /** Segredo que a Vercel manda ao chamar as tarefas diárias (/api/cron/daily). Vazio = rota desligada. */
+  CRON_SECRET: z.string().optional().default(''),
 
   S3_ENDPOINT: z.url(),
   S3_PUBLIC_ENDPOINT: z.url(),
@@ -25,11 +29,12 @@ export const envSchema = z.object({
   S3_CREATE_BUCKET: bool.default(false),
   S3_CORS_ORIGINS: z.string().transform(v => v.split(',').map(s => s.trim()).filter(Boolean)),
 
-  SMTP_HOST: z.string().min(1),
-  SMTP_PORT: z.coerce.number().int().positive(),
+  /** Servidor de e-mail. Vazio = envio de e-mails desligado (convites continuam valendo pelo login com Google). */
+  SMTP_HOST: z.string().optional().default(''),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASS: z.string().optional().default(''),
-  SMTP_FROM: z.string().min(1),
+  SMTP_FROM: z.string().optional().default(''),
 
   // ---------- Login e sessão ----------
   /** Segredo que assina o cookie de sessão (JWT). Pelo menos 32 caracteres. */

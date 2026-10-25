@@ -1,135 +1,117 @@
-# Como publicar o Circle of Life
+# Como publicar o Circle of Life (Supabase + Vercel)
 
-Este guia explica, passo a passo, como colocar o app no ar. Ele foi escrito para quem não é programador: cada termo técnico vem explicado na primeira vez que aparece.
+Este guia explica, passo a passo, como colocar o beta no ar usando só dois serviços: **Supabase** (banco de dados e fotos) e **Vercel** (site e API). Cada termo técnico vem explicado na primeira vez que aparece.
 
-> **Situação atual:** o app roda 100% no computador local. Os passos abaixo ainda **não foram executados** de verdade; a imagem Docker da API também não foi testada (o computador do projeto não tem Docker). Faça a primeira publicação com calma, de preferência acompanhado.
+O código continua sem nada específico desses serviços: tudo vem de variáveis de ambiente. Trocar de provedor no futuro é trocar variáveis (veja a seção 9).
 
 ## 1. As peças
 
-O app tem três partes que vão para lugares diferentes:
-
-| Peça | O que é | Onde fica em produção |
+| Peça | O que é | Onde fica |
 |---|---|---|
-| **Site** (`apps/web`) | As telas que a pessoa usa no celular ou no computador. | **Vercel** |
-| **API** (`apps/api`) | O "cérebro": regras de XP, sprints, login, permissões. O site conversa só com ela. | Um **host de contêiner** (um serviço que roda programas empacotados em Docker; por exemplo Render, Railway, Fly.io ou Google Cloud Run). |
-| **Banco de dados e arquivos** | Onde ficam os dados (Postgres) e as fotos (storage S3). | **Supabase** (Postgres e Storage) |
+| **Site** (`apps/web`) | As telas do app. | Projeto **circle-web** na Vercel |
+| **API** (`apps/api`) | As regras (XP, sprints, login, permissões). O site conversa só com ela. | Projeto **circle-api** na Vercel, como "função" (um programa que liga sozinho quando chega um pedido) |
+| **Banco de dados** | Onde ficam os dados. | **Supabase** (Postgres) |
+| **Fotos** | Fotos de perfil, stories, posts, sonhos, capas. | **Supabase Storage**, pelo protocolo S3 |
 
-Também são necessários: um **servidor de e-mail** (SMTP) para os convites, as **credenciais do Google** para o login e, se quiser a IA de verdade, uma **chave da API do Claude**.
+O site repassa tudo que começa com `/api/` para a API. O navegador só enxerga o endereço do site, e o cookie de login funciona sem configuração extra.
 
-O site repassa tudo que começa com `/api/` para a API. Por isso o navegador só enxerga um endereço (o do site) e o cookie de login funciona sem configuração extra.
+**E-mail:** nesta primeira publicação o envio de e-mails fica **desligado**. Os convites continuam funcionando: você convida o e-mail na tela de Convites e avisa a pessoa para entrar no site com a conta Google daquele e-mail.
 
-## 2. Banco de dados (Supabase Postgres)
+**Tarefas agendadas:** no plano grátis da Vercel, elas rodam **uma vez por dia** (por volta das 8h de Brasília): aviso de tarefas atrasadas, limpeza de avisos antigos e das fotos de stories vencidos. Os stories somem da tela após 24h de qualquer jeito.
 
-1. Crie um projeto no [Supabase](https://supabase.com).
-2. Em **Project Settings → Database → Connection string**, copie o endereço no formato `postgresql://...`. Esse é o valor de `DATABASE_URL`.
-   - Use a conexão **direta** (porta 5432) ou a do *session pooler*. A do *transaction pooler* (porta 6543) não funciona bem com as migrations.
-3. Não é preciso criar tabelas: a API cria e atualiza tudo sozinha ao iniciar (comando `prisma migrate deploy`, que aplica as "migrations", isto é, os passos de mudança do banco guardados em `apps/api/prisma/migrations`).
+## 2. Código no GitHub
 
-**Nunca rode o seed em produção.** O seed apaga e recria os usuários de teste; ele só existe para o ambiente local.
+A Vercel publica a partir do GitHub.
 
-## 3. Arquivos (Supabase Storage via S3)
-
-1. No Supabase, em **Storage**, crie um bucket **privado** (por exemplo `circle-of-life`).
-2. Em **Project Settings → Storage → S3 Connection**, ative o acesso S3 e crie uma chave de acesso.
-3. Anote:
-   - `S3_ENDPOINT` e `S3_PUBLIC_ENDPOINT`: o endereço "Endpoint" mostrado (os dois iguais).
-   - `S3_REGION`: a região mostrada.
-   - `S3_BUCKET`: o nome do bucket.
-   - `S3_ACCESS_KEY_ID` e `S3_SECRET_ACCESS_KEY`: a chave criada.
-   - `S3_FORCE_PATH_STYLE=true`.
-   - `S3_CREATE_BUCKET=false` (o bucket já existe).
-4. **CORS** (permissão para o navegador enviar fotos direto ao storage): configure o bucket para aceitar `PUT` e `GET` vindos do endereço do site. Em `S3_CORS_ORIGINS` coloque o endereço do site (ex.: `https://circleoflife.com.br`).
-
-As fotos nunca passam pela API: o navegador pede um endereço temporário à API e envia o arquivo direto para o storage.
-
-## 4. E-mail (SMTP)
-
-Qualquer serviço SMTP serve (Resend, Brevo, Amazon SES, o próprio e-mail da empresa…). Preencha `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` e `SMTP_FROM` (ex.: `Circle of Life <nao-responda@circleoflife.com.br>`).
-
-## 5. Login com Google
-
-1. No [Google Cloud Console](https://console.cloud.google.com), crie um projeto e vá em **APIs e serviços → Credenciais → Criar credenciais → ID do cliente OAuth** (tipo "Aplicativo da Web").
-2. Em **URIs de redirecionamento autorizados**, coloque: `https://SEU-SITE/api/auth/google/callback`.
-3. Copie o **ID do cliente** (`GOOGLE_CLIENT_ID`) e a **chave secreta** (`GOOGLE_CLIENT_SECRET`).
-4. Na **Tela de consentimento OAuth**, preencha nome do app, e-mail de suporte e publique.
-
-### O primeiro administrador
-
-O acesso é só por convite, e só administradores convidam. Para o **primeiro acesso**, coloque o seu e-mail do Google em `ADMIN_EMAILS` (pode ser mais de um, separados por vírgula). Quem está nessa lista entra sem convite e já vira administrador. Depois disso, convide as outras pessoas pela tela **Mais → Convites**.
-
-## 6. Notificações no celular (opcional)
-
-Rode `pnpm push:keys` no computador. Ele mostra `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`. Coloque as duas na API, junto com `VAPID_SUBJECT=mailto:seu-email@exemplo.com`. Sem elas, só o sino dentro do app funciona.
-
-## 7. Análise inteligente (opcional)
-
-- `AI_MODE=mock`: relatório montado com regras simples, sem custo e sem serviço externo.
-- `AI_MODE=anthropic`: usa o Claude. Crie uma chave no [Console da Anthropic](https://console.anthropic.com) e coloque em `ANTHROPIC_API_KEY`. O modelo fica em `AI_MODEL` (padrão `claude-opus-5-5`). Cada relatório tem custo; `AI_MIN_MINUTES` limita a frequência por pessoa (padrão: 1 a cada 5 minutos).
-
-## 8. Publicar a API (contêiner)
-
-A imagem é montada com o arquivo `apps/api/Dockerfile`, **a partir da raiz do projeto**:
+1. No GitHub, crie um repositório **privado** chamado `circle-of-life` (sem README, sem .gitignore).
+2. Envie o código (o Claude pode rodar estes comandos; o GitHub vai pedir login numa janela):
 
 ```bash
-docker build -f apps/api/Dockerfile -t circle-api .
+git remote add origin https://github.com/SEU-USUARIO/circle-of-life.git
+git push -u origin master
 ```
 
-A maioria dos hosts de contêiner faz isso sozinha ao ligar o repositório do GitHub: informe o caminho do Dockerfile (`apps/api/Dockerfile`) e a pasta de contexto (a raiz).
+A pasta `referencia/` e os arquivos `.env` nunca vão para o GitHub.
 
-Ao iniciar, o contêiner aplica as migrations e sobe a API. Configure estas variáveis no painel do host:
+## 3. Banco de dados (Supabase)
+
+1. Crie um projeto no [Supabase](https://supabase.com). Região: **South America (São Paulo)**. Guarde a senha do banco.
+2. Clique em **Connect** (no topo) e copie a conexão **Session pooler** (formato `postgresql://postgres.xxxx:SENHA@aws-...pooler.supabase.com:5432/postgres`). Troque `[YOUR-PASSWORD]` pela senha. Esse é o `DATABASE_URL`.
+   - Use o **Session pooler**: a conexão direta não funciona a partir da Vercel.
+3. Não crie tabelas: a cada publicação, a Vercel aplica as "migrations" (os passos de mudança do banco guardados no código).
+
+**Nunca rode o seed em produção.** Ele só existe para os dados de exemplo do computador local.
+
+## 4. Fotos (Supabase Storage)
+
+1. No Supabase, vá em **Storage → New bucket**, nome `circle-of-life`, **privado** (Public bucket desligado).
+2. Em **Project Settings → Storage → S3 Connection**: ligue **Enable connection via S3 protocol**. Anote o **Endpoint** e a **Region**.
+3. Em **S3 Access Keys → New access key**: anote o **Access key ID** e o **Secret access key** (o segredo só aparece uma vez).
+
+## 5. API na Vercel (projeto circle-api)
+
+1. Na Vercel: **Add New → Project**, escolha o repositório `circle-of-life`.
+2. **Project Name**: `circle-api`. **Root Directory**: `apps/api`. **Framework Preset**: Other. (Os comandos de instalar e montar já estão no arquivo `apps/api/vercel.json`.)
+3. Em **Environment Variables**, cole as variáveis abaixo e clique **Deploy**.
 
 | Variável | Valor |
 |---|---|
-| `NODE_ENV` | `production` (desliga o login de teste: a rota nem existe) |
-| `API_PORT` | a porta que o host espera (muitos usam `8080`; veja a documentação dele) |
-| `WEB_URL` | endereço do site, com `https://` |
-| `DATABASE_URL` | do passo 2 |
-| `S3_*` | do passo 3 |
-| `SMTP_*` | do passo 4 |
-| `JWT_SECRET` | um texto aleatório e longo (40+ caracteres). Gere com `openssl rand -base64 48`. Nunca reutilize o do `.env.example` (a API se recusa a iniciar com ele). |
-| `SESSION_DAYS` | dias que a pessoa fica logada (padrão 30) |
-| `COOKIE_DOMAIN` | deixe vazio (o site repassa a API pelo mesmo endereço) |
+| `WEB_URL` | endereço do site (passo 6), ex.: `https://circle-web.vercel.app`. Na primeira vez, coloque o endereço que a Vercel vai dar ao site (`https://circle-web.vercel.app`) e confira depois. |
+| `DATABASE_URL` | do passo 3 |
+| `DATABASE_POOL_MAX` | `3` |
+| `S3_ENDPOINT` e `S3_PUBLIC_ENDPOINT` | o Endpoint do passo 4 (os dois iguais) |
+| `S3_REGION` | a Region do passo 4 |
+| `S3_BUCKET` | `circle-of-life` |
+| `S3_ACCESS_KEY_ID` e `S3_SECRET_ACCESS_KEY` | a chave do passo 4 |
+| `S3_FORCE_PATH_STYLE` | `true` |
+| `S3_CREATE_BUCKET` | `false` |
+| `S3_CORS_ORIGINS` | endereço do site |
+| `JWT_SECRET` | um texto aleatório e longo (40+ caracteres), ex.: gerado em [1password.com/password-generator](https://1password.com/password-generator) |
 | `SIGNUP_MODE` | `invite` |
-| `ADMIN_EMAILS` | o seu e-mail do Google |
-| `INVITE_DAYS` | validade dos convites (padrão 7) |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | do passo 5 |
-| `VAPID_*`, `OVERDUE_HOUR` | do passo 6 (opcional) |
-| `AI_MODE`, `ANTHROPIC_API_KEY`, `AI_MODEL`, `AI_MIN_MINUTES` | do passo 7 |
+| `ADMIN_EMAILS` | o seu e-mail do Google (você entra sem convite e vira administrador) |
+| `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` | do passo 7 (pode deixar para depois e publicar de novo) |
+| `CRON_SECRET` | outro texto aleatório (a Vercel usa para chamar as tarefas diárias) |
+| `DISABLE_SCHEDULE` | `true` |
+| `AI_MODE` | `mock` (ou `anthropic` + `ANTHROPIC_API_KEY`) |
 
-Se faltar alguma variável, a API não inicia e mostra no log exatamente qual falta.
+Deixe vazias as variáveis de e-mail (`SMTP_*`): o envio fica desligado.
 
-Teste: `https://ENDERECO-DA-API/api/health` deve responder com `"status":"ok"` (e mostra se o banco e o storage estão acessíveis).
+Teste: `https://circle-api.vercel.app/api/health` deve responder com `"status":"ok"` (e mostra se o banco e o storage estão acessíveis).
 
-> A API roda tarefas agendadas (aviso de tarefas atrasadas e limpeza de stories vencidos) a cada hora. Mantenha **uma instância sempre ligada**; hosts que "dormem" sem acesso atrasam esses avisos.
+## 6. Site na Vercel (projeto circle-web)
 
-## 9. Publicar o site (Vercel)
+1. **Add New → Project** de novo, o mesmo repositório.
+2. **Project Name**: `circle-web`. **Root Directory**: `apps/web`. **Framework Preset**: Next.js (os comandos estão em `apps/web/vercel.json`).
+3. Variável: `API_INTERNAL_URL` = endereço da API, ex.: `https://circle-api.vercel.app` (sem barra no final).
+4. **Deploy**. Se o endereço final do site for diferente do que você colocou em `WEB_URL` e `S3_CORS_ORIGINS` na API, corrija lá e publique a API de novo (**Deployments → ⋯ → Redeploy**).
 
-1. Na [Vercel](https://vercel.com), importe o repositório do GitHub.
-2. **Root Directory**: `apps/web`.
-3. **Build Command**: `cd ../.. && pnpm --filter @circle/shared build && pnpm --filter @circle/web build`
-4. **Install Command**: `cd ../.. && pnpm install --frozen-lockfile`
-5. Variável de ambiente: `API_INTERNAL_URL` = endereço da API (ex.: `https://circle-api.onrender.com`), sem barra no final.
-6. Publique e, se quiser, ligue o domínio próprio em **Settings → Domains**. Lembre de atualizar `WEB_URL`, `S3_CORS_ORIGINS` e o endereço de retorno do Google (passo 5) se o endereço mudar.
+## 7. Login com Google
 
-## 10. Conferência final
+1. No [Google Cloud Console](https://console.cloud.google.com): **APIs e serviços → Credenciais → Criar credenciais → ID do cliente OAuth**, tipo **Aplicativo da Web**.
+2. **Origens JavaScript autorizadas**: o endereço do site. **URIs de redirecionamento autorizados**: `https://ENDERECO-DO-SITE/api/auth/google/callback`.
+3. Copie o **ID do cliente** e a **Chave secreta** para `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no projeto **circle-api** e publique a API de novo.
+4. Na **Tela de consentimento OAuth**, preencha nome do app e e-mail de suporte. Enquanto estiver "Em teste", só entram os e-mails cadastrados em **Usuários de teste**; para liberar, clique em **Publicar app**.
 
-- [ ] `/api/health` responde.
+## 8. Conferência final
+
+- [ ] `https://circle-api.vercel.app/api/health` responde com `"status":"ok"`.
 - [ ] Entrar com o Google usando o e-mail de `ADMIN_EMAILS`.
-- [ ] Mandar um convite para outro e-mail e ver se ele chega.
-- [ ] Enviar uma foto de perfil (confere o storage e o CORS).
+- [ ] A tela de login **não** mostra usuários de teste.
+- [ ] Enviar uma foto de perfil (confere o storage).
 - [ ] Criar uma tarefa, mover para Pronto e ver o XP.
-- [ ] A tela de login **não** mostra os usuários de teste.
-- [ ] (Se ativou) gerar um relatório da análise inteligente.
+- [ ] Convidar um e-mail e entrar com ele (a tela avisa que o e-mail está desligado).
+- [ ] Na Vercel, projeto circle-api → **Settings → Cron Jobs**: aparece `/api/cron/daily`.
 
-## 11. Segurança — o que já está feito
+## 9. Outras opções (para o futuro)
 
-- Sessão em cookie `httpOnly` (o JavaScript da página não lê), `SameSite=Lax` e `Secure` quando o site está em `https`.
-- Login de teste só existe com `NODE_ENV=development`; em produção a rota não é registrada.
-- Toda rota exige login, exceto login, convite e health check. Cada pessoa só vê os próprios dados; posts, stories e grupos respeitam amizade, grupo e visibilidade.
-- Toda entrada é validada; o texto do necrológio é limpo no servidor antes de salvar.
-- Fotos vão direto para um bucket privado, com endereços temporários.
-- Convites guardam só o "resumo" (hash) do código, não o código.
+- **E-mail:** preencha `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` e `SMTP_FROM` (Resend, Brevo, e-mail da empresa…) e publique de novo.
+- **Notificações no celular:** rode `pnpm push:keys` e cadastre `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` na API.
+- **API sempre ligada** (tarefas de hora em hora): o arquivo `apps/api/Dockerfile` monta a API para qualquer host de contêiner (ainda não testado). Nesse caso, `DISABLE_SCHEDULE=false` e `CRON_SECRET` vazio.
+
+## 10. Segurança — o que já está feito
+
+- Sessão em cookie `httpOnly`, `SameSite=Lax` e `Secure` em `https`.
+- Login de teste só existe com `NODE_ENV=development` (a Vercel usa `production`).
+- Toda rota exige login, exceto login, convite, health check e a rota diária (que exige o `CRON_SECRET`).
+- Fotos em bucket privado, com endereços temporários. O projeto da API não publica nenhum arquivo do código (pasta `public` vazia).
 - Cabeçalhos de segurança básicos no site e na API.
-- `pnpm audit` sem vulnerabilidades conhecidas na data desta etapa.
-
-**Pendente para o futuro:** limite de tentativas por IP nas rotas de login (hoje o Google já protege o login), política de segurança de conteúdo (CSP) no site e backups automáticos do banco (o Supabase faz backups diários nos planos pagos).
