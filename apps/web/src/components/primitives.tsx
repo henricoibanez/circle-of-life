@@ -137,7 +137,8 @@ export function Avatar({
     .join('')
     .toUpperCase();
   return (
-    <span className={`${size} inline-flex shrink-0 rounded-full ${ring ? 'p-[0.1875rem] ring-2 ring-primary/60 ring-offset-2 ring-offset-bg' : ''}`}>
+    // Sempre quadrado (aspect-square) e recortado no círculo: fotos retangulares de celular não vazam do contorno.
+    <span className={`${size} inline-flex aspect-square shrink-0 overflow-hidden rounded-full ${ring ? 'p-[0.1875rem] ring-2 ring-primary/60 ring-offset-2 ring-offset-bg' : ''}`}>
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={photo} alt="" className="h-full w-full rounded-full object-cover" />
