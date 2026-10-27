@@ -231,6 +231,12 @@ export function PublishSheet({ initiativeId, onClose }: { initiativeId: string; 
         </Field>
         <Field label="Descrição">
           <textarea rows={3} maxLength={600} className={inputCls} value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="Para quem é e o que a pessoa vai conquistar" />
+          {/* O botão só liga com 10+ letras na descrição: dizer quanto falta, para ninguém ficar sem saber por quê. */}
+          {f.description.trim().length < 10 && (
+            <p className="mt-1 text-xs text-amber-700">
+              Escreva pelo menos 10 letras para enviar (faltam {10 - f.description.trim().length}).
+            </p>
+          )}
         </Field>
         <Field label="Categoria">
           <select className={inputCls} value={f.category} onChange={e => setF({ ...f, category: e.target.value as TrilhaCategory })}>

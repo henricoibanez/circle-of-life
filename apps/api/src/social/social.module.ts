@@ -1,9 +1,10 @@
 import { AREA_IDS, type AreaId } from '@circle/shared';
-import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Query } from '@nestjs/common';
 import { IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import { CurrentUser } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { TrilhasModule } from '../trilhas/trilhas.module';
+import { ForumService } from './forum.service';
 import { FriendsService } from './friends.service';
 import { GroupsService } from './groups.service';
 import { PeopleService } from './people.service';
@@ -23,6 +24,13 @@ class GroupPatchDto {
   @IsOptional() @IsIn(AREA_IDS, { message: 'área inválida' }) area?: AreaId;
   @IsOptional() @ValidateIf((_, v) => v !== null) @IsString() coverFileId?: string | null;
 }
+class TopicBody {
+  @IsString() @MinLength(3, { message: 'o título precisa ter pelo menos 3 caracteres' }) @MaxLength(120, { message: 'o título pode ter até 120 caracteres' }) title!: string;
+  @IsOptional() @IsString() @MaxLength(3000, { message: 'o texto pode ter até 3.000 caracteres' }) text?: string;
+}
+class ReplyBody {
+  @IsString() @MinLength(1, { message: 'escreva a resposta' }) @MaxLength(2000, { message: 'a resposta pode ter até 2.000 caracteres' }) text!: string;
+}
 class GroupTrilhaDto {
   @IsString() trilhaId!: string;
 }
@@ -34,6 +42,10 @@ class FriendsController {
   @Get()
   list(@CurrentUser() u: User) {
     return this.friends.list(u.id);
+  }
+  @Get('search')
+  search(@CurrentUser() u: User, @Query('q') q = '') {
+    return this.friends.search(u, q.slice(0, 60));
   }
   @Post('requests')
   request(@CurrentUser() u: User, @Body() dto: FriendRequestDto) {
@@ -99,10 +111,42 @@ class GroupsController {
   }
 }
 
+/** Fórum do grupo: tópicos e respostas, só para membros. */
+@Controller('groups/:id/topics')
+class ForumController {
+  constructor(private readonly forum: ForumService) {}
+
+  @Get()
+  list(@CurrentUser() u: User, @Param('id') id: string) {
+    return this.forum.list(u, id);
+  }
+  @Post()
+  create(@CurrentUser() u: User, @Param('id') id: string, @Body() dto: TopicBody) {
+    return this.forum.create(u, id, dto);
+  }
+  @Get(':topicId')
+  detail(@CurrentUser() u: User, @Param('id') id: string, @Param('topicId') topicId: string) {
+    return this.forum.detail(u, id, topicId);
+  }
+  @Post(':topicId/replies')
+  reply(@CurrentUser() u: User, @Param('id') id: string, @Param('topicId') topicId: string, @Body() dto: ReplyBody) {
+    return this.forum.reply(u, id, topicId, dto.text);
+  }
+  @Delete(':topicId')
+  @HttpCode(204)
+  removeTopic(@CurrentUser() u: User, @Param('id') id: string, @Param('topicId') topicId: string) {
+    return this.forum.removeTopic(u, id, topicId);
+  }
+  @Delete(':topicId/replies/:replyId')
+  removeReply(@CurrentUser() u: User, @Param('id') id: string, @Param('topicId') topicId: string, @Param('replyId') replyId: string) {
+    return this.forum.removeReply(u, id, topicId, replyId);
+  }
+}
+
 @Module({
   imports: [TrilhasModule],
-  controllers: [FriendsController, GroupsController],
-  providers: [PeopleService, FriendsService, GroupsService],
+  controllers: [FriendsController, GroupsController, ForumController],
+  providers: [PeopleService, FriendsService, GroupsService, ForumService],
   exports: [PeopleService, FriendsService, GroupsService],
 })
 export class SocialModule {}

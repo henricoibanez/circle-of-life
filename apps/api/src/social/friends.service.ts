@@ -1,4 +1,4 @@
-import type { FriendsDto } from '@circle/shared';
+import type { FriendsDto, PersonSearchDto } from '@circle/shared';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../config/env';
@@ -37,6 +37,38 @@ export class FriendsService {
       received: rows.filter(r => r.status === 'pending' && r.addresseeId === userId).map(map),
       sent: rows.filter(r => r.status === 'pending' && r.requesterId === userId).map(map),
     };
+  }
+
+  /**
+   * Busca pessoas que já usam o app, pelo nome ou @ID (não pelo e-mail, que fica privado).
+   * Cada resultado diz a situação com você: amigo, pedido enviado, pedido recebido ou nenhuma.
+   */
+  async search(me: User, q: string): Promise<PersonSearchDto[]> {
+    const term = q.trim().replace(/^@/, '');
+    if (term.length < 2) return [];
+    const rows = await this.prisma.user.findMany({
+      where: {
+        id: { not: me.id },
+        OR: [{ name: { contains: term, mode: 'insensitive' } }, { handle: { contains: term.toLowerCase() } }],
+      },
+      select: PERSON_SELECT,
+      orderBy: { name: 'asc' },
+      take: 8,
+    });
+    const links = await this.prisma.friendship.findMany({
+      where: {
+        OR: [
+          { requesterId: me.id, addresseeId: { in: rows.map(r => r.id) } },
+          { addresseeId: me.id, requesterId: { in: rows.map(r => r.id) } },
+        ],
+      },
+    });
+    const people = await this.people.many(rows);
+    return people.map(p => {
+      const l = links.find(x => x.requesterId === p.id || x.addresseeId === p.id);
+      const relation = !l ? null : l.status === 'accepted' ? 'amigo' : l.requesterId === me.id ? 'enviado' : 'recebido';
+      return { ...p, relation, requestId: l && l.status === 'pending' ? l.id : null };
+    });
   }
 
   /** Pede amizade por e-mail ou @ID. Se a outra pessoa já tinha pedido, vira amizade na hora. */

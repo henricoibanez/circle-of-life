@@ -1,15 +1,17 @@
 'use client';
 
-import Link from 'next/link';
 import { useUnreadCount } from '@/lib/notifications';
 import { Icon } from './icon';
+import { NotificationsSheet } from './notifications-sheet';
+import { useSheets } from './sheet';
 
-/** Sino com o número de notificações não lidas. */
+/** Sino com o número de notificações não lidas. Abre as notificações numa folha. */
 export function Bell({ className = '' }: { className?: string }) {
   const { data: count = 0 } = useUnreadCount();
+  const { openSheet } = useSheets();
   return (
-    <Link
-      href="/notificacoes"
+    <button
+      onClick={() => openSheet(close => <NotificationsSheet onClose={close} />)}
       aria-label={count ? `Notificações: ${count} não lidas` : 'Notificações'}
       className={`relative grid h-10 w-10 place-items-center text-ink/80 ${className}`}
     >
@@ -19,6 +21,6 @@ export function Bell({ className = '' }: { className?: string }) {
           {count > 99 ? '99+' : count}
         </span>
       )}
-    </Link>
+    </button>
   );
 }

@@ -3,8 +3,9 @@
 import { AREA, type PostDto, VISIBILITY } from '@circle/shared';
 import { useState } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
+import { PostForm } from '@/components/feed/post-form';
 import { Icon, type IconName } from '@/components/icon';
-import { Avatar, Card, IconBtn, inputCls, Seg } from '@/components/primitives';
+import { Avatar, Card, IconBtn, inputCls } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ export function PostCard({ p }: { p: PostDto }) {
     openActions('Post', [
       { icon: 'bookmark', label: p.saved ? 'Remover dos salvos' : 'Salvar post', run: save },
       { icon: 'copy', label: 'Copiar texto', run: () => copy('Texto copiado') },
-      p.mine && !g && { icon: vis.icon, label: 'Quem pode ver', run: () => openSheet(close => <VisibilitySheet p={p} onClose={close} />) },
+      p.mine && { icon: 'edit', label: 'Editar post', run: () => openSheet(close => <PostForm post={p} onClose={close} />) },
       p.mine && {
         icon: 'trash',
         label: 'Excluir post',
@@ -157,36 +158,6 @@ export function PostCard({ p }: { p: PostDto }) {
         </div>
       )}
     </Card>
-  );
-}
-
-function VisibilitySheet({ p, onClose }: { p: PostDto; onClose: () => void }) {
-  const actions = useFeedActions();
-  const toast = useToast();
-  const [v, setV] = useState(p.visibility);
-  return (
-    <Sheet
-      title="Quem pode ver"
-      onClose={onClose}
-      footer={
-        <Button
-          className="flex-1"
-          onClick={() =>
-            actions.update(p.id, { visibility: v }).then(
-              () => {
-                toast('Visibilidade atualizada');
-                onClose();
-              },
-              () => toast('Não foi possível salvar.'),
-            )
-          }
-        >
-          Salvar
-        </Button>
-      }
-    >
-      <Seg items={VISIBILITY.map(x => ({ id: x.id, label: x.label }))} value={v} onChange={setV} />
-    </Sheet>
   );
 }
 

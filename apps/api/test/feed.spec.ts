@@ -152,6 +152,25 @@ describe('Feed', () => {
     assert.equal((await ana.c.request('GET', `/posts/${id}`)).status, 404);
   });
 
+  test('editar: troca texto, área, hashtags e imagens (as que saem são apagadas)', async () => {
+    const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    const photo = async () => {
+      const u = (await ana.c.request('POST', '/uploads', { purpose: 'post', mime: 'image/png', size: PNG.length, name: 'f.png' })).body;
+      await fetch(u.uploadUrl, { method: 'PUT', headers: u.headers, body: new Uint8Array(PNG) });
+      await ana.c.request('POST', `/uploads/${u.fileId}/confirm`);
+      return u.fileId as string;
+    };
+    const [a, b] = [await photo(), await photo()];
+    const id = (await ana.c.request('POST', '/posts', { text: 'Com fotos', mediaIds: [a] })).body.post.id;
+    const r = await ana.c.request('PATCH', `/posts/${id}`, { text: 'Com outra foto', area: 'lazer', tags: ['viagem'], mediaIds: [b] });
+    assert.equal(r.status, 200);
+    assert.equal(r.body.text, 'Com outra foto');
+    assert.equal(r.body.area, 'lazer');
+    assert.deepEqual(r.body.tags, ['viagem']);
+    assert.deepEqual(r.body.media.map((m: { id: string }) => m.id), [b]);
+    assert.equal(await api.prisma.file.count({ where: { id: a } }), 0, 'a foto que saiu foi apagada');
+  });
+
   test('paginação com cursor', async () => {
     for (let i = 0; i < 22; i++) await duda.c.request('POST', '/posts', { text: `Lote ${i}` });
     const p1 = (await duda.c.request('GET', `/feed?author=${duda.user.id}`)).body;

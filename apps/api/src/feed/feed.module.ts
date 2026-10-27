@@ -25,6 +25,7 @@ class UpdatePostDto {
   @IsOptional() @ValidateIf((_, v) => v !== null) @IsIn(AREA_IDS, { message: 'área inválida' }) area?: AreaId | null;
   @IsOptional() @IsIn(VIS, { message: 'visibilidade inválida' }) visibility?: Visibility;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) @MaxLength(30, { each: true }) tags?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_IMAGES, { message: `até ${MAX_POST_IMAGES} imagens por post` }) @IsString({ each: true }) mediaIds?: string[];
 }
 class CommentBody {
   @IsString() @MinLength(1, { message: 'escreva um comentário' }) @MaxLength(1000, { message: 'o comentário pode ter até 1.000 caracteres' }) text!: string;

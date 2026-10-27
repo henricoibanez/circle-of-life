@@ -9,6 +9,7 @@ import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
 import { Avatar, Card, IconBtn, inputCls, Seg } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
+import { AddFriend } from '@/components/social/add-friend';
 import { GroupCover, GroupForm } from '@/components/social/group-sheets';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -174,9 +175,6 @@ function AmigosTab() {
   const actions = useSocialActions();
   const toast = useToast();
   const { openSheet } = useSheets();
-  const [who, setWho] = useState('');
-  const [busy, setBusy] = useState(false);
-
   const run = async (fn: () => Promise<unknown>, ok?: string) => {
     try {
       await fn();
@@ -186,36 +184,9 @@ function AmigosTab() {
     }
   };
 
-  const send = async () => {
-    setBusy(true);
-    try {
-      const r = await actions.request(who.trim());
-      toast(r.status === 'amigos' ? 'Vocês agora são amigos' : 'Pedido enviado');
-      setWho('');
-    } catch (e) {
-      toast(e instanceof ApiError ? e.message : 'Não foi possível enviar o pedido.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <>
-      <Card className="p-4">
-        <h2 className="mb-2 font-semibold">Adicionar amigo</h2>
-        <form
-          className="flex gap-2"
-          onSubmit={e => {
-            e.preventDefault();
-            if (who.trim().length >= 2) send();
-          }}
-        >
-          <input value={who} onChange={e => setWho(e.target.value)} placeholder="E-mail ou @ID do amigo" className={inputCls} autoCapitalize="none" />
-          <Button variant="accent" type="submit" disabled={busy || who.trim().length < 2}>
-            Enviar
-          </Button>
-        </form>
-      </Card>
+      <AddFriend />
       {!!data?.received.length && (
         <section>
           <h2 className="mb-2 font-semibold">Solicitações recebidas</h2>

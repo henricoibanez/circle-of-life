@@ -1,7 +1,8 @@
 'use client';
 
 import { AREA } from '@circle/shared';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
 import { PostCard } from '@/components/feed/post-card';
 import { usePostForm } from '@/components/feed/post-form';
@@ -9,6 +10,7 @@ import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
 import { Avatar, Card, Empty, IconBtn, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
+import { ForumSection, TopicSheet } from '@/components/social/forum';
 import { AddTrilhaSheet, GroupCover, GroupForm } from '@/components/social/group-sheets';
 import { useToast } from '@/components/toasts';
 import { Cover, priceLabel, TrilhaSheet } from '@/components/trilhas/trilha-sheets';
@@ -21,7 +23,17 @@ import { useGroup, useSocialActions } from '@/lib/social';
 
 /** Página de um grupo: membros e trilhas escolhidas pelo administrador. */
 export default function GrupoPage() {
+  return (
+    <Suspense>
+      <Grupo />
+    </Suspense>
+  );
+}
+
+function Grupo() {
   const { id } = useParams<{ id: string }>();
+  const topico = useSearchParams().get('topico');
+  const openedTopic = useRef(false);
   const router = useRouter();
   const { data: g, error } = useGroup(id);
   const { data: me } = useMe();
@@ -30,6 +42,13 @@ export default function GrupoPage() {
   const { openSheet, openActions } = useSheets();
   const newPost = usePostForm();
   const posts = useFeed({ group: id });
+
+  // Aviso do sino ("?topico=..."): abre o tópico assim que a página do grupo carregar.
+  useEffect(() => {
+    if (!topico || !g?.member || openedTopic.current) return;
+    openedTopic.current = true;
+    openSheet(close => <TopicSheet groupId={id} topicId={topico} onClose={close} />);
+  }, [topico, g?.member, id, openSheet]);
 
   if (error) {
     return (
@@ -164,6 +183,8 @@ export default function GrupoPage() {
             <p className="text-sm text-muted">{g.admin ? 'Escolha trilhas da loja para o grupo seguir junto.' : 'O administrador ainda não escolheu trilhas.'}</p>
           )}
         </section>
+
+        {g.member && <ForumSection groupId={g.id} />}
 
         {g.member && (
           <section className="space-y-3">

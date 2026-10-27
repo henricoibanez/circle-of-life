@@ -194,9 +194,24 @@ export class FeedService {
     return p;
   }
 
-  async update(user: User, id: string, input: Partial<Pick<PostInput, 'title' | 'text' | 'area' | 'visibility' | 'tags'>>) {
+  /** Editar o próprio post. Com mediaIds, a lista de imagens é trocada (as que saírem são apagadas do storage). */
+  async update(user: User, id: string, input: Partial<Pick<PostInput, 'title' | 'text' | 'area' | 'visibility' | 'tags' | 'mediaIds'>>) {
     const p = await this.ownPost(user.id, id);
     if (!(input.text ?? p.text).trim() && !(input.title ?? p.title).trim()) throw new BadRequestException('Escreva alguma coisa ou dê um título à conquista.');
+    let removed: string[] = [];
+    if (input.mediaIds) {
+      const ids = [...new Set(input.mediaIds)];
+      const current = (await this.prisma.postMedia.findMany({ where: { postId: id }, select: { fileId: true } })).map(m => m.fileId);
+      for (const fileId of ids.filter(x => !current.includes(x))) {
+        await this.uploads.readyFile(user.id, fileId, 'post');
+        if (await this.prisma.postMedia.findUnique({ where: { fileId } })) throw new BadRequestException('Essa imagem já está em outro post.');
+      }
+      removed = current.filter(x => !ids.includes(x));
+      await this.prisma.$transaction([
+        this.prisma.postMedia.deleteMany({ where: { postId: id } }),
+        this.prisma.postMedia.createMany({ data: ids.map((fileId, position) => ({ postId: id, fileId, position })) }),
+      ]);
+    }
     await this.prisma.post.update({
       where: { id },
       data: {
@@ -207,6 +222,7 @@ export class FeedService {
         tags: input.tags ? cleanTags(input.tags) : undefined,
       },
     });
+    for (const fileId of removed) await this.uploads.remove(user.id, fileId).catch(() => undefined);
     return this.one(user, id);
   }
 

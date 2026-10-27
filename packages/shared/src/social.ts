@@ -4,6 +4,9 @@ import type { TrilhaDto } from './trilhas';
 /** Uma pessoa como aparece nas listas sociais. */
 export type PersonDto = { id: string; name: string; handle: string; photoUrl: string | null };
 
+/** Resultado da busca de pessoas ao adicionar amigo. */
+export type PersonSearchDto = PersonDto & { relation: 'amigo' | 'enviado' | 'recebido' | null; requestId: string | null };
+
 export type FriendsDto = {
   friends: PersonDto[];
   /** Pedidos que outras pessoas me mandaram. */
@@ -31,3 +34,21 @@ export type GroupDetailDto = GroupDto & {
   memberList: (PersonDto & { role: 'admin' | 'member' })[];
   trilhaList: TrilhaDto[];
 };
+
+// ---------- Fórum dos grupos ----------
+
+export type TopicDto = {
+  id: string;
+  title: string;
+  text: string;
+  author: PersonDto;
+  mine: boolean;
+  replies: number;
+  lastActivityAt: string;
+  createdAt: string;
+};
+
+export type ReplyDto = { id: string; author: PersonDto; mine: boolean; text: string; createdAt: string };
+
+/** Tópico aberto, com as respostas. `canModerate`: você é o administrador do grupo. */
+export type TopicDetailDto = TopicDto & { replyList: ReplyDto[]; canModerate: boolean };

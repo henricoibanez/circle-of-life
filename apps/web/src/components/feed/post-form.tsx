@@ -1,6 +1,6 @@
 'use client';
 
-import { AREAS, type AreaId, MAX_POST_IMAGES, type PostDraft, VISIBILITY, type Visibility } from '@circle/shared';
+import { AREAS, type AreaId, MAX_POST_IMAGES, type PostDraft, type PostDto, VISIBILITY, type Visibility } from '@circle/shared';
 import { useState } from 'react';
 import { Icon } from '@/components/icon';
 import { Avatar, Field, inputCls, Seg } from '@/components/primitives';
@@ -13,27 +13,43 @@ import { useMe } from '@/lib/me';
 import { useGroups } from '@/lib/social';
 import { uploadImage } from '@/lib/upload';
 
-/** Criar post (como no protótipo), com visibilidade. Pode vir preenchido ao compartilhar uma conclusão. */
-export function PostForm({ draft, groupId, onClose }: { draft?: PostDraft; groupId?: string; onClose: () => void }) {
+/**
+ * Criar post (como no protótipo), com visibilidade. Pode vir preenchido ao compartilhar uma conclusão.
+ * Com `post`, edita um post seu (o grupo não muda depois de publicado).
+ */
+export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft; groupId?: string; post?: PostDto; onClose: () => void }) {
   const { data: me } = useMe();
   const { data: groups } = useGroups();
   const actions = useFeedActions();
   const toast = useToast();
   const [f, setF] = useState({
-    title: draft?.title ?? '',
-    text: draft?.text ?? '',
-    area: (draft?.area ?? '') as AreaId | '',
-    group: groupId ?? '',
-    tags: '',
-    visibility: (me?.preferences.defaultPostVisibility ?? 'publico') as Visibility,
+    title: post?.title ?? draft?.title ?? '',
+    text: post?.text ?? draft?.text ?? '',
+    area: (post ? (post.area ?? '') : (draft?.area ?? '')) as AreaId | '',
+    group: post?.group?.id ?? groupId ?? '',
+    tags: post?.tags.join(', ') ?? '',
+    visibility: (post?.visibility ?? me?.preferences.defaultPostVisibility ?? 'publico') as Visibility,
   });
-  const [media, setMedia] = useState<{ id: string; url: string }[]>([]);
+  const [media, setMedia] = useState<{ id: string; url: string }[]>(post?.media ?? []);
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
 
   const publish = async () => {
     setBusy(true);
     try {
+      if (post) {
+        await actions.update(post.id, {
+          title: f.title.trim(),
+          text: f.text.trim(),
+          area: f.area || null,
+          tags: f.tags.split(/[\s,#]+/).filter(Boolean),
+          mediaIds: media.map(m => m.id),
+          ...(post.group ? {} : { visibility: f.visibility }),
+        });
+        toast('Post atualizado');
+        onClose();
+        return;
+      }
       const r = await actions.create({
         title: f.title.trim(),
         text: f.text.trim(),
@@ -48,7 +64,7 @@ export function PostForm({ draft, groupId, onClose }: { draft?: PostDraft; group
       toast(r.xp.gained > 0 ? `Publicado no feed, +${r.xp.gained} XP` : 'Publicado no feed');
       onClose();
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : 'Não foi possível publicar.');
+      toast(e instanceof ApiError ? e.message : post ? 'Não foi possível salvar.' : 'Não foi possível publicar.');
     } finally {
       setBusy(false);
     }
@@ -56,7 +72,7 @@ export function PostForm({ draft, groupId, onClose }: { draft?: PostDraft; group
 
   return (
     <Sheet
-      title="Criar post"
+      title={post ? 'Editar post' : 'Criar post'}
       onClose={onClose}
       footer={
         <>
@@ -64,7 +80,7 @@ export function PostForm({ draft, groupId, onClose }: { draft?: PostDraft; group
             Cancelar
           </Button>
           <Button className="flex-1" disabled={busy || uploading > 0 || (!f.text.trim() && !f.title.trim())} onClick={publish}>
-            Publicar
+            {post ? 'Salvar' : 'Publicar'}
           </Button>
         </>
       }
@@ -147,7 +163,7 @@ export function PostForm({ draft, groupId, onClose }: { draft?: PostDraft; group
             </select>
           </Field>
           <Field label="Grupo">
-            <select className={inputCls} value={f.group} onChange={e => setF({ ...f, group: e.target.value })}>
+            <select className={inputCls} value={f.group} disabled={Boolean(post)} onChange={e => setF({ ...f, group: e.target.value })}>
               <option value="">Nenhum</option>
               {groups?.mine.map(g => (
                 <option key={g.id} value={g.id}>

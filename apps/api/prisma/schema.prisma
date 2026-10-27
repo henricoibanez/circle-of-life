@@ -102,6 +102,8 @@ model User {
   storyLikes             StoryLike[]
   storyViews             StoryView[]
   analysisReports        AnalysisReport[]
+  groupTopics            GroupTopic[]
+  groupReplies           GroupReply[]
 
   @@map("users")
 }
@@ -481,6 +483,8 @@ enum NotificationType {
   trilha_pendente
   grupo_entrada
   grupo_trilha
+  grupo_topico
+  grupo_resposta
 }
 
 /// Notificação do sino (e, se ativado, também enviada ao celular).
@@ -658,6 +662,7 @@ model Group {
   members     GroupMember[]
   trilhas     GroupTrilha[]
   posts       Post[]
+  topics      GroupTopic[]
 
   @@map("groups")
 }
@@ -846,4 +851,37 @@ model AnalysisReport {
 
   @@index([userId, createdAt])
   @@map("analysis_reports")
+}
+
+// ---------- Fórum dos grupos ----------
+
+/// Tópico do fórum de um grupo. Só os membros leem e escrevem.
+model GroupTopic {
+  id             String       @id @default(cuid())
+  groupId        String
+  group          Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title          String
+  text           String       @default("")
+  /// Última resposta (ou a criação): a lista mostra primeiro os tópicos mais movimentados.
+  lastActivityAt DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  replies        GroupReply[]
+
+  @@index([groupId, lastActivityAt])
+  @@map("group_topics")
+}
+
+model GroupReply {
+  id        String     @id @default(cuid())
+  topicId   String
+  topic     GroupTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime   @default(now())
+
+  @@index([topicId, createdAt])
+  @@map("group_replies")
 }
