@@ -1,4 +1,5 @@
 import { BadRequestException, ValidationPipe, type INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
 /** Configurações comuns à API de verdade e aos testes. */
@@ -6,6 +7,8 @@ export function setupApp(app: INestApplication) {
   // Todas as rotas ficam em /api/... (o site repassa /api/* para cá).
   app.setGlobalPrefix('api');
   app.use(cookieParser());
+  // Importar planilha manda até ~3 mil linhas de uma vez (o padrão do Express é 100 KB).
+  (app as NestExpressApplication).useBodyParser('json', { limit: '4mb' });
   // Cabeçalhos de segurança básicos (a API só responde JSON).
   const http = app.getHttpAdapter().getInstance() as { disable?: (k: string) => void };
   http.disable?.('x-powered-by');

@@ -3,9 +3,53 @@ import { CurrentUser } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { SprintsController } from '../sprints/sprints.controller';
 import { SprintsService } from '../sprints/sprints.service';
+import { MAX_IMPORT_ROWS } from '@circle/shared';
+import { Type } from 'class-transformer';
+import { ArrayMaxSize, IsArray, IsBoolean, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { BacklogIoService } from './backlog-io.service';
 import { BacklogService } from './backlog.service';
 import { AttachDto, ChecklistItemDto, CreateEpicDto, CreateInitiativeDto, CreateTaskDto, MoveTaskDto, UpdateChecklistItemDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
 import { TaskDetailService } from './task-detail.service';
+
+/** Uma linha da planilha (todas as colunas como texto). */
+class BacklogRowDto {
+  @IsString() @MaxLength(200) area!: string;
+  @IsString() @MaxLength(200) iniciativa!: string;
+  @IsString() @MaxLength(2000) iniciativaDescricao!: string;
+  @IsString() @MaxLength(200) epico!: string;
+  @IsString() @MaxLength(2000) epicoDescricao!: string;
+  @IsString() @MaxLength(300) tarefa!: string;
+  @IsString() @MaxLength(4000) tarefaDescricao!: string;
+  @IsString() @MaxLength(40) previsao!: string;
+  @IsString() @MaxLength(40) status!: string;
+  @IsString() @MaxLength(40) prioridade!: string;
+  @IsString() @MaxLength(40) master!: string;
+}
+class BacklogImportDto {
+  @IsArray()
+  @ArrayMaxSize(MAX_IMPORT_ROWS, { message: `a planilha pode ter até ${MAX_IMPORT_ROWS} linhas` })
+  @ValidateNested({ each: true })
+  @Type(() => BacklogRowDto)
+  rows!: BacklogRowDto[];
+  /** false = só mostra o que vai entrar; true = grava. */
+  @IsBoolean() apply!: boolean;
+}
+
+/** Exportar e importar o backlog em planilha (modelo do app antigo). */
+@Controller('backlog')
+class BacklogIoController {
+  constructor(private readonly io: BacklogIoService) {}
+
+  @Get('export')
+  export(@CurrentUser() u: User) {
+    return this.io.export(u.id);
+  }
+  @Post('import')
+  @HttpCode(200)
+  import(@CurrentUser() u: User, @Body() dto: BacklogImportDto) {
+    return this.io.import(u.id, dto.rows, dto.apply);
+  }
+}
 
 @Controller()
 class BacklogController {
@@ -124,8 +168,8 @@ class BacklogController {
 }
 
 @Module({
-  controllers: [BacklogController, SprintsController],
-  providers: [BacklogService, SprintsService, TaskDetailService],
+  controllers: [BacklogController, BacklogIoController, SprintsController],
+  providers: [BacklogService, SprintsService, TaskDetailService, BacklogIoService],
   exports: [BacklogService, SprintsService],
 })
 export class BacklogModule {}

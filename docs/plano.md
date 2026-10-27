@@ -751,7 +751,7 @@ Do essencial ao menos importante. Cada etapa termina com algo que dá para ver o
 
 ## 7. Fora desta versão (registrado para o futuro)
 
-- **Migração do app antigo**: converter usuários e dados do app antigo para este. Por isso não haverá importação/exportação de Excel agora.
+- **Migração do app antigo**: converter usuários e dados do app antigo para este. A importação/exportação de tarefas em Excel (modelo do app antigo) entrou em 27/10/2026, no Backlog; a migração completa de usuários e dados continua para o futuro.
 - Seções e progresso no necrológio.
 - Nível e streak (até existirem regras definidas).
 - Publicação na App Store e no Google Play (depois do beta). O app será empacotado a partir do mesmo código web.

@@ -9,3 +9,4 @@ export * from './trilhas';
 export * from './social';
 export * from './feed';
 export * from './analysis';
+export * from './backlog-io';

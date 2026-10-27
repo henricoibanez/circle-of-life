@@ -4,6 +4,7 @@ import { AREA, AREAS, type AreaId } from '@circle/shared';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { EpicCard, TaskLine } from '@/components/backlog/backlog-items';
+import { ImportSheet } from '@/components/backlog/import-sheet';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { useCelebrate } from '@/components/celebrate';
 import { PublishSheet } from '@/components/trilhas/trilha-sheets';
@@ -13,6 +14,7 @@ import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { epicTasks, initEpics, progress, taskArea, useBacklog, useBacklogActions } from '@/lib/backlog';
+import { downloadBacklogSpreadsheet } from '@/lib/backlog-io';
 
 type Tab = 'ini' | 'epi' | 'tar';
 type TaskFilter = 'backlog' | 'sprint' | 'done';
@@ -105,6 +107,16 @@ export default function BacklogPage() {
           openActions('Backlog', [
             { icon: 'target', label: 'Nova iniciativa', run: () => sheets.openInitiative() },
             { icon: 'bag', label: 'Importar trilha da loja', run: () => router.push('/loja') },
+            { icon: 'download', label: 'Importar tarefas (planilha)', run: () => openSheet(close => <ImportSheet onClose={close} />) },
+            {
+              icon: 'share',
+              label: 'Exportar tarefas (planilha)',
+              run: () =>
+                downloadBacklogSpreadsheet().then(
+                  n => toast(n ? 'Planilha baixada' : 'Planilha baixada (o backlog está vazio)'),
+                  () => toast('Não foi possível gerar a planilha.'),
+                ),
+            },
             { icon: 'filter', label: 'Filtrar por área', run: areaFilter },
             { icon: 'chevD', label: 'Expandir todas as iniciativas', run: () => setOpen(Object.fromEntries(data.initiatives.map(i => [i.id, true]))) },
             { icon: 'chevU', label: 'Recolher todas', run: () => setOpen({}) },
