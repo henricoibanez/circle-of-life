@@ -397,6 +397,8 @@ model File {
 
 ### Trilhas
 
+> **Atualização (28/10/2026, decisão do dono):** a trilha passou a ser **um épico** com as tarefas (não mais a iniciativa inteira), e pode pertencer a um **grupo** (`groupId`; só membros veem). Na loja, aprovação do admin do app; no grupo, o gestor publica direto e os membros sugerem para os gestores aprovarem. Trazer da loja para o grupo cria uma cópia do grupo (`copiedFromId`). Ao importar, a pessoa escolhe a iniciativa. `TrilhaEpic` e `GroupTrilha` deixaram de existir; `Trilha` tem `area`, `sourceEpicId`, `groupId`, `copiedFromId` e `TrilhaTask` aponta direto para a trilha. Veja `apps/api/prisma/schema.prisma` e o CLAUDE.md. O texto abaixo é o desenho original.
+
 Uma trilha publicada é uma **cópia congelada** da iniciativa no momento da publicação. Mudanças posteriores no backlog do autor não alteram a trilha; para atualizar, ele publica de novo (nova versão).
 
 ```prisma

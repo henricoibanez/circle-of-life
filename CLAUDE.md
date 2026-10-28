@@ -71,13 +71,17 @@ Cada área tem também uma pergunta principal, um slogan e duas perguntas de ref
 
 ### Iniciativa > Épico > Tarefa
 
-- **Iniciativa**: objetivo estratégico de alto nível (ex.: "Vida longa e próspera"). Tem uma ou mais áreas da vida. Pode ser marcada como **Objetivo Master**. Pode ser **publicada como trilha** na loja. Quando todos os seus épicos estão encerrados, pode ser **concluída** (vira conquista).
-- **Épico**: conjunto de entregas relacionadas, dentro de uma iniciativa (ex.: "Comprar uma casa"). Tem **uma** área da vida. Quando todas as tarefas estão prontas, pode ser **encerrado** (vira conquista).
+- **Iniciativa**: objetivo estratégico de alto nível (ex.: "Vida longa e próspera"). Tem uma ou mais áreas da vida. Pode ser marcada como **Objetivo Master**. **Não** é publicada como trilha (é algo muito pessoal). Quando todos os seus épicos estão encerrados, pode ser **concluída** (vira conquista).
+- **Épico**: conjunto de entregas relacionadas, dentro de uma iniciativa (ex.: "Comprar uma casa"). Tem **uma** área da vida. Pode ser **publicado como trilha** (na loja ou num grupo). Quando todas as tarefas estão prontas, pode ser **encerrado** (vira conquista).
 - **Tarefa**: ação específica e executável, dentro de um épico (ex.: "Visitar imóveis"). Tem prioridade (Alta, Média, Baixa), prazo opcional, descrição, checklist, anexos de imagem e histórico de atividade. A tarefa é sempre do próprio usuário (não existe "responsável").
 
 Regras: toda tarefa pertence a um épico; todo épico pertence a uma iniciativa. A área de uma tarefa é a área do seu épico. Iniciativas, épicos e tarefas podem ser **duplicados**.
 
-**Trilha** = uma cascata pronta de iniciativa → épicos → tarefas, que pode ser importada para o backlog. Trilhas vêm da loja (publicadas por usuários), dos grupos e das sugestões da IA.
+**Trilha** = **um épico pronto, com as tarefas**, que pode ser importado para o backlog. Ao importar, a pessoa escolhe em qual iniciativa dela o épico entra (ou cria uma nova). Há dois tipos (decisão do dono de 28/10/2026):
+- **Trilha da loja**: qualquer pessoa vê e baixa; passa pela aprovação de um administrador do app; grátis ou paga em XP.
+- **Trilha do grupo**: pertence ao grupo e só os membros veem e baixam; sempre grátis. O **gestor** do grupo publica direto (a partir de um épico dele) ou **traz da loja**, o que cria uma **cópia do grupo** (a da loja continua intacta) que os gestores podem editar. Membro comum só **sugere**: a sugestão fica pendente até um gestor aprovar ou recusar (com motivo opcional). Trilha do grupo não passa pelo admin do app (a moderação de grupos virá no futuro).
+
+As **sugestões da análise inteligente** continuam no formato iniciativa → épicos → tarefas e vão direto para o backlog (não são trilhas da loja).
 
 ### Sprints de 14 dias
 
@@ -107,7 +111,7 @@ Cada pessoa tem dois números:
 | **Primeiro** post do dia | +10 (os outros posts do dia não rendem XP) |
 | **Primeiro** story do dia | +10 |
 | **Primeiro** comentário do dia, em qualquer publicação | +5 |
-| Alguém baixar (importar) uma trilha sua | +10 (uma vez por pessoa) |
+| Alguém baixar (importar) uma trilha sua **da loja** | +10 (uma vez por pessoa; trilhas de grupo não dão XP) |
 | Comprar uma trilha paga | − preço, só do disponível. O preço **não** vai para o autor. |
 
 "Dia" segue o fuso da pessoa. Todo ganho e gasto fica registrado num extrato.
@@ -125,7 +129,7 @@ Navegação inferior com 4 abas e um botão central "+": **Feed**, **Board**, **
 | **Notificações (sino)** | Abre numa folha (não é uma página). Lista de notificações (pedidos de amizade, curtidas, comentários, tarefas atrasadas, trilha baixada etc.), com contador de não lidas, marcar como lida, marcar todas como lidas, apagar uma e limpar todas. Tocar leva à tela relacionada. |
 | **Board** (Quadro Kanban) | Aviso de tarefas atrasadas. Colunas A Fazer, Fazendo, Pronto da sprint atual. Arrastar cartões (no celular, segurar e arrastar), visão em lista, busca, filtro por área. Toque no cabeçalho abre a folha da sprint (resumo, histórico, encerrar). Cartões sem foto do usuário. |
 | **Adicionar (+)** | Escolher: Nova Iniciativa, Novo Épico, Nova Tarefa, Novo post. |
-| **Backlog** | Abas Iniciativas (cascata iniciativa → épicos → tarefas, com progresso), Épicos e Tarefas (No backlog, Na sprint, Concluídas). Busca, filtro por área, puxar para a sprint, importar trilha, duplicar. Nos três pontinhos: **Exportar tarefas** e **Importar tarefas** em planilha Excel, no modelo do app antigo (8 colunas: área, iniciativa, descrição, épico, descrição, tarefa, descrição, previsão de entrega) + status, prioridade e objetivo master. A importação mostra uma prévia, junta sem duplicar (pelo nome) e lista o que falta completar (decisão do dono de 27/10/2026). No menu "⋮" da iniciativa: **Publicar como trilha**. |
+| **Backlog** | Abas Iniciativas (cascata iniciativa → épicos → tarefas, com progresso), Épicos e Tarefas (No backlog, Na sprint, Concluídas). Busca, filtro por área, puxar para a sprint, importar trilha, duplicar. Nos três pontinhos: **Exportar tarefas** e **Importar tarefas** em planilha Excel, no modelo do app antigo (8 colunas: área, iniciativa, descrição, épico, descrição, tarefa, descrição, previsão de entrega) + status, prioridade e objetivo master. A importação mostra uma prévia, junta sem duplicar (pelo nome) e lista o que falta completar (decisão do dono de 27/10/2026). No menu "⋮" do **épico**: **Publicar como trilha** (escolhendo loja ou um grupo seu). |
 | **Detalhe da tarefa** | Abas Detalhes (prazo, área, iniciativa › épico, descrição, status), Checklist, Anexos e Atividade. Editar, duplicar e excluir. |
 | **Concluir tarefa** | Ao concluir **qualquer** tarefa, aparece sempre a pergunta "Quer compartilhar?" (cada tarefa é uma conquista; não há opção para desligar). Se sim, abre o formulário de post já preenchido com a tarefa, a área e o XP. |
 | **Mais** | Cartão do perfil e atalhos: Ferramentas de reflexão (Necrológio, Pirâmide de Maslow, Roda da Vida, Quadro de visualização) e Acompanhamento (Análise inteligente, Relatórios, Loja de trilhas, Amigos e grupos, Configurações). |
@@ -135,8 +139,8 @@ Navegação inferior com 4 abas e um botão central "+": **Feed**, **Board**, **
 | **Quadro de visualização / Minhas conquistas** | Quadro: até 10 sonhos abertos com imagem e área; "Realizei" marca como realizado. Minhas conquistas: por área da vida, os **épicos encerrados e as iniciativas concluídas** daquela área. |
 | **Análise inteligente** | No topo, os ícones das fontes (Necrológio, Roda da vida, Pirâmide, Quadro de visualização, Tarefas): **a pessoa escolhe quais entram na análise**. A IA mostra índice de alinhamento, análise por área, insights e **sugestões em forma de trilha** (iniciativa → épicos → tarefas) que podem ser importadas para o backlog. |
 | **Relatórios** | Visão geral, Por área da vida, Evolução e **Entregas** (tarefas concluídas entre duas datas, com data, área e épico, sem poluir). |
-| **Loja de trilhas** | Trilhas publicadas pelos usuários, por categoria, busca, favoritos, detalhe. Trilha **grátis** ou **paga em XP**. "Importar para o backlog" (ou comprar, se paga). **Toda trilha publicada precisa ser aprovada por um administrador**: para o admin, as trilhas pendentes aparecem na própria loja com efeito borrado e o selo "Aguardando aprovação"; ele abre, confere e aprova ou recusa (com um motivo opcional, para o autor ajustar e mandar de novo). Para o autor, a trilha aparece como "Em análise". Os demais usuários só veem trilhas aprovadas. |
-| **Amigos e grupos** | Grupos criados pelos usuários: membros interessados no assunto e trilhas prontas do grupo (o **administrador do grupo** escolhe quais trilhas aprovadas entram). Fórum do grupo (tópicos e respostas, só membros). Adicionar amigo buscando pelo nome ou @ID das pessoas que já usam o app (não é campo livre), solicitações recebidas e enviadas, lista de amigos. |
+| **Loja de trilhas** | Trilhas publicadas pelos usuários, por categoria, busca, favoritos, detalhe. Trilha **grátis** ou **paga em XP**. "Importar para o backlog" (ou comprar, se paga), escolhendo a iniciativa. Trilhas de grupo não aparecem na loja. **Toda trilha publicada precisa ser aprovada por um administrador**: para o admin, as trilhas pendentes aparecem na própria loja com efeito borrado e o selo "Aguardando aprovação"; ele abre, confere e aprova ou recusa (com um motivo opcional, para o autor ajustar e mandar de novo). Para o autor, a trilha aparece como "Em análise". Os demais usuários só veem trilhas aprovadas. |
+| **Amigos e grupos** | Grupos criados pelos usuários: membros interessados no assunto e **trilhas do grupo** (veja Trilha). **Gestores**: quem cria o grupo é gestor e, na lista de membros, escolhe quem mais é gestor (o criador continua sempre gestor; se ele sair, os gestores escolhem). Gestores criam, trazem da loja, editam e tiram trilhas do grupo, aprovam as sugestões dos membros e moderam o fórum. Fórum do grupo (tópicos e respostas, só membros). Adicionar amigo buscando pelo nome ou @ID das pessoas que já usam o app (não é campo livre), solicitações recebidas e enviadas, lista de amigos. |
 | **Meu Perfil / Configurações** | Foto, nome, e-mail, ID (@), bio; XP total e XP disponível; uso das ferramentas; atividade recente; tema e aparência; **visibilidade padrão dos posts** (Todo mundo, Somente amigos, Privado); notificações no celular; **Sair**; **Excluir minha conta**. |
 
 Cada tela de ferramenta tem um botão "i" com a explicação do exercício (textos em `INFO` no protótipo).
@@ -149,7 +153,7 @@ Cada tela de ferramenta tem um botão "i" com a explicação do exercício (text
 - Board sem foto do usuário nos cartões; detalhe da tarefa sem "Responsável".
 - Grupos com **fórum** (tópicos com respostas, só para membros; decisão do dono de 26/10/2026), mas sem "Desafios", "Eventos" e sem indicador "online". Stories sem bolinha "online".
 - "Apagar dados e recomeçar" vira "Excluir minha conta". Acrescentar "Sair".
-- Acrescentar: notificações, aviso de atrasadas, duplicar, publicar trilha, aprovação de trilhas pelo admin, trilhas pagas em XP, relatório de entregas, concluir iniciativa, nota no "Me ajude a refletir", nível atual da pirâmide, escolha das fontes da análise, pergunta de compartilhar ao concluir tarefa, visibilidade dos posts, convites.
+- Acrescentar: notificações, aviso de atrasadas, duplicar, publicar épico como trilha (loja ou grupo), aprovação de trilhas pelo admin, gestores e trilhas próprias dos grupos, trilhas pagas em XP, relatório de entregas, concluir iniciativa, nota no "Me ajude a refletir", nível atual da pirâmide, escolha das fontes da análise, pergunta de compartilhar ao concluir tarefa, visibilidade dos posts, convites.
 
 ### Tema visual
 

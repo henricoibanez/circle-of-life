@@ -1,5 +1,5 @@
 import { AREA_IDS, type AreaId } from '@circle/shared';
-import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import { CurrentUser } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
@@ -33,6 +33,9 @@ class ReplyBody {
 }
 class GroupTrilhaDto {
   @IsString() trilhaId!: string;
+}
+class MemberRoleDto {
+  @IsIn(['admin', 'member'], { message: 'papel inválido' }) role!: 'admin' | 'member';
 }
 
 @Controller('friends')
@@ -108,6 +111,11 @@ class GroupsController {
   @Delete(':id/trilhas/:trilhaId')
   removeTrilha(@CurrentUser() u: User, @Param('id') id: string, @Param('trilhaId') trilhaId: string) {
     return this.groups.removeTrilha(u, id, trilhaId);
+  }
+  /** Tornar gestor (role "admin") ou membro comum. */
+  @Put(':id/members/:userId/role')
+  setRole(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string, @Body() dto: MemberRoleDto) {
+    return this.groups.setRole(u, id, userId, dto.role);
   }
 }
 

@@ -70,29 +70,29 @@ model User {
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
 
-  invitesSent     Invite[] @relation("InvitedBy")
-  invitesAccepted Invite[] @relation("AcceptedBy")
-  initiatives     Initiative[]
-  epics           Epic[]
-  tasks           Task[]
-  sprints         Sprint[]
-  xpEvents        XpEvent[]
-  activity        ActivityEvent[]
-  files           File[]
-  rodaScores      RodaScore[]
-  rodaSnapshots   RodaSnapshot[]
-  maslowChecks    MaslowCheck[]
-  maslowNotes     MaslowNote[]
-  necrologio      Necrologio?
-  dreams          Dream[]
-  notifications   Notification[] @relation("NotificationsReceived")
-  notified        Notification[] @relation("NotificationsCaused")
-  pushSubscriptions PushSubscription[]
-  trilhas         Trilha[]            @relation("TrilhasAuthored")
-  trilhaFavorites TrilhaFavorite[]
-  trilhaAcquisitions TrilhaAcquisition[]
-  friendRequestsSent     Friendship[]  @relation("FriendRequestsSent")
-  friendRequestsReceived Friendship[]  @relation("FriendRequestsReceived")
+  invitesSent            Invite[]            @relation("InvitedBy")
+  invitesAccepted        Invite[]            @relation("AcceptedBy")
+  initiatives            Initiative[]
+  epics                  Epic[]
+  tasks                  Task[]
+  sprints                Sprint[]
+  xpEvents               XpEvent[]
+  activity               ActivityEvent[]
+  files                  File[]
+  rodaScores             RodaScore[]
+  rodaSnapshots          RodaSnapshot[]
+  maslowChecks           MaslowCheck[]
+  maslowNotes            MaslowNote[]
+  necrologio             Necrologio?
+  dreams                 Dream[]
+  notifications          Notification[]      @relation("NotificationsReceived")
+  notified               Notification[]      @relation("NotificationsCaused")
+  pushSubscriptions      PushSubscription[]
+  trilhas                Trilha[]            @relation("TrilhasAuthored")
+  trilhaFavorites        TrilhaFavorite[]
+  trilhaAcquisitions     TrilhaAcquisition[]
+  friendRequestsSent     Friendship[]        @relation("FriendRequestsSent")
+  friendRequestsReceived Friendship[]        @relation("FriendRequestsReceived")
   groupMemberships       GroupMember[]
   posts                  Post[]
   postLikes              PostLike[]
@@ -212,29 +212,29 @@ model Epic {
 
 /// Ação específica e executável, dentro de um épico. A área é a do épico.
 model Task {
-  id                String          @id @default(cuid())
+  id                String           @id @default(cuid())
   userId            String
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   epicId            String
-  epic              Epic            @relation(fields: [epicId], references: [id], onDelete: Cascade)
+  epic              Epic             @relation(fields: [epicId], references: [id], onDelete: Cascade)
   title             String
-  description       String          @default("")
-  status            TaskStatus      @default(backlog)
-  priority          Priority        @default(media)
+  description       String           @default("")
+  status            TaskStatus       @default(backlog)
+  priority          Priority         @default(media)
   /// "Previsão de entrega" (só a data).
-  dueDate           DateTime?       @db.Date
+  dueDate           DateTime?        @db.Date
   doneAt            DateTime?
   /// Saiu do quadro ao encerrar a sprint (vai para os relatórios).
   archivedAt        DateTime?
   /// Sprint em que a tarefa entrou no quadro / foi entregue.
   sprintId          String?
-  sprint            Sprint?         @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  sprint            Sprint?          @relation(fields: [sprintId], references: [id], onDelete: SetNull)
   /// Quando o aviso de "tarefa atrasada" já foi enviado.
   overdueNotifiedAt DateTime?
   /// Ordem dentro da coluna do quadro.
-  position          Int             @default(0)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  position          Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
   checklist         ChecklistItem[]
   logs              TaskLog[]
   attachments       TaskAttachment[]
@@ -485,6 +485,8 @@ enum NotificationType {
   grupo_trilha
   grupo_topico
   grupo_resposta
+  grupo_trilha_sugerida
+  grupo_gestor
 }
 
 /// Notificação do sino (e, se ativado, também enviada ao celular).
@@ -525,7 +527,8 @@ model PushSubscription {
 
 // ---------- Loja de trilhas ----------
 
-/// Toda publicação passa por "pendente" até um administrador aprovar ou recusar.
+/// Toda publicação passa por "pendente" até ser aprovada ou recusada: na loja, por um administrador
+/// do app; num grupo, por um gestor do grupo (o que o gestor publica já entra aprovado).
 enum TrilhaStatus {
   pendente
   aprovada
@@ -533,64 +536,60 @@ enum TrilhaStatus {
   despublicada
 }
 
-/// Trilha: cópia congelada de uma iniciativa (épicos e tarefas) para importar no backlog.
+/// Trilha: cópia congelada de um épico (com as tarefas) para importar no backlog.
+/// Sem grupo = loja (qualquer pessoa baixa); com grupo = só os membros do grupo veem e baixam.
 model Trilha {
-  id                 String              @id @default(cuid())
+  id              String              @id @default(cuid())
   /// Id da primeira versão. Versões novas da mesma trilha compartilham o rootId.
-  rootId             String
+  rootId          String
   /// Versão aprovada que esta substitui quando for aprovada.
-  replacesId         String?
-  /// Nulo = trilha oficial do Circle of Life.
-  authorId           String?
-  author             User?               @relation("TrilhasAuthored", fields: [authorId], references: [id], onDelete: Cascade)
-  sourceInitiativeId String?
-  title              String
-  description        String
-  category           String
-  areas              Area[]
+  replacesId      String?
+  /// Nulo = trilha oficial do Circle of Life. No grupo: quem criou ou sugeriu.
+  authorId        String?
+  author          User?               @relation("TrilhasAuthored", fields: [authorId], references: [id], onDelete: Cascade)
+  /// Grupo dono da trilha (nulo = loja).
+  groupId         String?
+  group           Group?              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  /// Épico de onde a trilha foi publicada.
+  sourceEpicId    String?
+  /// Trilha da loja de onde esta cópia do grupo veio.
+  copiedFromId    String?
+  title           String
+  description     String
+  category        String
+  area            Area
   /// Capa: imagem enviada, ou ilustração (art + cor) com texto opcional.
-  coverFileId        String?             @unique
-  art                String              @default("lake")
-  color              String              @default("#5e873c")
-  coverText          String?
-  /// 0 = grátis.
-  priceXp            Int                 @default(0)
-  status             TrilhaStatus        @default(pendente)
-  reviewedById       String?
-  reviewedAt         DateTime?
-  rejectionReason    String?
+  /// Não é única: a cópia do grupo usa a mesma capa da trilha da loja.
+  coverFileId     String?
+  art             String              @default("lake")
+  color           String              @default("#5e873c")
+  coverText       String?
+  /// 0 = grátis. Trilhas de grupo são sempre grátis.
+  priceXp         Int                 @default(0)
+  status          TrilhaStatus        @default(pendente)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?
   /// Número de downloads mostrado antes dos downloads reais (trilhas oficiais do seed).
-  baseDownloads      Int                 @default(0)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  epics              TrilhaEpic[]
-  favorites          TrilhaFavorite[]
-  acquisitions       TrilhaAcquisition[]
-  groups             GroupTrilha[]
+  baseDownloads   Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  tasks           TrilhaTask[]
+  favorites       TrilhaFavorite[]
+  acquisitions    TrilhaAcquisition[]
 
   @@index([status])
   @@index([rootId])
+  @@index([groupId])
   @@map("trilhas")
 }
 
-model TrilhaEpic {
-  id       String       @id @default(cuid())
-  trilhaId String
-  trilha   Trilha       @relation(fields: [trilhaId], references: [id], onDelete: Cascade)
-  title    String
-  area     Area
-  position Int
-  tasks    TrilhaTask[]
-
-  @@map("trilha_epics")
-}
-
 model TrilhaTask {
-  id           String     @id @default(cuid())
-  trilhaEpicId String
-  epic         TrilhaEpic @relation(fields: [trilhaEpicId], references: [id], onDelete: Cascade)
-  title        String
-  position     Int
+  id       String @id @default(cuid())
+  trilhaId String
+  trilha   Trilha @relation(fields: [trilhaId], references: [id], onDelete: Cascade)
+  title    String
+  position Int
 
   @@map("trilha_tasks")
 }
@@ -643,6 +642,7 @@ model Friendship {
   @@map("friendships")
 }
 
+/// admin = Gestor do grupo (aprova trilhas, modera o fórum). O criador escolhe os gestores.
 enum GroupRole {
   admin
   member
@@ -660,7 +660,7 @@ model Group {
   createdById String?
   createdAt   DateTime      @default(now())
   members     GroupMember[]
-  trilhas     GroupTrilha[]
+  trilhas     Trilha[]
   posts       Post[]
   topics      GroupTopic[]
 
@@ -678,19 +678,6 @@ model GroupMember {
   @@id([groupId, userId])
   @@index([userId])
   @@map("group_members")
-}
-
-/// Trilha aprovada que o administrador do grupo colocou no grupo.
-model GroupTrilha {
-  groupId   String
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  trilhaId  String
-  trilha    Trilha   @relation(fields: [trilhaId], references: [id], onDelete: Cascade)
-  addedById String
-  addedAt   DateTime @default(now())
-
-  @@id([groupId, trilhaId])
-  @@map("group_trilhas")
 }
 
 // ---------- Feed ----------

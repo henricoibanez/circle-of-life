@@ -101,7 +101,7 @@ async function main() {
     });
   }
 
-  console.log(`✓ Seed concluído: ${USERS.length} usuários de teste, 1 convite pendente (convidado@teste.local) e o backlog do Henrico (${backlog.initiatives} iniciativas, ${backlog.epics} épicos, ${backlog.tasks} tarefas, sprints 10 a 12) os exercícios de reflexão, 10 trilhas (1 aguardando aprovação), ${social.groups} grupos, ${social.friendships} amizades, ${posts} posts e ${stories} stories.`);
+  console.log(`✓ Seed concluído: ${USERS.length} usuários de teste, 1 convite pendente (convidado@teste.local) e o backlog do Henrico (${backlog.initiatives} iniciativas, ${backlog.epics} épicos, ${backlog.tasks} tarefas, sprints 10 a 12) os exercícios de reflexão, 11 trilhas na loja (1 aguardando aprovação), trilhas dos grupos (1 sugestão aguardando gestor), ${social.groups} grupos, ${social.friendships} amizades, ${posts} posts e ${stories} stories.`);
 }
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);

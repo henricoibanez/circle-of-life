@@ -65,7 +65,7 @@ describe('Amigos e grupos', () => {
     assert.equal((await caio.c.request('GET', '/friends')).body.sent.length, 0);
   });
 
-  test('criar grupo: quem cria é administrador; outros veem como sugerido', async () => {
+  test('criar grupo: quem cria é gestor; outros veem como sugerido', async () => {
     const r = await ana.c.request('POST', '/groups', { name: 'Corredores', description: 'Treinos de rua', area: 'saude' });
     assert.equal(r.status, 201);
     assert.equal(r.body.admin, true);
@@ -77,7 +77,7 @@ describe('Amigos e grupos', () => {
     assert.equal((await ana.c.request('POST', '/groups', { name: 'X', description: '', area: 'saude' })).status, 400);
   });
 
-  test('entrar avisa o administrador; só o administrador edita, coloca trilhas e exclui', async () => {
+  test('entrar avisa o gestor; só o gestor edita, traz trilhas da loja e exclui', async () => {
     const g = (await ana.c.request('POST', '/groups', { name: 'Leitores', description: 'Livros', area: 'intelectual' })).body;
     const joined = (await bia.c.request('POST', `/groups/${g.id}/join`)).body;
     assert.equal(joined.member, true);
@@ -92,22 +92,23 @@ describe('Amigos e grupos', () => {
     const ini = (await adm.c.request('POST', '/initiatives', { title: 'Clássicos' })).body;
     const ep = (await adm.c.request('POST', '/epics', { initiativeId: ini.id, title: 'Odisseia', area: 'intelectual' })).body;
     await adm.c.request('POST', '/tasks', { epicId: ep.id, title: 'Canto 1' });
-    const t = (await adm.c.request('POST', `/initiatives/${ini.id}/publish`, { description: 'Leitura dos clássicos gregos.', category: 'saude', priceXp: 0 })).body;
+    const t = (await adm.c.request('POST', `/epics/${ep.id}/publish`, { description: 'Leitura dos clássicos gregos.', category: 'estudos', priceXp: 0 })).body;
     assert.equal((await ana.c.request('POST', `/groups/${g.id}/trilhas`, { trilhaId: t.id })).status, 400);
     await adm.c.request('POST', `/trilhas/${t.id}/approve`);
     assert.equal((await bia.c.request('POST', `/groups/${g.id}/trilhas`, { trilhaId: t.id })).status, 403);
     const withT = (await ana.c.request('POST', `/groups/${g.id}/trilhas`, { trilhaId: t.id })).body;
-    assert.equal(withT.trilhaList[0].title, 'Clássicos');
+    assert.equal(withT.trilhaList[0].title, 'Odisseia');
     assert.equal(withT.trilhas, 1);
     assert.ok((await bia.c.request('GET', '/notifications')).body.some((n: Note) => n.type === 'grupo_trilha'));
-    assert.equal((await ana.c.request('DELETE', `/groups/${g.id}/trilhas/${t.id}`)).body.trilhas, 0);
+    const copyId = withT.trilhaList[0].id;
+    assert.equal((await ana.c.request('DELETE', `/groups/${g.id}/trilhas/${copyId}`)).body.trilhas, 0);
 
     assert.equal((await bia.c.request('DELETE', `/groups/${g.id}`)).status, 403);
     assert.equal((await ana.c.request('DELETE', `/groups/${g.id}`)).status, 204);
     assert.equal((await bia.c.request('GET', `/groups/${g.id}`)).status, 404);
   });
 
-  test('se o único administrador sai, o membro mais antigo assume', async () => {
+  test('se o único gestor sai, o membro mais antigo assume', async () => {
     const g = (await ana.c.request('POST', '/groups', { name: 'Gratidão', description: '', area: 'emocional' })).body;
     await bia.c.request('POST', `/groups/${g.id}/join`);
     await caio.c.request('POST', `/groups/${g.id}/join`);

@@ -15,7 +15,7 @@ import { useSocialActions } from '@/lib/social';
 import { useTrilhas } from '@/lib/trilhas';
 import { uploadImage } from '@/lib/upload';
 
-/** Capa do grupo: a foto enviada pelo administrador ou a ilustração da área. */
+/** Capa do grupo: a foto enviada pelo gestor ou a ilustração da área. */
 export function GroupCover({ g, className }: { g: Pick<GroupDto, 'art' | 'area' | 'coverUrl'>; className?: string }) {
   return g.coverUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -25,7 +25,7 @@ export function GroupCover({ g, className }: { g: Pick<GroupDto, 'art' | 'area' 
   );
 }
 
-/** Criar ou editar um grupo. Quem cria vira administrador. */
+/** Criar ou editar um grupo. Quem cria vira gestor e escolhe os outros gestores. */
 export function GroupForm({ group, onClose, onSaved }: { group?: GroupDetailDto; onClose: () => void; onSaved?: (g: GroupDetailDto) => void }) {
   const actions = useSocialActions();
   const toast = useToast();
@@ -107,18 +107,20 @@ export function GroupForm({ group, onClose, onSaved }: { group?: GroupDetailDto;
   );
 }
 
-/** O administrador escolhe trilhas aprovadas da loja para o grupo. */
+/** Gestor traz uma trilha aprovada da loja: o grupo ganha uma cópia própria, que pode editar. */
 export function AddTrilhaSheet({ group, onClose }: { group: GroupDetailDto; onClose: () => void }) {
   const { data } = useTrilhas();
   const actions = useSocialActions();
   const toast = useToast();
   const [q, setQ] = useState('');
-  const inGroup = new Set(group.trilhaList.map(t => t.id));
+  const inGroup = new Set(group.trilhaList.map(t => t.copiedFromId));
   const list = (data ?? []).filter(t => t.status === 'aprovada' && !inGroup.has(t.id) && (!q || t.title.toLowerCase().includes(q.toLowerCase())));
 
   return (
-    <Sheet title="Adicionar trilha ao grupo" onClose={onClose}>
-      <p className="mb-3 text-sm text-muted">Só trilhas aprovadas da loja. Os membros do grupo recebem um aviso.</p>
+    <Sheet title="Trazer trilha da loja" onClose={onClose}>
+      <p className="mb-3 text-sm text-muted">
+        O grupo ganha uma cópia da trilha, grátis para os membros, que os gestores podem editar. A trilha da loja continua como está. Trilha paga só entra se você já tiver comprado.
+      </p>
       <div className="relative mb-3">
         <Icon n="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar trilhas…" className={inputCls + ' pl-10'} />
@@ -130,7 +132,7 @@ export function AddTrilhaSheet({ group, onClose }: { group: GroupDetailDto; onCl
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{t.title}</p>
               <p className="text-xs text-muted">
-                {t.tasksCount} tarefas • {priceLabel(t)}
+                {AREA[t.area].name} • {t.tasksCount} tarefas • {priceLabel(t)}
               </p>
             </div>
             <Button
@@ -139,14 +141,14 @@ export function AddTrilhaSheet({ group, onClose }: { group: GroupDetailDto; onCl
               onClick={async () => {
                 try {
                   await actions.addTrilha(group.id, t.id);
-                  toast('Trilha adicionada ao grupo');
+                  toast('Trilha copiada para o grupo');
                   onClose();
                 } catch (e) {
                   toast(e instanceof ApiError ? e.message : 'Não foi possível adicionar.');
                 }
               }}
             >
-              Adicionar
+              Trazer
             </Button>
           </li>
         ))}

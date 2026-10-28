@@ -7,7 +7,7 @@ import { PeopleService, PERSON_SELECT } from './people.service';
 
 /**
  * Fórum dos grupos: tópicos com respostas. Só os membros leem e escrevem.
- * Quem escreveu apaga o que escreveu; o administrador do grupo apaga qualquer coisa.
+ * Quem escreveu apaga o que escreveu; um gestor do grupo apaga qualquer coisa.
  */
 @Injectable()
 export class ForumService {
@@ -122,7 +122,7 @@ export class ForumService {
   async removeTopic(user: User, groupId: string, topicId: string) {
     const m = await this.membership(user.id, groupId);
     const t = await this.topicOf(groupId, topicId);
-    if (t.authorId !== user.id && m.role !== 'admin') throw new ForbiddenException('Só quem escreveu ou o administrador do grupo pode apagar.');
+    if (t.authorId !== user.id && m.role !== 'admin') throw new ForbiddenException('Só quem escreveu ou um gestor do grupo pode apagar.');
     await this.prisma.groupTopic.delete({ where: { id: topicId } });
   }
 
@@ -131,7 +131,7 @@ export class ForumService {
     await this.topicOf(groupId, topicId);
     const r = await this.prisma.groupReply.findFirst({ where: { id: replyId, topicId } });
     if (!r) throw new NotFoundException('Resposta não encontrada.');
-    if (r.authorId !== user.id && m.role !== 'admin') throw new ForbiddenException('Só quem escreveu ou o administrador do grupo pode apagar.');
+    if (r.authorId !== user.id && m.role !== 'admin') throw new ForbiddenException('Só quem escreveu ou um gestor do grupo pode apagar.');
     await this.prisma.groupReply.delete({ where: { id: replyId } });
     return this.detail(user, groupId, topicId);
   }

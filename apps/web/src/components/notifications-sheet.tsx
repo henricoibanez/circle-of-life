@@ -24,6 +24,8 @@ const ICONS: Record<string, [IconName, string]> = {
   trilha_pendente: ['bag', '#f59e0b'],
   grupo_entrada: ['users', '#14b8a6'],
   grupo_trilha: ['bag', '#7c4dde'],
+  grupo_trilha_sugerida: ['bag', '#f59e0b'],
+  grupo_gestor: ['verified', '#7c4dde'],
   grupo_topico: ['msg', '#7c4dde'],
   grupo_resposta: ['msg', '#7c4dde'],
 };

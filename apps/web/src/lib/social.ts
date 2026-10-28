@@ -50,5 +50,7 @@ export function useSocialActions() {
       }),
     addTrilha: (id: string, trilhaId: string) => api<GroupDetailDto>(`/groups/${id}/trilhas`, { method: 'POST', body: { trilhaId } }).then(groups),
     removeTrilha: (id: string, trilhaId: string) => api<GroupDetailDto>(`/groups/${id}/trilhas/${trilhaId}`, { method: 'DELETE' }).then(groups),
+    /** Tornar gestor (role "admin") ou membro comum. */
+    setRole: (id: string, userId: string, role: 'admin' | 'member') => api<GroupDetailDto>(`/groups/${id}/members/${userId}/role`, { method: 'PUT', body: { role } }).then(groups),
   };
 }

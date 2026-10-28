@@ -11,7 +11,10 @@ export type GroupInput = { name: string; description: string; area: AreaId; cove
 
 type GroupWithCounts = Group & { _count: { members: number; trilhas: number }; members: { userId: string; role: 'admin' | 'member' }[] };
 
-/** Grupos: quem cria vira administrador; o administrador escolhe as trilhas (aprovadas) do grupo. */
+/**
+ * Grupos: quem cria vira gestor (no banco, role "admin") e escolhe quem mais é gestor.
+ * Os gestores cuidam das trilhas do grupo (ver TrilhasService) e moderam o fórum.
+ */
 @Injectable()
 export class GroupsService {
   constructor(
@@ -23,7 +26,7 @@ export class GroupsService {
   ) {}
 
   private include(userId: string) {
-    return { _count: { select: { members: true, trilhas: true } }, members: { where: { userId }, select: { userId: true, role: true } } } as const;
+    return { _count: { select: { members: true, trilhas: { where: { status: 'aprovada' as const } } } }, members: { where: { userId }, select: { userId: true, role: true } } } as const;
   }
 
   private async toDto(g: GroupWithCounts): Promise<GroupDto> {
@@ -57,21 +60,21 @@ export class GroupsService {
 
   private async requireAdmin(userId: string, id: string) {
     const g = await this.get(userId, id);
-    if (g.members[0]?.role !== 'admin') throw new ForbiddenException('Só o administrador do grupo pode fazer isso.');
+    if (g.members[0]?.role !== 'admin') throw new ForbiddenException('Só os gestores do grupo podem fazer isso.');
     return g;
   }
 
   async detail(user: User, id: string): Promise<GroupDetailDto> {
     const g = await this.get(user.id, id);
-    const [members, links] = await Promise.all([
-      this.prisma.groupMember.findMany({ where: { groupId: id }, include: { user: { select: PERSON_SELECT } }, orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }] }),
-      this.prisma.groupTrilha.findMany({ where: { groupId: id }, select: { trilhaId: true } }),
-    ]);
+    const members = await this.prisma.groupMember.findMany({ where: { groupId: id }, include: { user: { select: PERSON_SELECT } }, orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }] });
     const people = await this.people.many(members.map(m => m.user));
+    const gestor = g.members[0]?.role === 'admin';
+    const lists = g.members.length ? await this.trilhas.groupLists(user, id, gestor) : { trilhaList: [], suggestions: [] };
     return {
       ...(await this.toDto(g)),
-      memberList: people.map((p, i) => ({ ...p, role: members[i]!.role })),
-      trilhaList: await this.trilhas.approvedByIds(user, links.map(l => l.trilhaId)),
+      memberList: people.map((p, i) => ({ ...p, role: members[i]!.role, creator: p.id === g.createdById })),
+      canManageGestores: this.canManage(g, user.id, members.map(m => m.userId)),
+      ...lists,
     };
   }
 
@@ -128,7 +131,7 @@ export class GroupsService {
     return this.detail(user, id);
   }
 
-  /** Sair. Se era o único administrador e ainda há membros, o membro mais antigo vira administrador. */
+  /** Sair. Se era o único gestor e ainda há membros, o membro mais antigo vira gestor. */
   async leave(user: User, id: string) {
     const g = await this.get(user.id, id);
     if (!g.members.length) return;
@@ -141,25 +144,47 @@ export class GroupsService {
     });
   }
 
+  /** Gestor traz uma trilha da loja: vira uma cópia do grupo. */
   async addTrilha(user: User, id: string, trilhaId: string) {
-    const g = await this.requireAdmin(user.id, id);
-    const t = await this.prisma.trilha.findUnique({ where: { id: trilhaId } });
-    if (!t || t.status !== 'aprovada') throw new BadRequestException('Só trilhas aprovadas da loja podem entrar no grupo.');
-    await this.prisma.groupTrilha.upsert({
-      where: { groupId_trilhaId: { groupId: id, trilhaId } },
-      create: { groupId: id, trilhaId, addedById: user.id },
-      update: {},
-    });
-    const members = await this.prisma.groupMember.findMany({ where: { groupId: id, userId: { not: user.id } }, select: { userId: true } });
-    for (const m of members) {
-      await this.notifications.notify({ userId: m.userId, type: 'grupo_trilha', title: `Nova trilha em ${g.name}`, body: `“${t.title}”`, link: `/grupos/${id}`, actorId: user.id, refId: trilhaId });
-    }
+    await this.trilhas.copyToGroup(user, id, trilhaId);
     return this.detail(user, id);
   }
 
+  /** Gestor tira uma trilha do grupo. Quem já importou continua com o épico no backlog. */
   async removeTrilha(user: User, id: string, trilhaId: string) {
     await this.requireAdmin(user.id, id);
-    await this.prisma.groupTrilha.deleteMany({ where: { groupId: id, trilhaId } });
+    await this.prisma.trilha.deleteMany({ where: { id: trilhaId, groupId: id } });
+    return this.detail(user, id);
+  }
+
+  /** Quem escolhe os gestores: o criador; se ele não está mais no grupo, qualquer gestor. */
+  private canManage(g: GroupWithCounts, userId: string, memberIds: string[]) {
+    if (g.members[0]?.role !== 'admin') return false;
+    return g.createdById === userId || !g.createdById || !memberIds.includes(g.createdById);
+  }
+
+  /** Tornar gestor ou tirar de gestor. O criador continua sempre gestor. */
+  async setRole(user: User, id: string, memberId: string, role: 'admin' | 'member') {
+    const g = await this.get(user.id, id);
+    const members = await this.prisma.groupMember.findMany({ where: { groupId: id }, select: { userId: true, role: true } });
+    if (!this.canManage(g, user.id, members.map(m => m.userId))) throw new ForbiddenException('Só quem criou o grupo escolhe os gestores.');
+    const target = members.find(m => m.userId === memberId);
+    if (!target) throw new NotFoundException('Essa pessoa não faz parte do grupo.');
+    if (memberId === g.createdById && role === 'member') throw new BadRequestException('Quem criou o grupo continua sempre como gestor.');
+    if (role === 'member' && members.filter(m => m.role === 'admin').length === 1 && target.role === 'admin') throw new BadRequestException('O grupo precisa ter pelo menos um gestor.');
+    if (target.role === role) return this.detail(user, id);
+    await this.prisma.groupMember.update({ where: { groupId_userId: { groupId: id, userId: memberId } }, data: { role } });
+    if (role === 'admin' && memberId !== user.id) {
+      await this.notifications.notify({
+        userId: memberId,
+        type: 'grupo_gestor',
+        title: `Você agora é gestor de ${g.name}`,
+        body: 'Você aprova as trilhas sugeridas pelos membros e cuida das trilhas do grupo.',
+        link: `/grupos/${id}`,
+        actorId: user.id,
+        refId: id,
+      });
+    }
     return this.detail(user, id);
   }
 

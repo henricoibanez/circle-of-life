@@ -21,7 +21,8 @@ export type TrilhaDto = {
   title: string;
   description: string;
   category: TrilhaCategory;
-  areas: AreaId[];
+  /** Área da vida do épico. */
+  area: AreaId;
   art: ArtVariant;
   color: string;
   coverText: string | null;
@@ -37,7 +38,18 @@ export type TrilhaDto = {
   /** Já baixou/comprou (importar de novo é grátis). */
   acquired: boolean;
   mine: boolean;
+  /** Trilha de grupo (só os membros veem). Nulo = loja. */
+  groupId: string | null;
+  /** Cópia do grupo: id da trilha da loja de onde veio. */
+  copiedFromId: string | null;
   createdAt: string;
 };
 
-export type TrilhaDetailDto = TrilhaDto & { epics: { id: string; title: string; area: AreaId; tasks: string[] }[] };
+/**
+ * Detalhe: as tarefas do épico. `canReview`: pode aprovar ou recusar (admin do app na loja,
+ * gestor no grupo). `canEdit`: gestor do grupo dono da trilha.
+ */
+export type TrilhaDetailDto = TrilhaDto & { tasks: string[]; group: { id: string; name: string } | null; canReview: boolean; canEdit: boolean };
+
+/** Onde o épico baixado entra: numa iniciativa sua ou numa nova. */
+export type TrilhaImportInput = { initiativeId: string } | { newInitiative: string };

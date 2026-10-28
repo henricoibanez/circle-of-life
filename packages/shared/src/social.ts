@@ -25,14 +25,18 @@ export type GroupDto = {
   coverUrl: string | null;
   members: number;
   trilhas: number;
-  /** Faço parte? E sou administrador? */
+  /** Faço parte? Sou gestor? (`admin` = gestor do grupo.) */
   member: boolean;
   admin: boolean;
 };
 
 export type GroupDetailDto = GroupDto & {
-  memberList: (PersonDto & { role: 'admin' | 'member' })[];
+  memberList: (PersonDto & { role: 'admin' | 'member'; creator: boolean })[];
+  /** Posso escolher quem é gestor (o criador; se ele saiu, os gestores). */
+  canManageGestores: boolean;
   trilhaList: TrilhaDto[];
+  /** Gestor: todas as sugestões aguardando. Membro: as suas (em análise ou recusadas). */
+  suggestions: TrilhaDto[];
 };
 
 // ---------- Fórum dos grupos ----------
@@ -50,5 +54,5 @@ export type TopicDto = {
 
 export type ReplyDto = { id: string; author: PersonDto; mine: boolean; text: string; createdAt: string };
 
-/** Tópico aberto, com as respostas. `canModerate`: você é o administrador do grupo. */
+/** Tópico aberto, com as respostas. `canModerate`: você é gestor do grupo. */
 export type TopicDetailDto = TopicDto & { replyList: ReplyDto[]; canModerate: boolean };

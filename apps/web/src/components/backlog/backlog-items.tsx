@@ -7,6 +7,7 @@ import { Icon } from '@/components/icon';
 import { Bar, IconBtn, Prio, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
+import { PublishSheet } from '@/components/trilhas/trilha-sheets';
 import { Button } from '@/components/ui/button';
 import { epicTasks, progress, useBacklogActions } from '@/lib/backlog';
 import { tint } from '@/lib/color';
@@ -68,7 +69,7 @@ export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
 export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: BacklogDto; nested?: boolean; showIni?: boolean }) {
   const actions = useBacklogActions();
   const sheets = useBacklogSheets();
-  const { openActions } = useSheets();
+  const { openActions, openSheet } = useSheets();
   const toast = useToast();
   const celebrate = useCelebrate();
   const [open, setOpen] = useState(Boolean(nested && !e.closedAt));
@@ -142,6 +143,7 @@ export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: Backl
                 openActions(e.title, [
                   { icon: 'copy', label: 'Duplicar épico', run: () => actions.duplicateEpic(e.id).then(() => toast('Épico duplicado')) },
                   e.closedAt && { icon: 'undo', label: 'Reabrir épico', run: () => actions.reopenEpic(e.id) },
+                  { icon: 'share', label: 'Publicar como trilha', run: () => openSheet(close => <PublishSheet epicId={e.id} onClose={close} />) },
                   {
                     icon: 'trash',
                     label: 'Excluir épico',

@@ -1,6 +1,6 @@
 'use client';
 
-import { TRILHA_CATEGORIES } from '@circle/shared';
+import { AREA, TRILHA_CATEGORIES } from '@circle/shared';
 import { useState } from 'react';
 import { StepsArt } from '@/components/art';
 import { Header, InfoSheet } from '@/components/header';
@@ -78,7 +78,7 @@ export default function LojaPage() {
               <Icon n="alert" className="h-5 w-5" />
               {reviewQueue.length} {reviewQueue.length === 1 ? 'trilha aguardando' : 'trilhas aguardando'} sua aprovação
             </p>
-            <p className="text-xs text-muted">Abra a trilha, confira os épicos e as tarefas e aprove ou recuse.</p>
+            <p className="text-xs text-muted">Abra a trilha, confira o épico e as tarefas e aprove ou recuse.</p>
           </section>
         )}
 
@@ -90,7 +90,7 @@ export default function LojaPage() {
               Recomendadas para você
             </p>
             <p className="mt-1 text-[1.375rem] font-semibold leading-tight">Trilhas feitas para transformar sua vida</p>
-            <p className="mt-1.5 text-[0.8125rem] text-muted">Conteúdos práticos, organizados em épicos e tarefas para gerar resultados reais.</p>
+            <p className="mt-1.5 text-[0.8125rem] text-muted">Épicos prontos, com as tarefas, para gerar resultados reais.</p>
             <Button variant="accent" className="mt-3" onClick={() => setCat('all')}>
               Explorar trilhas
             </Button>
@@ -120,10 +120,9 @@ export default function LojaPage() {
                   </div>
                   <p className="mt-2 px-0.5 text-[0.875rem] font-semibold leading-tight">{t.title}</p>
                   <p className="mt-1 line-clamp-3 px-0.5 text-[0.7188rem] leading-snug text-muted">{t.description}</p>
-                  <div className="mt-2 flex gap-1 px-0.5">
-                    {t.areas.slice(0, 4).map(a => (
-                      <AreaIcon key={a} id={a} size="w-6 h-6" icon="w-3.5 h-3.5" />
-                    ))}
+                  <div className="mt-2 flex items-center gap-1.5 px-0.5 text-[0.6875rem] text-muted">
+                    <AreaIcon id={t.area} size="w-6 h-6" icon="w-3.5 h-3.5" />
+                    <span className="truncate">{AREA[t.area].name}</span>
                   </div>
                   <div className="mt-2 flex items-center gap-2 px-0.5 text-[0.6875rem] text-muted">
                     <span className="inline-flex items-center gap-1">
@@ -161,7 +160,7 @@ export default function LojaPage() {
           </span>
           <div className="flex-1">
             <p className="font-semibold">Importe para o seu Backlog</p>
-            <p className="text-xs text-muted">Ao importar uma trilha, todas as tarefas vão para o seu backlog automaticamente.</p>
+            <p className="text-xs text-muted">Ao importar, você escolhe a iniciativa e o épico entra no seu backlog com todas as tarefas.</p>
           </div>
           <Button variant="pline" className="rounded-full px-3 py-1.5 text-[0.75rem]" onClick={() => openSheet(close => <InfoSheet k="loja" onClose={close} />)}>
             Entenda como funciona

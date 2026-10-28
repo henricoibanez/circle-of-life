@@ -81,7 +81,7 @@ function GruposTab() {
             <div className="min-w-0 flex-1">
               <p className="flex flex-wrap items-center gap-2 text-[1.1875rem] font-semibold">
                 {g.name}
-                {g.admin && <span className="rounded-md border border-white/20 bg-white/15 px-1.5 py-0.5 text-[0.625rem] font-semibold">Administrador</span>}
+                {g.admin && <span className="rounded-md border border-white/20 bg-white/15 px-1.5 py-0.5 text-[0.625rem] font-semibold">Gestor</span>}
               </p>
               <p className="mt-1 text-[0.8125rem] text-white/80">{g.description}</p>
             </div>
