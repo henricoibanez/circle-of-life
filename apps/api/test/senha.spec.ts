@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
+import { hashPassword } from '../src/auth/password';
 import { client, mailpitMessages, startApi } from './helpers';
 
 /** Código mandado por e-mail (o assunto começa com ele). Espera o Mailpit receber. */
@@ -120,6 +121,39 @@ describe('Login com e-mail e senha', () => {
     for (let i = 0; i < 5; i++) await c.request('POST', '/auth/password/reset', { email, code: wrong, password: 'novasenha1' });
     const r = await c.request('POST', '/auth/password/reset', { email, code, password: 'novasenha1' });
     assert.equal(r.status, 400);
+    assert.match(r.body.message, /Muitas tentativas/);
+  });
+
+  test('login trava após 10 tentativas erradas (força bruta)', async () => {
+    const email = mail('forca');
+    await api.prisma.user.create({ data: { email, name: 'Força', handle: `forca${run}`, passwordHash: await hashPassword('senhacerta1') } });
+    const c = client(api.url);
+    for (let i = 0; i < 10; i++) {
+      assert.equal((await c.request('POST', '/auth/login', { email, password: 'errada' })).status, 401);
+    }
+    // 11ª tentativa: bloqueada, mesmo com a senha certa
+    const blocked = await c.request('POST', '/auth/login', { email, password: 'senhacerta1' });
+    assert.equal(blocked.status, 429);
+    assert.match(blocked.body.message, /Muitas tentativas/);
+  });
+
+  test('login que dá certo zera o contador de tentativas', async () => {
+    const email = mail('zera');
+    await api.prisma.user.create({ data: { email, name: 'Zera', handle: `zera${run}`, passwordHash: await hashPassword('senhacerta1') } });
+    const c = client(api.url);
+    for (let i = 0; i < 9; i++) await c.request('POST', '/auth/login', { email, password: 'errada' });
+    assert.equal((await c.request('POST', '/auth/login', { email, password: 'senhacerta1' })).status, 204);
+    // Depois de zerar, dá para tentar de novo sem bloquear na hora.
+    assert.equal((await c.request('POST', '/auth/login', { email, password: 'errada' })).status, 401);
+  });
+
+  test('envio de código tem teto diário por e-mail', async () => {
+    const email = mail('teto');
+    await api.prisma.invite.create({ data: { email, tokenHash: `teto${run}`, invitedById: adminId, expiresAt: new Date(Date.now() + 86_400_000) } });
+    // Simula que o teto do dia já foi atingido.
+    await api.prisma.rateLimit.create({ data: { key: `code:${email}`, count: 10, windowStart: new Date() } });
+    const r = await signup(client(api.url), email);
+    assert.equal(r.status, 429);
     assert.match(r.body.message, /Muitas tentativas/);
   });
 });
