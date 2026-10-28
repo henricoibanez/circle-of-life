@@ -7,6 +7,7 @@ import { EpicCard, TaskLine } from '@/components/backlog/backlog-items';
 import { ImportSheet } from '@/components/backlog/import-sheet';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { useCelebrate } from '@/components/celebrate';
+import { useGoBack } from '@/components/header';
 import { Icon } from '@/components/icon';
 import { Bar, Card, Empty, IconBtn, inputCls, Seg, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
@@ -250,9 +251,12 @@ function Header(p: {
   area?: AreaId | 'all';
   clearArea?: () => void;
 }) {
+  // O Backlog abre pelo "Mais" (não está mais na barra inferior): voltar leva para lá.
+  const goBack = useGoBack('/mais');
   return (
     <header className="sticky z-20 bg-bg/90 px-4 pb-3 pt-4 backdrop-blur-md" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
       <div className="flex items-start gap-2">
+        <IconBtn n="arrowL" label="Voltar" box onClick={goBack} />
         <div className="flex-1">
           <h1 className="text-[2rem] font-bold leading-none tracking-tight">Backlog</h1>
           <p className="mt-1.5 text-muted">Sua visão completa em cascata</p>

@@ -11,11 +11,11 @@ import { usePostForm } from './feed/post-form';
 const TABS: { href: string; icon: IconName; label: string }[] = [
   { href: '/feed', icon: 'home', label: 'Feed' },
   { href: '/board', icon: 'board', label: 'Board' },
-  { href: '/backlog', icon: 'backlog', label: 'Backlog' },
+  { href: '/grupos', icon: 'users', label: 'Grupos' },
   { href: '/mais', icon: 'grid', label: 'Mais' },
 ];
 
-/** Barra inferior do protótipo: Feed, Board, botão "+", Backlog e Mais. */
+/** Barra inferior: Feed, Board, botão "+", Grupos (amigos e grupos) e Mais. O Backlog fica no Mais. */
 export function BottomNav() {
   const path = usePathname();
   const { openSheet } = useSheets();

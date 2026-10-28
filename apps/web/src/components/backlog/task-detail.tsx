@@ -4,7 +4,7 @@ import { AREA, STATUS_LABEL, type AreaId, type TaskDto, type TaskStatus, type Xp
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icon';
-import { Bar, IconBtn, inputCls, Prio, Seg } from '@/components/primitives';
+import { Bar, IconBtn, inputCls, Prio, Seg, ImageHint } from '@/components/primitives';
 import { Sheet } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -288,6 +288,7 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
           </label>
         </div>
       )}
+      {tab === 'files' && <ImageHint purpose="task" className="mt-2" />}
 
       {tab === 'log' && (
         <ol className="relative ml-2 space-y-4 border-l border-line">

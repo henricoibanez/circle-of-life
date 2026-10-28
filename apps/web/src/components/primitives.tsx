@@ -3,10 +3,16 @@
 import { AREA, type AreaId } from '@circle/shared';
 import type { ComponentProps, CSSProperties, ReactNode } from 'react';
 import { tint } from '@/lib/color';
+import { IMAGE_SIZE, type UploadPurpose } from '@/lib/upload';
 import { cn } from '@/lib/utils';
 import { Icon, type IconName } from './icon';
 
 /** Peças pequenas de interface do protótipo (AreaIcon, Ring, Bar, Tag, Card, Avatar…). */
+
+/** "Tamanho ideal: …" embaixo de cada campo de imagem. */
+export function ImageHint({ purpose, className = '' }: { purpose: UploadPurpose; className?: string }) {
+  return <p className={`text-xs text-muted ${className}`}>Tamanho ideal: {IMAGE_SIZE[purpose]}.</p>;
+}
 
 export function AreaIcon({ id, size = 'w-11 h-11', icon = 'w-5 h-5', color }: { id?: AreaId | null; size?: string; icon?: string; color?: string }) {
   const a = id ? AREA[id] : undefined;

@@ -45,6 +45,11 @@ export default function MaisPage() {
         </Link>
 
         <section className="space-y-3">
+          <h2 className="px-1 text-sm font-semibold text-muted">Planejamento</h2>
+          <Row href="/backlog" n="backlog" title="Backlog" d="Suas iniciativas, épicos e tarefas." />
+        </section>
+
+        <section className="space-y-3">
           <h2 className="px-1 text-sm font-semibold text-muted">Ferramentas de reflexão</h2>
           <Row href="/necrologio" n="feather" c="#7c4dde" title="Necrológio" d="Reflita sobre sua vida e o legado que deseja deixar." />
           <Row href="/maslow" n="triangle" title="Pirâmide de Maslow" d="Entenda suas prioridades e necessidades." />
@@ -57,7 +62,6 @@ export default function MaisPage() {
           <Row href="/analise" n="sparkles" c="#7c4dde" title="Análise inteligente" d="A IA cruza seus exercícios com o que você executa." />
           <Row href="/relatorios" n="chart" c="#7c4dde" title="Relatórios" d="Acompanhe seu progresso e evolução." />
           <Row href="/loja" n="bag" c="#ef4444" title="Loja de trilhas" d="Trilhas prontas para importar no backlog." />
-          <Row href="/grupos" n="users" c="#14b8a6" title="Amigos e grupos" d="Conecte-se, compartilhe e evolua junto." />
           <Row href="/perfil" n="settings" c="#6b7280" title="Configurações" d="Ajustes da sua conta e do app." />
         </section>
 

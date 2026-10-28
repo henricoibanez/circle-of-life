@@ -10,7 +10,7 @@ import { useCelebrate } from '@/components/celebrate';
 import { ConfirmSheet } from '@/components/confirm';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
-import { AreaIcon, Field, inputCls, Ring, Seg } from '@/components/primitives';
+import { AreaIcon, Field, inputCls, Ring, Seg, ImageHint } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -274,12 +274,13 @@ function DreamSheet({ dream, onClose }: { dream?: DreamDto; onClose: () => void 
               e.target.value = '';
               if (!file) return;
               await run(async () => {
-                const up = await uploadImage(file, 'dream', 1000);
+                const up = await uploadImage(file, 'dream', 1200);
                 setImage({ id: up.id, url: up.url });
               });
             }}
           />
         </label>
+        <ImageHint purpose="dream" />
         {image.url && (
           <button className="text-sm text-muted" onClick={() => setImage({ id: null, url: null })}>
             Remover imagem

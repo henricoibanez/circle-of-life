@@ -3,7 +3,7 @@
 import { AREAS, type AreaId, MAX_POST_IMAGES, type PostDraft, type PostDto, VISIBILITY, type Visibility } from '@circle/shared';
 import { useState } from 'react';
 import { Icon } from '@/components/icon';
-import { Avatar, Field, inputCls, Seg } from '@/components/primitives';
+import { Avatar, Field, inputCls, Seg, ImageHint } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -151,6 +151,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
             </label>
           )}
         </div>
+        <ImageHint purpose="post" />
         <div className="grid grid-cols-2 gap-3">
           <Field label="Área">
             <select className={inputCls} value={f.area} onChange={e => setF({ ...f, area: e.target.value as AreaId | '' })}>

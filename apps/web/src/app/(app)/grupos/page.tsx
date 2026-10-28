@@ -35,7 +35,7 @@ function Grupos() {
   const setTab = (t: Tab) => router.replace(`/grupos?aba=${t}`);
   return (
     <>
-      <Header title="Amigos e grupos" sub="Conecte-se, compartilhe e evolua junto" right={<IconBtn n="userPlus" label="Adicionar amigo" box onClick={() => setTab('amigos')} />} />
+      <Header title="Amigos e grupos" back={false} sub="Conecte-se, compartilhe e evolua junto" right={<IconBtn n="userPlus" label="Adicionar amigo" box onClick={() => setTab('amigos')} />} />
       <div className="space-y-4 px-4 pb-8">
         <Seg
           tone="a"

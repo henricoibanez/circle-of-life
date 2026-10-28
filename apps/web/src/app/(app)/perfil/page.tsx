@@ -9,7 +9,7 @@ import { Bell } from '@/components/bell';
 import { ConfirmSheet } from '@/components/confirm';
 import { useGoBack } from '@/components/header';
 import { Icon, type IconName } from '@/components/icon';
-import { Avatar, Bar, Card, Field, IconBtn, inputCls, Ring, Seg } from '@/components/primitives';
+import { Avatar, Bar, Card, Field, IconBtn, inputCls, Ring, Seg, ImageHint } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -254,7 +254,7 @@ export default function PerfilPage() {
             <Icon n="sparkles" className="h-6 w-6 text-primary" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Modo aleatório {prefs.randomTheme ? 'ativado' : 'desativado'}</p>
-              <p className="text-xs text-muted">Seu tema será alterado automaticamente a cada 2 minutos.</p>
+              <p className="text-xs text-muted">As cores mudam sozinhas a cada 2 minutos. O claro ou escuro continua como você escolheu.</p>
             </div>
             <button
               role="switch"
@@ -389,6 +389,7 @@ function ProfileForm({ onClose }: { onClose: () => void }) {
             }}
           />
         </label>
+        <ImageHint purpose="avatar" />
         {photo.url && (
           <button className="text-sm text-muted" onClick={() => setPhoto({ id: null, url: null })}>
             Remover foto

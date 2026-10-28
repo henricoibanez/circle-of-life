@@ -5,7 +5,7 @@ import { Dialog as DialogPrimitive } from 'radix-ui';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
 import { Icon } from '@/components/icon';
-import { AreaIcon, Avatar, Field, inputCls, Seg } from '@/components/primitives';
+import { AreaIcon, Avatar, Field, inputCls, Seg, ImageHint } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -359,7 +359,7 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
               if (!file) return;
               setUploading(true);
               try {
-                const up = await uploadImage(file, 'story', 1440);
+                const up = await uploadImage(file, 'story', 1920);
                 setPhoto({ id: up.id, url: up.url });
               } catch (err) {
                 toast(err instanceof Error ? err.message : 'Não foi possível enviar a foto.');
@@ -369,6 +369,7 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
             }}
           />
         </label>
+        <ImageHint purpose="story" className="text-center" />
         <p className="text-center text-xs text-muted">O story some sozinho em 24 horas.</p>
         <Field label={`Áreas da vida (1 a ${STORY_MAX_AREAS})`}>
           <div className="flex flex-wrap gap-2">

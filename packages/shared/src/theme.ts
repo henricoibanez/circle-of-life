@@ -14,6 +14,10 @@ export const PALETTES: { id: PaletteId; name: string; sub: string; art: ArtVaria
   { id: 'premium', name: 'Preto', sub: 'Premium', art: 'night', c: '#1e1e1e' },
 ];
 
-/** No modo aleatório, a paleta muda a cada 2 minutos (igual para todo mundo no mesmo instante). */
+/**
+ * No modo aleatório, a paleta muda a cada 2 minutos (igual para todo mundo no mesmo instante).
+ * Só as cores mudam, nunca o claro/escuro: por isso o Preto/Premium, que força o escuro, fica de fora.
+ */
 export const RANDOM_PALETTE_MS = 120_000;
-export const randomPalette = (now = Date.now()): PaletteId => PALETTES[Math.floor(now / RANDOM_PALETTE_MS) % PALETTES.length]!.id;
+const RANDOM_PALETTES = PALETTES.filter(p => p.id !== 'premium');
+export const randomPalette = (now = Date.now()): PaletteId => RANDOM_PALETTES[Math.floor(now / RANDOM_PALETTE_MS) % RANDOM_PALETTES.length]!.id;

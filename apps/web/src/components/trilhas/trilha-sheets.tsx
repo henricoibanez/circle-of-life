@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Art } from '@/components/art';
 import { AreaPicker } from '@/components/backlog/forms';
 import { Icon } from '@/components/icon';
-import { AreaIcon, Field, IconBtn, inputCls, Seg, Tag } from '@/components/primitives';
+import { AreaIcon, Field, IconBtn, inputCls, Seg, Tag, ImageHint } from '@/components/primitives';
 import { Sheet } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -449,6 +449,7 @@ export function PublishSheet({ epicId, groupId, onClose }: { epicId?: string; gr
             }}
           />
         </label>
+        <ImageHint purpose="trilha" />
       </div>
     </Sheet>
   );

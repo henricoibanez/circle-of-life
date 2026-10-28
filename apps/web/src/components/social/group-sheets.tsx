@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Art } from '@/components/art';
 import { AreaPicker } from '@/components/backlog/forms';
 import { Icon } from '@/components/icon';
-import { Field, inputCls } from '@/components/primitives';
+import { Field, inputCls, ImageHint } from '@/components/primitives';
 import { Sheet } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Cover, priceLabel } from '@/components/trilhas/trilha-sheets';
@@ -102,6 +102,7 @@ export function GroupForm({ group, onClose, onSaved }: { group?: GroupDetailDto;
             }}
           />
         </label>
+        <ImageHint purpose="group" />
       </div>
     </Sheet>
   );
