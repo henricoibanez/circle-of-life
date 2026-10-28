@@ -1,7 +1,7 @@
 'use client';
 
 import { AREAS, type AreaId, MAX_POST_AREAS, MAX_POST_IMAGES, type PostDraft, type PostDto, VISIBILITY, type Visibility } from '@circle/shared';
-import { type ReactNode, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icon';
 import { Avatar, Field, ImageHint, inputCls, Seg } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
@@ -9,7 +9,6 @@ import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { useFeedActions } from '@/lib/feed';
-import { tint } from '@/lib/color';
 import { useMe } from '@/lib/me';
 import { useGroups } from '@/lib/social';
 import { uploadImage } from '@/lib/upload';
@@ -155,36 +154,26 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
           )}
         </div>
         <ImageHint purpose="post" />
-        <Pick label="Áreas" hint={`até ${MAX_POST_AREAS}`}>
-          {AREAS.map(a => {
-            const on = f.areas.includes(a.id);
-            return (
-              <Toggle
-                key={a.id}
-                on={on}
-                disabled={!on && f.areas.length >= MAX_POST_AREAS}
-                color={a.color}
-                onClick={() => setF({ ...f, areas: on ? f.areas.filter(x => x !== a.id) : [...f.areas, a.id] })}
-              >
-                <Icon n={a.icon} className="h-4 w-4" />
-                {a.name}
-              </Toggle>
-            );
-          })}
-        </Pick>
-        {(groups?.mine.length ?? 0) > 0 && (
-          <Pick label="Grupos">
-            {groups!.mine.map(g => {
-              const on = f.groups.includes(g.id);
-              return (
-                <Toggle key={g.id} on={on} onClick={() => setF({ ...f, groups: on ? f.groups.filter(x => x !== g.id) : [...f.groups, g.id] })}>
-                  <Icon n={g.icon} className="h-4 w-4" />
-                  {g.name}
-                </Toggle>
-              );
-            })}
-          </Pick>
-        )}
+        <div className="grid grid-cols-2 gap-3">
+          <MultiSelect
+            label={`Áreas (até ${MAX_POST_AREAS})`}
+            empty="Nenhuma"
+            plural="áreas"
+            max={MAX_POST_AREAS}
+            options={AREAS.map(a => ({ id: a.id, label: a.name, icon: a.icon, color: a.color }))}
+            value={f.areas}
+            onChange={areas => setF({ ...f, areas: areas as AreaId[] })}
+          />
+          <MultiSelect
+            label="Grupos"
+            empty="Nenhum"
+            plural="grupos"
+            align="right"
+            options={(groups?.mine ?? []).map(g => ({ id: g.id, label: g.name, icon: g.icon }))}
+            value={f.groups}
+            onChange={groups => setF({ ...f, groups })}
+          />
+        </div>
         <Field label="Hashtags">
           <input className={inputCls} value={f.tags} onChange={e => setF({ ...f, tags: e.target.value })} placeholder="sprint, evolução" />
         </Field>
@@ -201,32 +190,91 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
   );
 }
 
-/** Escolha múltipla em "pílulas" que quebram linha. */
-function Pick({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <div>
-      <p className="mb-1.5 text-sm font-semibold">
-        {label} {hint && <span className="font-normal text-muted">({hint})</span>}
-      </p>
-      <div className="flex flex-wrap gap-1.5">{children}</div>
-    </div>
-  );
-}
+type Option = { id: string; label: string; icon: string; color?: string };
 
-function Toggle({ on, disabled, color, onClick, children }: { on: boolean; disabled?: boolean; color?: string; onClick: () => void; children: ReactNode }) {
+/** Caixa de seleção que aceita várias opções: abre uma lista com marcações. */
+function MultiSelect({
+  label,
+  empty,
+  plural,
+  max,
+  align = 'left',
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  empty: string;
+  plural: string;
+  max?: number;
+  align?: 'left' | 'right';
+  options: Option[];
+  value: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [open]);
+  const chosen = options.filter(o => value.includes(o.id));
+  const full = max !== undefined && value.length >= max;
+
   return (
-    <button
-      type="button"
-      aria-pressed={on}
-      disabled={disabled}
-      onClick={onClick}
-      style={on && color ? { color, background: tint(color, 0.12), borderColor: tint(color, 0.45) } : undefined}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition disabled:opacity-40 ${
-        on ? (color ? '' : 'border-primary/40 bg-primary/10 text-primary') : 'border-line bg-surface text-ink/80 hover:bg-sunk'
-      }`}
-    >
-      {children}
-    </button>
+    <div ref={box} className="relative">
+      <p className="mb-1.5 text-sm font-semibold">{label}</p>
+      <button
+        type="button"
+        aria-expanded={open}
+        disabled={options.length === 0}
+        onClick={() => setOpen(o => !o)}
+        className={`${inputCls} flex items-center gap-2 text-left disabled:opacity-50`}
+      >
+        {chosen.length > 0 && (
+          <span className="flex shrink-0 gap-0.5">
+            {chosen.map(o => (
+              <Icon key={o.id} n={o.icon} className="h-4 w-4" style={{ color: o.color }} />
+            ))}
+          </span>
+        )}
+        <span className="min-w-0 flex-1 truncate">{chosen.length === 0 ? empty : chosen.length === 1 ? chosen[0]!.label : `${chosen.length} ${plural}`}</span>
+        <Icon n="chevR" className={`h-4 w-4 shrink-0 text-muted transition ${open ? '-rotate-90' : 'rotate-90'}`} />
+      </button>
+      {open && (
+        <div
+          className={`absolute top-full z-20 mt-1 max-h-72 w-[15rem] max-w-[calc(100vw-2rem)] overflow-auto rounded-xl border border-line bg-surface p-1 shadow-lg ${
+            align === 'right' ? 'right-0' : 'left-0'
+          }`}
+        >
+          {options.map(o => {
+            const on = value.includes(o.id);
+            return (
+              <button
+                key={o.id}
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={on}
+                disabled={!on && full}
+                onClick={() => onChange(on ? value.filter(x => x !== o.id) : [...value, o.id])}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-sunk disabled:opacity-40"
+              >
+                <span
+                  className={`grid h-4.5 w-4.5 shrink-0 place-items-center rounded border ${on ? 'border-primary bg-primary text-onprimary' : 'border-line'}`}
+                >
+                  {on && <Icon n="check" className="h-3 w-3" sw={3} />}
+                </span>
+                <Icon n={o.icon} className="h-4 w-4 shrink-0" style={{ color: o.color }} />
+                <span className="min-w-0 flex-1 truncate">{o.label}</span>
+              </button>
+            );
+          })}
+          {full && <p className="px-2.5 pb-1.5 pt-1 text-xs text-muted">Até {max} por post. Desmarque uma para trocar.</p>}
+        </div>
+      )}
+    </div>
   );
 }
 
