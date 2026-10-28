@@ -14,6 +14,8 @@ export const FEED_FILTERS = ['para', 'amigos', 'grupos', 'seguindo', 'salvos'] a
 export type FeedFilter = (typeof FEED_FILTERS)[number];
 
 export const MAX_POST_IMAGES = 8;
+/** Áreas por post (os grupos não têm limite). */
+export const MAX_POST_AREAS = 3;
 
 /** O que originou um post de conclusão (para mostrar o "+N XP"). */
 export const POST_REF_TYPES = ['task', 'epic', 'initiative', 'sprint', 'sonho'] as const;
@@ -25,8 +27,8 @@ export type PostDto = {
   mine: boolean;
   title: string;
   text: string;
-  area: AreaId | null;
-  group: { id: string; name: string; icon: string } | null;
+  areas: AreaId[];
+  groups: { id: string; name: string; icon: string }[];
   visibility: Visibility;
   tags: string[];
   media: { id: string; url: string }[];

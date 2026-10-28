@@ -10,8 +10,8 @@ import { XpService } from '../xp/xp.service';
 export type PostInput = {
   title?: string;
   text?: string;
-  area?: AreaId | null;
-  groupId?: string | null;
+  areas?: AreaId[];
+  groupIds?: string[];
   visibility?: Visibility;
   tags?: string[];
   mediaIds?: string[];
@@ -26,7 +26,7 @@ const PAGE = 20;
 const postInclude = (userId: string) =>
   ({
     author: { select: PERSON_SELECT },
-    group: { select: { id: true, name: true, icon: true } },
+    groups: { include: { group: { select: { id: true, name: true, icon: true } } } },
     media: { include: { file: true }, orderBy: { position: 'asc' } },
     likes: { where: { userId: { not: userId } }, include: { user: { select: PERSON_SELECT } }, orderBy: { createdAt: 'desc' }, take: 3 },
     saves: { where: { userId }, select: { userId: true } },
@@ -40,8 +40,8 @@ const cleanTags = (tags: string[] = []) => [...new Set(tags.map(t => t.trim().re
 
 /**
  * Feed: posts, curtidas, salvos e comentários.
- * Quem vê um post: o autor sempre; post de grupo, só os membros; fora de grupo,
- * "publico" = todos, "amigos" = amigos do autor, "privado" = só o autor.
+ * Quem vê um post: o autor sempre; os membros dos grupos em que ele foi publicado;
+ * e mais "publico" = todos, "amigos" = amigos do autor, "privado" = ninguém além desses.
  */
 @Injectable()
 export class FeedService {
@@ -65,9 +65,9 @@ export class FeedService {
     return {
       OR: [
         { authorId: userId },
-        { groupId: { in: c.groups } },
-        { groupId: null, visibility: 'publico' },
-        { groupId: null, visibility: 'amigos', authorId: { in: c.friends } },
+        { groups: { some: { groupId: { in: c.groups } } } },
+        { visibility: 'publico' },
+        { visibility: 'amigos', authorId: { in: c.friends } },
       ],
     };
   }
@@ -93,8 +93,8 @@ export class FeedService {
         mine: r.authorId === userId,
         title: r.title,
         text: r.text,
-        area: r.area,
-        group: r.group,
+        areas: r.areas,
+        groups: r.groups.map(g => g.group).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
         visibility: r.visibility,
         tags: r.tags,
         media: await Promise.all(r.media.map(async m => ({ id: m.fileId, url: await this.uploads.url(m.file) }))),
@@ -117,18 +117,18 @@ export class FeedService {
         and.push({ authorId: { in: c.friends } });
         break;
       case 'grupos':
-        and.push({ groupId: { in: c.groups } });
+        and.push({ groups: { some: { groupId: { in: c.groups } } } });
         break;
       case 'seguindo':
-        and.push({ OR: [{ authorId: { in: c.friends } }, { groupId: { in: c.groups } }] });
+        and.push({ OR: [{ authorId: { in: c.friends } }, { groups: { some: { groupId: { in: c.groups } } } }] });
         break;
       case 'salvos':
         and.push({ saves: { some: { userId: user.id } } });
         break;
     }
-    if (q.area) and.push({ area: q.area });
+    if (q.area) and.push({ areas: { has: q.area } });
     if (q.author) and.push({ authorId: q.author });
-    if (q.group) and.push({ groupId: q.group });
+    if (q.group) and.push({ groups: { some: { groupId: q.group } } });
 
     const rows = await this.prisma.post.findMany({
       where: { AND: and },
@@ -156,9 +156,7 @@ export class FeedService {
 
   async create(user: User, input: PostInput) {
     if (!input.text?.trim() && !input.title?.trim()) throw new BadRequestException('Escreva alguma coisa ou dê um título à conquista.');
-    if (input.groupId && !(await this.prisma.groupMember.findUnique({ where: { groupId_userId: { groupId: input.groupId, userId: user.id } } }))) {
-      throw new ForbiddenException('Você precisa participar do grupo para postar nele.');
-    }
+    const groupIds = await this.checkGroups(user.id, input.groupIds);
     const mediaIds = [...new Set(input.mediaIds ?? [])];
     for (const id of mediaIds) {
       await this.uploads.readyFile(user.id, id, 'post');
@@ -172,8 +170,8 @@ export class FeedService {
           authorId: user.id,
           title: input.title?.trim() ?? '',
           text: input.text?.trim() ?? '',
-          area: input.area ?? null,
-          groupId: input.groupId ?? null,
+          areas: [...new Set(input.areas ?? [])],
+          groups: { create: groupIds.map(groupId => ({ groupId })) },
           visibility: input.visibility ?? user.defaultPostVisibility,
           tags: cleanTags(input.tags),
           refType: input.refId ? (input.refType ?? null) : null,
@@ -188,6 +186,14 @@ export class FeedService {
     return { post: await this.one(user, post.id), xp };
   }
 
+  /** Só dá para postar nos grupos de que a pessoa participa. */
+  private async checkGroups(userId: string, ids: string[] = []) {
+    const groupIds = [...new Set(ids)];
+    const member = await this.prisma.groupMember.count({ where: { userId, groupId: { in: groupIds } } });
+    if (member < groupIds.length) throw new ForbiddenException('Você precisa participar do grupo para postar nele.');
+    return groupIds;
+  }
+
   private async ownPost(userId: string, id: string) {
     const p = await this.prisma.post.findUnique({ where: { id } });
     if (!p || p.authorId !== userId) throw new NotFoundException('Post não encontrado.');
@@ -195,9 +201,10 @@ export class FeedService {
   }
 
   /** Editar o próprio post. Com mediaIds, a lista de imagens é trocada (as que saírem são apagadas do storage). */
-  async update(user: User, id: string, input: Partial<Pick<PostInput, 'title' | 'text' | 'area' | 'visibility' | 'tags' | 'mediaIds'>>) {
+  async update(user: User, id: string, input: Partial<Pick<PostInput, 'title' | 'text' | 'areas' | 'groupIds' | 'visibility' | 'tags' | 'mediaIds'>>) {
     const p = await this.ownPost(user.id, id);
     if (!(input.text ?? p.text).trim() && !(input.title ?? p.title).trim()) throw new BadRequestException('Escreva alguma coisa ou dê um título à conquista.');
+    const groupIds = input.groupIds && (await this.checkGroups(user.id, input.groupIds));
     let removed: string[] = [];
     if (input.mediaIds) {
       const ids = [...new Set(input.mediaIds)];
@@ -217,7 +224,8 @@ export class FeedService {
       data: {
         title: input.title?.trim(),
         text: input.text?.trim(),
-        area: input.area,
+        areas: input.areas && [...new Set(input.areas)],
+        groups: groupIds && { deleteMany: {}, create: groupIds.map(groupId => ({ groupId })) },
         visibility: input.visibility,
         tags: input.tags ? cleanTags(input.tags) : undefined,
       },

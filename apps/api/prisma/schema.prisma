@@ -661,7 +661,7 @@ model Group {
   createdAt   DateTime      @default(now())
   members     GroupMember[]
   trilhas     Trilha[]
-  posts       Post[]
+  posts       PostGroup[]
   topics      GroupTopic[]
 
   @@map("groups")
@@ -691,9 +691,9 @@ model Post {
   /// Conquista (opcional), mostrada em destaque com o ✓.
   title      String      @default("")
   text       String
-  area       Area?
-  groupId    String?
-  group      Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  /// Até 3 áreas da vida.
+  areas      Area[]      @default([])
+  /// Quem vê: o que a visibilidade libera + os membros dos grupos escolhidos (sem limite de grupos).
   visibility Visibility
   tags       String[]
   /// O que originou o post ao compartilhar uma conclusão (task, epic, initiative, sprint, sonho).
@@ -707,11 +707,23 @@ model Post {
   likes      PostLike[]
   saves      PostSave[]
   comments   Comment[]
+  groups     PostGroup[]
 
   @@index([createdAt])
   @@index([authorId, createdAt])
-  @@index([groupId, createdAt])
   @@map("posts")
+}
+
+/// Grupos em que o post foi publicado.
+model PostGroup {
+  postId  String
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([postId, groupId])
+  @@index([groupId])
+  @@map("post_groups")
 }
 
 /// Imagens do post (até 8), na ordem escolhida.

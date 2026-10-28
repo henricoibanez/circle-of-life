@@ -5,14 +5,14 @@ import { api } from './api';
 export type UploadPurpose = 'avatar' | 'dream' | 'task' | 'post' | 'story' | 'group' | 'trilha';
 
 /** Tamanho ideal de cada imagem, conforme o formato em que ela aparece no app (mostrado em cada campo). */
-export const IMAGE_SIZE: Record<UploadPurpose, string> = {
-  avatar: 'quadrada, 400 × 400 px',
-  dream: 'horizontal (4:3), 1200 × 900 px',
-  task: 'qualquer formato, até 1200 px no lado maior',
-  post: 'quadrada 1080 × 1080, vertical 1080 × 1350 (4:5) ou horizontal 1080 × 566. O app escolhe sozinho o formato mais próximo da sua foto e recorta o excesso',
-  story: 'vertical (9:16), 1080 × 1920 px. O app recorta sozinho se a foto for de outro formato',
-  group: 'horizontal (2:1), 1200 × 600 px, com o assunto no centro (ela também aparece num círculo)',
-  trilha: 'horizontal (16:9), 1200 × 675 px',
+export const IMAGE_SIZE: Record<UploadPurpose, [size: string, note?: string]> = {
+  avatar: ['400 × 400 px (quadrada)'],
+  dream: ['1200 × 900 px (horizontal)'],
+  task: ['até 1200 px no lado maior'],
+  post: ['1080 × 1080, 1080 × 1350 ou 1080 × 566 px', 'O app ajusta sozinho ao formato mais próximo.'],
+  story: ['1080 × 1920 px (vertical)', 'O app ajusta sozinho.'],
+  group: ['1200 × 600 px (horizontal)', 'Deixe o assunto no centro: ela também aparece num círculo.'],
+  trilha: ['1200 × 675 px (horizontal)'],
 };
 
 /** Formatos de post e story (os do Instagram), em px. */

@@ -63,10 +63,10 @@ describe('Feed', () => {
     assert.equal((await feed(ana.c)).includes('Post do Caio'), false);
   });
 
-  test('post de grupo: só membros veem; só membro posta', async () => {
+  test('post de grupo privado: só membros veem; só membro posta', async () => {
     const g = (await bia.c.request('POST', '/groups', { name: 'Leitores', description: '', area: 'intelectual' })).body;
-    assert.equal((await caio.c.request('POST', '/posts', { text: 'Intruso', groupId: g.id })).status, 403);
-    await bia.c.request('POST', '/posts', { text: 'No grupo', groupId: g.id });
+    assert.equal((await caio.c.request('POST', '/posts', { text: 'Intruso', groupIds: [g.id] })).status, 403);
+    await bia.c.request('POST', '/posts', { text: 'No grupo', groupIds: [g.id], visibility: 'privado' });
     assert.ok((await feed(bia.c, '?filter=grupos')).includes('No grupo'));
     assert.equal((await feed(ana.c)).includes('No grupo'), false);
     await ana.c.request('POST', `/groups/${g.id}/join`);
@@ -75,12 +75,32 @@ describe('Feed', () => {
     assert.deepEqual(await feed(ana.c, `?group=${g.id}`), ['No grupo']);
   });
 
-  test('filtros amigos e área', async () => {
-    await bia.c.request('POST', '/posts', { text: 'Treino feito', area: 'saude' });
+  test('vários grupos: quem vê é a visibilidade somada aos membros dos grupos', async () => {
+    const g1 = (await caio.c.request('POST', '/groups', { name: 'Corrida', description: '', area: 'saude' })).body;
+    const g2 = (await caio.c.request('POST', '/groups', { name: 'Finanças', description: '', area: 'financas' })).body;
+    await duda.c.request('POST', `/groups/${g2.id}/join`);
+    assert.equal((await caio.c.request('POST', '/posts', { text: 'x', groupIds: [g1.id, 'nao-existe'] })).status, 403);
+    const r = await caio.c.request('POST', '/posts', { text: 'Dois grupos', groupIds: [g2.id, g1.id], visibility: 'privado' });
+    assert.deepEqual(r.body.post.groups.map((g: { name: string }) => g.name), ['Corrida', 'Finanças']);
+    assert.ok((await feed(duda.c)).includes('Dois grupos'));
+    assert.equal((await feed(bia.c)).includes('Dois grupos'), false);
+    assert.deepEqual(await feed(caio.c, `?group=${g1.id}`), ['Dois grupos']);
+    // Todo mundo + grupos: todos veem, e o post continua na página dos grupos.
+    await caio.c.request('PATCH', `/posts/${r.body.post.id}`, { visibility: 'publico', groupIds: [g1.id] });
+    assert.ok((await feed(bia.c)).includes('Dois grupos'));
+    assert.deepEqual(await feed(duda.c, `?group=${g2.id}`), []);
+    assert.deepEqual(await feed(duda.c, `?group=${g1.id}`), ['Dois grupos']);
+  });
+
+  test('até 3 áreas; filtro por área acha qualquer uma delas', async () => {
+    assert.equal((await bia.c.request('POST', '/posts', { text: 'x', areas: ['saude', 'lazer', 'amor', 'familia'] })).status, 400);
+    assert.equal((await bia.c.request('POST', '/posts', { text: 'x', areas: ['inventada'] })).status, 400);
+    const r = await bia.c.request('POST', '/posts', { text: 'Treino feito', areas: ['saude', 'emocional', 'saude'] });
+    assert.deepEqual(r.body.post.areas, ['saude', 'emocional']);
     const amigos = await feed(ana.c, '?filter=amigos');
     assert.ok(amigos.includes('Treino feito'));
     assert.ok(!amigos.includes('Primeiro post'));
-    assert.deepEqual(await feed(ana.c, '?area=saude'), ['Treino feito']);
+    assert.deepEqual(await feed(ana.c, '?area=emocional'), ['Treino feito']);
   });
 
   test('curtidas: contagem, "curtido por" e aviso agrupado', async () => {
@@ -133,7 +153,7 @@ describe('Feed', () => {
     const ep = (await duda.c.request('POST', '/epics', { initiativeId: ini.id, title: 'Livros', area: 'intelectual' })).body;
     const t = (await duda.c.request('POST', '/tasks', { epicId: ep.id, title: 'Ler Sêneca' })).body;
     await duda.c.request('POST', `/tasks/${t.id}/move`, { status: 'done' });
-    const r = await duda.c.request('POST', '/posts', { title: 'Ler Sêneca', text: 'Terminei!', area: 'intelectual', refType: 'task', refId: t.id });
+    const r = await duda.c.request('POST', '/posts', { title: 'Ler Sêneca', text: 'Terminei!', areas: ['intelectual'], refType: 'task', refId: t.id });
     assert.equal(r.body.post.xpShown, 10);
     assert.equal(r.body.post.title, 'Ler Sêneca');
     // refId de outra pessoa não mostra XP
@@ -162,10 +182,10 @@ describe('Feed', () => {
     };
     const [a, b] = [await photo(), await photo()];
     const id = (await ana.c.request('POST', '/posts', { text: 'Com fotos', mediaIds: [a] })).body.post.id;
-    const r = await ana.c.request('PATCH', `/posts/${id}`, { text: 'Com outra foto', area: 'lazer', tags: ['viagem'], mediaIds: [b] });
+    const r = await ana.c.request('PATCH', `/posts/${id}`, { text: 'Com outra foto', areas: ['lazer'], tags: ['viagem'], mediaIds: [b] });
     assert.equal(r.status, 200);
     assert.equal(r.body.text, 'Com outra foto');
-    assert.equal(r.body.area, 'lazer');
+    assert.deepEqual(r.body.areas, ['lazer']);
     assert.deepEqual(r.body.tags, ['viagem']);
     assert.deepEqual(r.body.media.map((m: { id: string }) => m.id), [b]);
     assert.equal(await api.prisma.file.count({ where: { id: a } }), 0, 'a foto que saiu foi apagada');

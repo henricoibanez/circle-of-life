@@ -1,6 +1,6 @@
-import { AREA_IDS, type AreaId, FEED_FILTERS, type FeedFilter, MAX_POST_IMAGES, POST_REF_TYPES, type PostRefType, type Visibility } from '@circle/shared';
+import { AREA_IDS, type AreaId, FEED_FILTERS, type FeedFilter, MAX_POST_AREAS, MAX_POST_IMAGES, POST_REF_TYPES, type PostRefType, type Visibility } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { ArrayMaxSize, IsArray, IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { CurrentUser } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { SocialModule } from '../social/social.module';
@@ -11,8 +11,8 @@ const VIS = ['publico', 'amigos', 'privado'];
 class CreatePostDto {
   @IsOptional() @IsString() @MaxLength(120, { message: 'a conquista pode ter até 120 caracteres' }) title?: string;
   @IsOptional() @IsString() @MaxLength(3000, { message: 'o texto pode ter até 3.000 caracteres' }) text?: string;
-  @IsOptional() @ValidateIf((_, v) => v !== null) @IsIn(AREA_IDS, { message: 'área inválida' }) area?: AreaId | null;
-  @IsOptional() @ValidateIf((_, v) => v !== null) @IsString() groupId?: string | null;
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_AREAS, { message: `até ${MAX_POST_AREAS} áreas por post` }) @IsIn(AREA_IDS, { each: true, message: 'área inválida' }) areas?: AreaId[];
+  @IsOptional() @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) groupIds?: string[];
   @IsOptional() @IsIn(VIS, { message: 'visibilidade inválida' }) visibility?: Visibility;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) @MaxLength(30, { each: true }) tags?: string[];
   @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_IMAGES, { message: `até ${MAX_POST_IMAGES} imagens por post` }) @IsString({ each: true }) mediaIds?: string[];
@@ -22,7 +22,8 @@ class CreatePostDto {
 class UpdatePostDto {
   @IsOptional() @IsString() @MaxLength(120) title?: string;
   @IsOptional() @IsString() @MaxLength(3000) text?: string;
-  @IsOptional() @ValidateIf((_, v) => v !== null) @IsIn(AREA_IDS, { message: 'área inválida' }) area?: AreaId | null;
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_AREAS, { message: `até ${MAX_POST_AREAS} áreas por post` }) @IsIn(AREA_IDS, { each: true, message: 'área inválida' }) areas?: AreaId[];
+  @IsOptional() @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) groupIds?: string[];
   @IsOptional() @IsIn(VIS, { message: 'visibilidade inválida' }) visibility?: Visibility;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) @MaxLength(30, { each: true }) tags?: string[];
   @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_IMAGES, { message: `até ${MAX_POST_IMAGES} imagens por post` }) @IsString({ each: true }) mediaIds?: string[];

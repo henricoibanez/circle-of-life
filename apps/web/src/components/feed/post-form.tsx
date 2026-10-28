@@ -1,21 +1,23 @@
 'use client';
 
-import { AREAS, type AreaId, MAX_POST_IMAGES, type PostDraft, type PostDto, VISIBILITY, type Visibility } from '@circle/shared';
-import { useState } from 'react';
+import { AREAS, type AreaId, MAX_POST_AREAS, MAX_POST_IMAGES, type PostDraft, type PostDto, VISIBILITY, type Visibility } from '@circle/shared';
+import { type ReactNode, useState } from 'react';
 import { Icon } from '@/components/icon';
-import { Avatar, Field, inputCls, Seg, ImageHint } from '@/components/primitives';
+import { Avatar, Field, ImageHint, inputCls, Seg } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { useFeedActions } from '@/lib/feed';
+import { tint } from '@/lib/color';
 import { useMe } from '@/lib/me';
 import { useGroups } from '@/lib/social';
 import { uploadImage } from '@/lib/upload';
 
 /**
  * Criar post (como no protótipo), com visibilidade. Pode vir preenchido ao compartilhar uma conclusão.
- * Com `post`, edita um post seu (o grupo não muda depois de publicado).
+ * Até 3 áreas e quantos grupos quiser; os membros dos grupos veem além do que a visibilidade libera.
+ * Com `post`, edita um post seu.
  */
 export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft; groupId?: string; post?: PostDto; onClose: () => void }) {
   const { data: me } = useMe();
@@ -25,8 +27,8 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
   const [f, setF] = useState({
     title: post?.title ?? draft?.title ?? '',
     text: post?.text ?? draft?.text ?? '',
-    area: (post ? (post.area ?? '') : (draft?.area ?? '')) as AreaId | '',
-    group: post?.group?.id ?? groupId ?? '',
+    areas: post ? post.areas : draft?.area ? [draft.area] : ([] as AreaId[]),
+    groups: post ? post.groups.map(g => g.id) : groupId ? [groupId] : ([] as string[]),
     tags: post?.tags.join(', ') ?? '',
     visibility: (post?.visibility ?? me?.preferences.defaultPostVisibility ?? 'publico') as Visibility,
   });
@@ -41,10 +43,11 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
         await actions.update(post.id, {
           title: f.title.trim(),
           text: f.text.trim(),
-          area: f.area || null,
+          areas: f.areas,
+          groupIds: f.groups,
           tags: f.tags.split(/[\s,#]+/).filter(Boolean),
           mediaIds: media.map(m => m.id),
-          ...(post.group ? {} : { visibility: f.visibility }),
+          visibility: f.visibility,
         });
         toast('Post atualizado');
         onClose();
@@ -53,8 +56,8 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
       const r = await actions.create({
         title: f.title.trim(),
         text: f.text.trim(),
-        area: f.area || null,
-        groupId: f.group || null,
+        areas: f.areas,
+        groupIds: f.groups,
         visibility: f.visibility,
         tags: f.tags.split(/[\s,#]+/).filter(Boolean),
         mediaIds: media.map(m => m.id),
@@ -152,43 +155,78 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
           )}
         </div>
         <ImageHint purpose="post" />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Área">
-            <select className={inputCls} value={f.area} onChange={e => setF({ ...f, area: e.target.value as AreaId | '' })}>
-              <option value="">Nenhuma</option>
-              {AREAS.map(a => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Grupo">
-            <select className={inputCls} value={f.group} disabled={Boolean(post)} onChange={e => setF({ ...f, group: e.target.value })}>
-              <option value="">Nenhum</option>
-              {groups?.mine.map(g => (
-                <option key={g.id} value={g.id}>
+        <Pick label="Áreas" hint={`até ${MAX_POST_AREAS}`}>
+          {AREAS.map(a => {
+            const on = f.areas.includes(a.id);
+            return (
+              <Toggle
+                key={a.id}
+                on={on}
+                disabled={!on && f.areas.length >= MAX_POST_AREAS}
+                color={a.color}
+                onClick={() => setF({ ...f, areas: on ? f.areas.filter(x => x !== a.id) : [...f.areas, a.id] })}
+              >
+                <Icon n={a.icon} className="h-4 w-4" />
+                {a.name}
+              </Toggle>
+            );
+          })}
+        </Pick>
+        {(groups?.mine.length ?? 0) > 0 && (
+          <Pick label="Grupos">
+            {groups!.mine.map(g => {
+              const on = f.groups.includes(g.id);
+              return (
+                <Toggle key={g.id} on={on} onClick={() => setF({ ...f, groups: on ? f.groups.filter(x => x !== g.id) : [...f.groups, g.id] })}>
+                  <Icon n={g.icon} className="h-4 w-4" />
                   {g.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+                </Toggle>
+              );
+            })}
+          </Pick>
+        )}
         <Field label="Hashtags">
           <input className={inputCls} value={f.tags} onChange={e => setF({ ...f, tags: e.target.value })} placeholder="sprint, evolução" />
         </Field>
-        <Field label="Quem pode ver">
-          {f.group ? (
-            <p className="flex items-center gap-2 rounded-xl bg-sunk px-3 py-2.5 text-sm text-muted">
-              <Icon n="users" className="h-4 w-4" />
-              Só os membros do grupo.
-            </p>
-          ) : (
-            <Seg items={VISIBILITY.map(v => ({ id: v.id, label: v.label }))} value={f.visibility} onChange={visibility => setF({ ...f, visibility })} />
-          )}
-        </Field>
+        <div>
+          <p className="mb-1.5 text-sm font-semibold">Quem pode ver</p>
+          <Seg items={VISIBILITY.map(v => ({ id: v.id, label: v.label }))} value={f.visibility} onChange={visibility => setF({ ...f, visibility })} />
+          <p className="mt-1.5 text-xs text-muted">
+            {f.visibility === 'publico' ? 'Todas as pessoas do app.' : f.visibility === 'amigos' ? 'Só os seus amigos.' : 'Só você.'}
+            {f.groups.length > 0 && (f.visibility === 'publico' ? ' O post também aparece nos grupos escolhidos.' : ' E os membros dos grupos escolhidos.')}
+          </p>
+        </div>
       </div>
     </Sheet>
+  );
+}
+
+/** Escolha múltipla em "pílulas" que quebram linha. */
+function Pick({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-sm font-semibold">
+        {label} {hint && <span className="font-normal text-muted">({hint})</span>}
+      </p>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function Toggle({ on, disabled, color, onClick, children }: { on: boolean; disabled?: boolean; color?: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      disabled={disabled}
+      onClick={onClick}
+      style={on && color ? { color, background: tint(color, 0.12), borderColor: tint(color, 0.45) } : undefined}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition disabled:opacity-40 ${
+        on ? (color ? '' : 'border-primary/40 bg-primary/10 text-primary') : 'border-line bg-surface text-ink/80 hover:bg-sunk'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

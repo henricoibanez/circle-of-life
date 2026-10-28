@@ -31,8 +31,8 @@ export function useComments(id: string) {
 export type PostBody = {
   title?: string;
   text?: string;
-  area?: AreaId | null;
-  groupId?: string | null;
+  areas?: AreaId[];
+  groupIds?: string[];
   visibility?: Visibility;
   tags?: string[];
   mediaIds?: string[];

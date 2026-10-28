@@ -470,8 +470,8 @@ model Post {
   kind       PostKind   @default(post)
   title      String     @default("")
   text       String
-  area       Area?
-  groupId    String?                           // post de grupo: visível para os membros
+  areas      Area[]                            // até 3
+  groups     PostGroup[]                       // vários grupos; os membros veem além da visibilidade
   visibility Visibility                        // vem da configuração padrão; pode mudar no post
   tags       String[]
   xpShown    Int?                              // "+10 XP" quando vem de uma conclusão

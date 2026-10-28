@@ -11,7 +11,16 @@ import { Icon, type IconName } from './icon';
 
 /** "Tamanho ideal: …" embaixo de cada campo de imagem. */
 export function ImageHint({ purpose, className = '' }: { purpose: UploadPurpose; className?: string }) {
-  return <p className={`text-xs text-muted ${className}`}>Tamanho ideal: {IMAGE_SIZE[purpose]}.</p>;
+  const [size, note] = IMAGE_SIZE[purpose];
+  return (
+    <p className={`flex gap-1.5 text-xs leading-snug text-muted ${className}`}>
+      <Icon n="image" className="mt-px h-3.5 w-3.5 shrink-0" />
+      <span>
+        Ideal: <span className="font-medium text-ink/70">{size}</span>
+        {note && <span className="block text-muted/80">{note}</span>}
+      </span>
+    </p>
+  );
 }
 
 export function AreaIcon({ id, size = 'w-11 h-11', icon = 'w-5 h-5', color }: { id?: AreaId | null; size?: string; icon?: string; color?: string }) {

@@ -20,8 +20,8 @@ export function PostCard({ p }: { p: PostDto }) {
   const actions = useFeedActions();
   const toast = useToast();
   const { openSheet, openActions } = useSheets();
-  const g = p.group;
-  const a = p.area ? AREA[p.area] : null;
+  const groups = p.groups;
+  const areas = p.areas.map(id => AREA[id]);
   const media = p.media;
   const vis = VISIBILITY.find(v => v.id === p.visibility)!;
 
@@ -62,16 +62,37 @@ export function PostCard({ p }: { p: PostDto }) {
           <p className="font-semibold leading-tight">{p.mine ? 'Você' : p.author.name}</p>
           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-muted">
             {since(p.createdAt)}
-            {(g || a) && (
+            {groups.length > 0 && (
               <>
                 <span>•</span>
-                <span className="inline-flex items-center gap-1 text-primary">
-                  <Icon n={(g ? g.icon : a!.icon) as IconName} className="h-4 w-4" />
-                  {g ? g.name : a!.name}
+                <span className="inline-flex min-w-0 items-center gap-1 text-primary">
+                  <Icon n={groups[0]!.icon as IconName} className="h-4 w-4 shrink-0" />
+                  {groups.map(g => g.name).join(', ')}
                 </span>
               </>
             )}
-            {p.mine && !g && p.visibility !== 'publico' && (
+            {areas.length > 0 && (
+              <>
+                <span>•</span>
+                {/* Uma área sem grupo mostra o nome; várias (ou com grupo), só os ícones nas cores das áreas. */}
+                {areas.length === 1 && groups.length === 0 ? (
+                  <span className="inline-flex items-center gap-1" style={{ color: areas[0]!.color }}>
+                    <Icon n={areas[0]!.icon} className="h-4 w-4" />
+                    {areas[0]!.name}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    {areas.map(a => (
+                      <span key={a.id} title={a.name} style={{ color: a.color }}>
+                        <Icon n={a.icon} className="h-4 w-4" />
+                        <span className="sr-only">{a.name}</span>
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </>
+            )}
+            {p.mine && p.visibility !== 'publico' && (
               <span className="inline-flex items-center gap-1" title={vis.label}>
                 <span>•</span>
                 <Icon n={vis.icon} className="h-3.5 w-3.5" />

@@ -11,7 +11,7 @@ type PostSeed = {
   hoursAgo: number;
   title?: string;
   text: string;
-  area?: Area;
+  areas?: Area[];
   group?: string;
   visibility?: Visibility;
   tags?: string[];
@@ -28,7 +28,7 @@ const POSTS: PostSeed[] = [
     group: 'Time Ágil',
     title: 'Sprint 11 encerrada: 9 de 10 tarefas prontas',
     text: 'Só a reunião com o corretor ficou para a próxima. O melhor da sprint foi começar a hidratação diária: já estou na semana 2.',
-    area: 'saude',
+    areas: ['saude', 'profissional'],
     tags: ['sprint', 'constância', 'timeágil'],
     photo: 'po_agua',
     likes: ['julia', 'lucas', 'tiago'],
@@ -40,7 +40,7 @@ const POSTS: PostSeed[] = [
   {
     author: 'julia',
     hoursAgo: 5,
-    area: 'emocional',
+    areas: ['emocional'],
     title: 'Épico encerrado: Diário de 30 dias',
     text: 'Escrevi uma página por dia durante um mês inteiro. Nunca imaginei que fosse conseguir.',
     xp: 50,
@@ -51,7 +51,7 @@ const POSTS: PostSeed[] = [
   {
     author: 'lucas',
     hoursAgo: 9,
-    area: 'profissional',
+    areas: ['profissional'],
     title: 'Épico encerrado: Plataforma de Aprendizado 🚀',
     text: 'Seis meses de trabalho à noite. Hoje o primeiro aluno de verdade fez login. Agora é ver se alguém usa.',
     xp: 50,
@@ -62,7 +62,7 @@ const POSTS: PostSeed[] = [
   {
     author: 'tiago',
     hoursAgo: 26,
-    area: 'saude',
+    areas: ['saude'],
     title: 'Épico encerrado: correr 5 km',
     text: 'Seis semanas atrás eu não corria até a esquina. Hoje foram 5 km sem parar, em 34 minutos.',
     xp: 50,
@@ -74,7 +74,8 @@ const POSTS: PostSeed[] = [
     author: 'barbara',
     hoursAgo: 50,
     group: 'Leitores de Homero',
-    area: 'intelectual',
+    visibility: 'privado',
+    areas: ['intelectual'],
     text: 'Terminei o canto 6 da Ilíada. A despedida de Heitor e Andrômaca é a cena mais humana que já li.',
     tags: ['ilíada', 'clássicos'],
     photo: 'po_iliada',
@@ -83,7 +84,7 @@ const POSTS: PostSeed[] = [
   {
     author: 'vinicius',
     hoursAgo: 30,
-    area: 'lazer',
+    areas: ['lazer'],
     text: 'Primeira semana usando o quadro. Tirei do papel duas tarefas que estavam paradas há meses.',
     photo: 'po_kanban',
     likes: ['tiago'],
@@ -102,8 +103,8 @@ export async function seedFeed(prisma: PrismaClient, created: Record<string, str
         authorId: id(p.author),
         title: p.title ?? '',
         text: p.text,
-        area: p.area ?? null,
-        groupId: p.group ? (groups.get(p.group) ?? null) : null,
+        areas: p.areas ?? [],
+        groups: p.group && groups.has(p.group) ? { create: [{ groupId: groups.get(p.group)! }] } : undefined,
         visibility: p.visibility ?? 'publico',
         tags: p.tags ?? [],
         xpShown: p.xp ?? null,
