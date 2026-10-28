@@ -912,3 +912,14 @@ model EmailCode {
   @@index([email, purpose])
   @@map("email_codes")
 }
+
+/// Contador de tentativas para o limite de força bruta (login, envio de códigos).
+/// Guardado no banco porque, na Vercel, a API não mantém memória entre pedidos.
+/// Janela fixa: quando `windowStart` passa da janela, a contagem recomeça.
+model RateLimit {
+  key         String   @id
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
+
+  @@map("rate_limits")
+}

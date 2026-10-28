@@ -4,10 +4,14 @@ import type { EmailCodePurpose, Prisma } from '../generated/prisma/client';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { hashEmailCode, newEmailCode } from './password';
+import { RateLimitService } from './rate-limit.service';
 
 const VALID_MS = 15 * 60_000;
 const COOLDOWN_MS = 60_000;
 const MAX_ATTEMPTS = 5;
+/** Teto de códigos enviados para o mesmo e-mail por dia (evita enxurrada de e-mails). */
+const MAX_PER_DAY = 10;
+const DAY_MS = 24 * 3600_000;
 
 const TEXTS: Record<EmailCodePurpose, { subject: string; title: string; intro: string }> = {
   cadastro: {
@@ -32,6 +36,7 @@ export class EmailCodeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly rate: RateLimitService,
   ) {}
 
   get enabled() {
@@ -48,6 +53,7 @@ export class EmailCodeService {
     if (last && Date.now() - last.createdAt.getTime() < COOLDOWN_MS) {
       throw new HttpException('Espere um minuto para pedir outro código.', HttpStatus.TOO_MANY_REQUESTS);
     }
+    await this.rate.hit(`code:${email}`, MAX_PER_DAY, DAY_MS);
     const code = newEmailCode();
     await this.prisma.$transaction([
       this.prisma.emailCode.deleteMany({ where: { email, purpose } }),

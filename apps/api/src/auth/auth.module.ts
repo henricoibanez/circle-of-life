@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { SessionGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { EmailCodeService } from './email-code.service';
+import { RateLimitService } from './rate-limit.service';
 import { GoogleAuthController, GoogleUnavailableController } from './google.controller';
 import { GoogleAuthGuard } from './google-auth.guard';
 import { GoogleStrategy } from './google.strategy';
@@ -26,8 +27,8 @@ const googleOn = (env: NodeJS.ProcessEnv) => Boolean(env.GOOGLE_CLIENT_ID && env
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailCodeService, SessionService, JwtStrategy, { provide: APP_GUARD, useClass: SessionGuard }],
-  exports: [AuthService, SessionService],
+  providers: [AuthService, EmailCodeService, RateLimitService, SessionService, JwtStrategy, { provide: APP_GUARD, useClass: SessionGuard }],
+  exports: [AuthService, SessionService, RateLimitService],
 })
 export class SessionModule {}
 

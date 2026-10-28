@@ -8,6 +8,7 @@ import { uniqueHandle } from '../users/handle';
 import { EmailCodeService } from './email-code.service';
 import type { GoogleIdentity } from './google.strategy';
 import { checkPassword, hashPassword } from './password';
+import { RateLimitService } from './rate-limit.service';
 
 /** Motivos de recusa do login, mostrados em português na tela de login. */
 export type LoginError = 'email-nao-verificado' | 'sem-convite' | 'convite-outro-email';
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService<Env, true>,
     private readonly codes: EmailCodeService,
+    private readonly rate: RateLimitService,
   ) {}
 
   private isAdminEmail(email: string) {
@@ -115,12 +117,17 @@ export class AuthService {
   }
 
   async loginWithPassword(rawEmail: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email: normalizeEmail(rawEmail) } });
+    const email = normalizeEmail(rawEmail);
+    // Trava a força bruta: até 10 tentativas por e-mail a cada 10 minutos.
+    await this.rate.hit(`login:${email}`, 10, 10 * 60_000);
+    const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user || !(await checkPassword(password, user.passwordHash))) {
       throw new UnauthorizedException(
         user && !user.passwordHash ? 'Essa conta entra com o Google. Para usar senha, toque em "Esqueci minha senha".' : 'E-mail ou senha incorretos.',
       );
     }
+    // Deu certo: zera o contador para não atrapalhar os próximos logins.
+    await this.rate.clear(`login:${email}`);
     return this.promote(user);
   }
 
