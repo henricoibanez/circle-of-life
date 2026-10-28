@@ -95,8 +95,9 @@ export function PostCard({ p }: { p: PostDto }) {
         <div className={`mt-3 grid gap-2 ${media.length === 1 ? 'grid-cols-1' : media.length === 2 ? 'grid-cols-2' : 'grid-cols-4'}`}>
           {media.slice(0, media.length > 4 ? 3 : 4).map((m, i) => (
             <button key={m.id} onClick={() => openSheet(close => <Gallery media={media} start={i} onClose={close} />)} aria-label={`Ver imagem ${i + 1}`}>
+              {/* Foto única no formato em que foi enviada (quadrada, vertical 4:5 ou horizontal); várias, em miniaturas quadradas. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={m.url} alt="" className={`w-full rounded-xl object-cover ${media.length === 1 ? 'aspect-[16/9]' : 'aspect-square'}`} />
+              <img src={m.url} alt="" className={`w-full rounded-xl object-cover ${media.length === 1 ? 'max-h-[40rem]' : 'aspect-square'}`} />
             </button>
           ))}
           {media.length > 4 && (
