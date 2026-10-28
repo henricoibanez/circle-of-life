@@ -1,6 +1,7 @@
 'use client';
 
 import { AREA, AREAS, isLate, type AreaId, type TaskDto, type TaskStatus } from '@circle/shared';
+import Link from 'next/link';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { boardTasks, SprintSheet } from '@/components/board/sprint-sheet';
@@ -226,7 +227,7 @@ export default function BoardPage() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 px-4 pb-3">
+      <div className="flex items-center gap-1.5 px-4 pb-3">
         {(
           [
             ['quadro', 'board', 'Quadro'],
@@ -236,7 +237,7 @@ export default function BoardPage() {
           <button
             key={id}
             onClick={() => setView(id)}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2.5 sm:px-4 text-sm font-semibold ${
               view === id ? 'bg-primary/10 text-primary' : 'border border-line bg-surface text-ink/80'
             }`}
           >
@@ -244,14 +245,18 @@ export default function BoardPage() {
             {label}
           </button>
         ))}
+        <Link href="/backlog" className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2.5 sm:px-4 text-sm font-semibold text-ink/80">
+          <Icon n="backlog" className="h-4 w-4" />
+          Backlog
+        </Link>
         <button
           onClick={areaFilter}
-          className={`ml-auto inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${
+          className={`ml-auto inline-flex items-center gap-1.5 rounded-xl border px-3 py-2.5 sm:px-4 text-sm font-semibold ${
             area !== 'all' ? 'border-primary/40 bg-primary/5 text-primary' : 'border-line bg-surface text-ink/80'
           }`}
         >
           <Icon n="filter" className="h-4 w-4" />
-          {area === 'all' ? 'Filtros' : AREA[area].name.split(' ')[0]}
+          {area === 'all' ? <span className="max-sm:sr-only">Filtros</span> : AREA[area].name.split(' ')[0]}
         </button>
       </div>
 
