@@ -126,7 +126,8 @@ export class TrilhasService {
       ...dto!,
       tasks: tasks.map(x => x.title),
       group: t.group,
-      canReview: t.status === 'pendente' && t.authorId !== user.id && (t.groupId ? gestor : user.role === 'admin'),
+      // Na loja, o admin do app revisa qualquer trilha (inclusive a própria: pode ser o único admin).
+      canReview: t.status === 'pendente' && (t.groupId ? gestor && t.authorId !== user.id : user.role === 'admin'),
       canEdit: Boolean(t.groupId) && gestor && t.status === 'aprovada',
     };
   }
@@ -231,7 +232,7 @@ export class TrilhasService {
     }
   }
 
-  /** Quem revisa: admin do app (loja) ou gestor do grupo (grupo). Ninguém revisa a própria trilha. */
+  /** Quem revisa: admin do app (loja, inclusive a própria trilha) ou gestor do grupo (grupo). */
   private async forReview(user: User, id: string) {
     const t = await this.prisma.trilha.findUnique({ where: { id }, include: { group: { select: { id: true, name: true } } } });
     if (!t) throw new NotFoundException('Trilha não encontrada.');

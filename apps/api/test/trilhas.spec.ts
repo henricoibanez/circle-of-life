@@ -70,6 +70,12 @@ describe('Loja de trilhas', () => {
     assert.ok((await author.c.request('GET', '/notifications')).body.some((n: { type: string }) => n.type === 'trilha_aprovada'));
   });
 
+  test('o admin aprova a própria trilha (pode ser o único admin)', async () => {
+    const id = (await admin.c.request('POST', `/epics/${await makeEpic(admin.c)}/publish`, { description: 'Trilha publicada pelo próprio admin.', category: 'saude', priceXp: 0 })).body.id;
+    assert.equal((await admin.c.request('GET', `/trilhas/${id}`)).body.canReview, true);
+    assert.equal((await admin.c.request('POST', `/trilhas/${id}/approve`)).body.status, 'aprovada');
+  });
+
   test('recusar com motivo: autor vê o motivo e é avisado', async () => {
     const id = (await publish(await makeEpic(author.c))).body.id;
     assert.equal((await admin.c.request('POST', `/trilhas/${id}/reject`, { reason: 'Descreva melhor as tarefas.' })).status, 204);

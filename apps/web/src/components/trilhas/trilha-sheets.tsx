@@ -82,30 +82,7 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
   const status = statusTag(t);
 
   let footer;
-  if (t.canReview && !rejecting) {
-    footer = (
-      <>
-        <Button variant="line" className="flex-1" disabled={busy} onClick={() => setRejecting(true)}>
-          Recusar
-        </Button>
-        <Button className="flex-1" disabled={busy} onClick={() => go(() => actions.approve(id), t.groupId ? 'Trilha aprovada e liberada no grupo' : 'Trilha aprovada e publicada na loja')}>
-          <Icon n="checkCircle" className="h-4 w-4" />
-          Aprovar
-        </Button>
-      </>
-    );
-  } else if (rejecting) {
-    footer = (
-      <>
-        <Button variant="line" className="flex-1" onClick={() => setRejecting(false)}>
-          Voltar
-        </Button>
-        <Button className="flex-1 !bg-red-600 !text-white" disabled={busy} onClick={() => go(() => actions.reject(id, reason), 'Trilha recusada').then(ok => ok && onClose())}>
-          Recusar trilha
-        </Button>
-      </>
-    );
-  } else if (t.status === 'aprovada' && !importing) {
+  if (t.status === 'aprovada' && !importing) {
     footer = (
       <Button variant="accent" className="flex-1" onClick={() => setImporting(true)}>
         {needsPayment ? `Comprar por ${priceLabel(t)}` : t.acquired ? 'Importar novamente' : 'Importar para o backlog'}
@@ -129,11 +106,6 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
       {t.group && <p className="mb-2 text-xs text-muted">Só os membros de {t.group.name} veem e baixam esta trilha.</p>}
       <p className="text-[0.9375rem] text-ink/80">{t.description}</p>
       {t.rejectionReason && t.status === 'recusada' && <p className="mt-3 rounded-xl bg-red-500/5 px-3 py-2 text-sm text-red-700">Motivo da recusa: {t.rejectionReason}</p>}
-      {rejecting && (
-        <Field label="Motivo (opcional, o autor vai ver)">
-          <textarea rows={3} maxLength={500} className={inputCls} value={reason} onChange={e => setReason(e.target.value)} placeholder="Ex.: Detalhe melhor as tarefas da segunda semana." />
-        </Field>
-      )}
       <div className="mt-4 flex items-center gap-2">
         <AreaIcon id={t.area} size="w-7 h-7" icon="w-4 h-4" />
         <p className="flex-1 font-semibold">{t.title}</p>
@@ -150,6 +122,46 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
           </li>
         ))}
       </ul>
+      {/* Revisão (admin na loja, gestor no grupo): no fim, depois de conferir as tarefas. */}
+      {t.canReview && (
+        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3">
+          <p className="mb-2 text-sm font-semibold text-amber-700">{rejecting ? 'Por que recusar?' : 'Confira as tarefas e decida'}</p>
+          {rejecting && (
+            <textarea
+              rows={3}
+              maxLength={500}
+              className={inputCls + ' mb-2'}
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              placeholder="Motivo (opcional, o autor vai ver). Ex.: Detalhe melhor as tarefas da segunda semana."
+              autoFocus
+            />
+          )}
+          <div className="flex gap-2">
+            {rejecting ? (
+              <>
+                <Button variant="line" className="flex-1" onClick={() => setRejecting(false)}>
+                  Voltar
+                </Button>
+                <Button className="flex-1 !bg-red-600 !text-white" disabled={busy} onClick={() => go(() => actions.reject(id, reason), 'Trilha recusada').then(ok => ok && onClose())}>
+                  Recusar trilha
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="line" className="flex-1 !text-red-600" disabled={busy} onClick={() => setRejecting(true)}>
+                  <Icon n="xCircle" className="h-4 w-4" />
+                  Recusar
+                </Button>
+                <Button className="flex-1" disabled={busy} onClick={() => go(() => actions.approve(id), t.groupId ? 'Trilha aprovada e liberada no grupo' : 'Trilha aprovada e publicada na loja')}>
+                  <Icon n="checkCircle" className="h-4 w-4" />
+                  Aprovar
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <div className="mt-4 flex flex-wrap gap-4">
         {t.canEdit && (
           <button className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent" onClick={() => setEditing(true)}>

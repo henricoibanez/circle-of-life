@@ -27,8 +27,9 @@ export default function LojaPage() {
   const isAdmin = me?.role === 'admin';
   const list = (data ?? []).filter(t => (cat === 'all' || t.category === cat) && (!q || (t.title + t.description).toLowerCase().includes(q.toLowerCase())));
   const pending = list.filter(t => t.status === 'pendente');
-  const visible = list.filter(t => t.status !== 'pendente' || t.mine);
-  const reviewQueue = isAdmin ? pending.filter(t => !t.mine) : [];
+  // O admin revisa todas as pendentes, inclusive as que ele mesmo publicou.
+  const reviewQueue = isAdmin ? pending : [];
+  const visible = list.filter(t => t.status !== 'pendente' || (t.mine && !isAdmin));
 
   return (
     <>
@@ -146,7 +147,7 @@ export default function LojaPage() {
                   </span>
                 )}
                 <Button variant="aline" className="mt-2.5 py-2 text-[0.8125rem]" onClick={() => open(t.id)}>
-                  {blurred ? 'Revisar' : t.acquired ? 'Importada' : 'Ver detalhes'}
+                  {t.status === 'pendente' && isAdmin ? 'Revisar' : t.acquired ? 'Importada' : 'Ver detalhes'}
                 </Button>
               </div>
             );
