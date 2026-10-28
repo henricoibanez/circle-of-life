@@ -40,7 +40,7 @@ describe('Login e convites (ambiente de desenvolvimento)', () => {
 
   test('providers informa o que está disponível', async () => {
     const res = await client(api.url).request('GET', '/auth/providers');
-    assert.deepEqual(res.body, { google: false, dev: true, convite: true });
+    assert.deepEqual(res.body, { google: false, dev: true, convite: true, senha: true });
   });
 
   test('sem credenciais do Google, o botão volta ao login com aviso', async () => {

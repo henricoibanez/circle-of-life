@@ -11,12 +11,16 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   const [invite, setInvite] = useState<Check | null>(null);
   const [error, setError] = useState('');
   const [googleOn, setGoogleOn] = useState(true);
+  const [senhaOn, setSenhaOn] = useState(false);
 
   useEffect(() => {
     api<Check>(`/invites/check/${encodeURIComponent(token)}`)
       .then(setInvite)
       .catch(e => setError(e instanceof ApiError ? e.message : 'Não foi possível abrir o convite.'));
-    api<{ google: boolean }>('/auth/providers').then(p => setGoogleOn(p.google));
+    api<{ google: boolean; senha: boolean }>('/auth/providers').then(p => {
+      setGoogleOn(p.google);
+      setSenhaOn(p.senha);
+    });
   }, [token]);
 
   return (
@@ -34,7 +38,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
           <div className="space-y-2">
             <h1 className="text-2xl font-bold">Você foi convidado</h1>
             <p className="text-muted">
-              Para entrar, use a conta Google de <strong className="text-ink">{invite.email}</strong>.
+              Para entrar, use <strong className="text-ink">{invite.email}</strong>: com a conta Google desse e-mail{senhaOn ? ' ou criando uma senha' : ''}.
             </p>
           </div>
           <a
@@ -44,6 +48,14 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
           >
             Aceitar convite e entrar com Google
           </a>
+          {senhaOn && (
+            <a
+              href={`/login?criar=1&email=${encodeURIComponent(invite.email)}`}
+              className="rounded-xl border border-line bg-surface px-4 py-3 font-semibold hover:bg-sunk"
+            >
+              Criar conta com e-mail e senha
+            </a>
+          )}
           {!googleOn && <p className="text-xs text-muted">Login com Google ainda não configurado neste ambiente.</p>}
         </>
       )}

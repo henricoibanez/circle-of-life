@@ -7,6 +7,7 @@ import type { Env } from '../config/env';
 import { AuthController } from './auth.controller';
 import { SessionGuard } from './auth.guard';
 import { AuthService } from './auth.service';
+import { EmailCodeService } from './email-code.service';
 import { GoogleAuthController, GoogleUnavailableController } from './google.controller';
 import { GoogleAuthGuard } from './google-auth.guard';
 import { GoogleStrategy } from './google.strategy';
@@ -25,7 +26,7 @@ const googleOn = (env: NodeJS.ProcessEnv) => Boolean(env.GOOGLE_CLIENT_ID && env
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SessionService, JwtStrategy, { provide: APP_GUARD, useClass: SessionGuard }],
+  providers: [AuthService, EmailCodeService, SessionService, JwtStrategy, { provide: APP_GUARD, useClass: SessionGuard }],
   exports: [AuthService, SessionService],
 })
 export class SessionModule {}

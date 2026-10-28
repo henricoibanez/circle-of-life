@@ -11,6 +11,7 @@
  * A cada etapa, este arquivo cresce com o restante do cenário do protótipo
  * (backlog, sprint, exercícios, social…).
  */
+import { hashPassword } from '../src/auth/password';
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -60,8 +61,10 @@ async function main() {
   await prisma.user.deleteMany({ where: { isTestUser: true } });
 
   const created: Record<string, string> = {};
+  // Todos os usuários de teste entram também com a senha "teste1234" (login com e-mail e senha).
+  const passwordHash = await hashPassword('teste1234');
   for (const data of USERS) {
-    const user = await prisma.user.create({ data: { ...data, isTestUser: true } });
+    const user = await prisma.user.create({ data: { ...data, isTestUser: true, passwordHash } });
     created[user.email] = user.id;
   }
 

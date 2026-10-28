@@ -14,7 +14,7 @@ Este arquivo é lido pelo Claude no início de toda sessão. Ele explica o que �
 
 Um **app de celular que também funciona no computador**. Nesta versão (beta) ele é um aplicativo web instalável (PWA): a pessoa abre no navegador, pode "instalar" na tela inicial do celular e recebe notificações. O layout é pensado primeiro para o celular. **Depois do beta, o app irá para a App Store e o Google Play**; por isso, evite soluções que só funcionem no navegador quando houver alternativa equivalente.
 
-**Acesso só por convite** nesta versão: apenas participantes do Sprint da Vida entram. **Só administradores convidam**: o admin digita o e-mail, a pessoa recebe o convite e entra com a conta Google daquele e-mail. Os e-mails listados na variável `ADMIN_EMAILS` entram sem convite e viram administradores (é assim que o primeiro admin entra em produção). Convites feitos por participantes comuns (ex.: "Convidar pelo WhatsApp") ficam para o futuro. No futuro, qualquer pessoa poderá se cadastrar (Google, cadastro próprio etc.). Por isso, o login deve ser feito de um jeito que permita acrescentar outras formas de entrada depois.
+**Acesso só por convite** nesta versão: apenas participantes do Sprint da Vida entram. **Só administradores convidam**: o admin digita o e-mail, a pessoa recebe o convite e entra com a conta Google daquele e-mail **ou cria uma conta com e-mail e senha** (decisão do dono de 28/10/2026). No cadastro com senha, um **código de 6 números** chega por e-mail e a conta só é criada depois de confirmado; a pessoa aceita os **termos de uso** (texto provisório em `/termos`, a revisar). "Esqueci minha senha" manda um código para criar uma senha nova (serve também para quem só entrava com o Google). Os e-mails listados na variável `ADMIN_EMAILS` entram sem convite e viram administradores (é assim que o primeiro admin entra em produção). Convites feitos por participantes comuns (ex.: "Convidar pelo WhatsApp") ficam para o futuro. No futuro, qualquer pessoa poderá se cadastrar (Google, cadastro próprio etc.). Por isso, o login deve ser feito de um jeito que permita acrescentar outras formas de entrada depois.
 
 ## Idioma
 
@@ -172,7 +172,7 @@ Monorepo com **pnpm workspaces**:
 - `apps/api`: **Nest.js** + **Prisma** + **PostgreSQL**.
 - `packages/shared`: constantes de domínio (áreas, níveis de Maslow, XP, paletas) e tipos compartilhados entre web e api.
 - **Arquivos** (fotos, imagens de sonhos, anexos, mídia de posts e stories, capas de trilhas e grupos) em storage **compatível com S3**. O navegador envia o arquivo direto para o storage usando uma **URL pré-assinada** gerada pela API; a API nunca recebe o arquivo em si.
-- **Login com Google** feito no Nest com **Passport**. Depois do login, a sessão é um **JWT guardado em cookie httpOnly** (o JavaScript da página não consegue ler o cookie, o que protege contra roubo de sessão).
+- **Login com Google** feito no Nest com **Passport**, e **e-mail e senha** (senha guardada só como resumo scrypt, do próprio Node; códigos por e-mail na tabela `email_codes`). Depois do login, a sessão é um **JWT guardado em cookie httpOnly** (o JavaScript da página não consegue ler o cookie, o que protege contra roubo de sessão).
 
 ## Regra principal: roda 100% local
 
@@ -188,7 +188,7 @@ O computador do dono **não tem Docker** (a virtualização está desligada e el
 
 - Os programas `.exe` são baixados uma vez, com **versões fixas**, por um script do projeto (`pnpm setup:local`) para a pasta `.local/`, que não vai para o git. Nada é instalado no Windows.
 - O **`docker-compose.yml` também existe** e usa as mesmas variáveis e os mesmos programas (Postgres, SeaweedFS, Mailpit). Ele serve para outros computadores e para a produção, mas **não pode ser testado no computador do dono**; avise isso sempre que mexer nele.
-- **Beta publicado só com Supabase + Vercel** (decisão do dono). Na Vercel a API roda como função: entrada em `apps/api/api/index.js` → `src/serverless.ts`; as tarefas agendadas rodam uma vez por dia pela rota `/api/cron/daily` (protegida por `CRON_SECRET`), com `DISABLE_SCHEDULE=true`. **E-mail desligado** no beta (`SMTP_HOST` vazio): os convites valem pelo login com Google.
+- **Beta publicado só com Supabase + Vercel** (decisão do dono). Na Vercel a API roda como função: entrada em `apps/api/api/index.js` → `src/serverless.ts`; as tarefas agendadas rodam uma vez por dia pela rota `/api/cron/daily` (protegida por `CRON_SECRET`), com `DISABLE_SCHEDULE=true`. **E-mail pelo Gmail** do dono (SMTP com "senha de app"; ver docs/deploy.md). Sem `SMTP_HOST`, o cadastro com senha e o "esqueci minha senha" somem da tela e os convites valem pelo login com Google.
 - O MinIO **não é usado**: ele deixou de publicar versões gratuitas em 2025.
 
 - **Login de desenvolvimento**: com `NODE_ENV=development`, a tela de login mostra usuários de teste para entrar com um clique, sem Google. Com qualquer outro valor de `NODE_ENV`, essa rota **não existe** na API (não é só escondida na tela).

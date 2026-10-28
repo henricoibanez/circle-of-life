@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 /** Páginas que qualquer pessoa pode abrir, sem estar logada. */
-const PUBLIC = [/^\/login$/, /^\/convite\//];
+const PUBLIC = [/^\/login$/, /^\/convite\//, /^\/termos$/];
 
 /**
  * Checagem rápida antes de abrir cada página: sem o cookie de sessão,

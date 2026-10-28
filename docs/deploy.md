@@ -118,6 +118,25 @@ Teste: `https://circle-of-life-three.vercel.app/api/health` deve responder com `
 ## 9. Outras opções (para o futuro)
 
 - **E-mail:** preencha `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` e `SMTP_FROM` (Resend, Brevo, e-mail da empresa…) e publique de novo.
+
+## Ligar o envio de e-mails pelo Gmail
+
+Sem e-mail, a tela de login mostra só o Google. Com e-mail ligado, aparecem o cadastro com senha e o "Esqueci minha senha", e os convites chegam por e-mail. O Gmail manda até ~500 e-mails por dia, de graça.
+
+1. Na conta Google que vai mandar os e-mails, ligue a **verificação em duas etapas** (myaccount.google.com → Segurança).
+2. Abra **myaccount.google.com/apppasswords**, dê um nome (ex.: "Circle of Life") e clique em **Criar**. Copie a senha de 16 letras que aparece (ela só aparece uma vez).
+3. Na Vercel, no projeto da **API** → Settings → Environment Variables, crie:
+
+| Variável | Valor |
+|---|---|
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | o Gmail completo (ex.: `voce@gmail.com`) |
+| `SMTP_PASS` | a senha de app de 16 letras (sem espaços) |
+| `SMTP_FROM` | `Circle of Life <voce@gmail.com>` (o mesmo Gmail) |
+
+4. Em Deployments, no último, clique em **⋯ → Redeploy** para valer.
+5. Teste: crie uma conta com senha usando um e-mail convidado e veja se o código chega (olhe também o spam).
 - **Notificações no celular:** rode `pnpm push:keys` e cadastre `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` na API.
 - **API sempre ligada** (tarefas de hora em hora): o arquivo `apps/api/Dockerfile` monta a API para qualquer host de contêiner (ainda não testado). Nesse caso, `DISABLE_SCHEDULE=false` e `CRON_SECRET` vazio.
 

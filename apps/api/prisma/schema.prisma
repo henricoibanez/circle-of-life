@@ -49,6 +49,10 @@ model User {
   id                    String     @id @default(cuid())
   email                 String     @unique
   googleId              String?    @unique
+  /// Resumo (scrypt) da senha, para quem entra com e-mail e senha. Nunca a senha em si.
+  passwordHash          String?
+  /// Quando aceitou os termos de uso (no cadastro com senha).
+  termsAcceptedAt       DateTime?
   role                  UserRole   @default(member)
   name                  String
   /// Aparece no perfil como "ID: @handle".
@@ -883,4 +887,28 @@ model GroupReply {
 
   @@index([topicId, createdAt])
   @@map("group_replies")
+}
+
+enum EmailCodePurpose {
+  /// Confirmar o e-mail ao criar conta com senha.
+  cadastro
+  /// "Esqueci minha senha".
+  senha
+}
+
+/// Código de 6 números enviado por e-mail. Vale 15 minutos e 5 tentativas.
+model EmailCode {
+  id        String           @id @default(cuid())
+  email     String
+  purpose   EmailCodePurpose
+  /// Resumo (sha256) do código.
+  codeHash  String
+  /// No cadastro: nome, resumo da senha e aceite dos termos, até o e-mail ser confirmado.
+  data      Json?
+  attempts  Int              @default(0)
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  @@index([email, purpose])
+  @@map("email_codes")
 }
