@@ -3,6 +3,7 @@ import { ConditionalModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AnalysisModule } from './analysis/analysis.module';
 import { AuthModule } from './auth/auth.module';
+import { CalendarModule } from './calendar/calendar.module';
 import { BacklogModule } from './backlog/backlog.module';
 import { AppConfigModule } from './config/config.module';
 import { CronModule } from './cron/cron.module';
@@ -37,6 +38,7 @@ import { XpModule } from './xp/xp.module';
     NotificationsModule,
     UploadsModule,
     AuthModule,
+    CalendarModule,
     // Login de teste: só existe em desenvolvimento.
     ConditionalModule.registerWhen(DevAuthModule, env => env.NODE_ENV === 'development', { debug: false }),
     UsersModule,

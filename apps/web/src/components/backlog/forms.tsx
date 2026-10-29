@@ -8,6 +8,8 @@ import { Sheet } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { useBacklog, useBacklogActions } from '@/lib/backlog';
+import { useMe } from '@/lib/me';
+import Link from 'next/link';
 
 /** Escolha de área(s) da vida em "pílulas" com o ícone de cada área. */
 export function AreaPicker(
@@ -209,6 +211,7 @@ export function TaskForm({
   const { data } = useBacklog();
   const actions = useBacklogActions();
   const toast = useToast();
+  const { data: me } = useMe();
   const edit = id ? data?.tasks.find(t => t.id === id) : undefined;
   const open = (data?.epics ?? []).filter(e => !e.closedAt || e.id === edit?.epicId);
   const [f, setF] = useState({
@@ -219,6 +222,9 @@ export function TaskForm({
     dueDate: edit?.dueDate ?? '',
     status: initialStatus ?? 'backlog',
   });
+  // Vincular à Google Agenda (só quando a pessoa conectou nas Configurações).
+  const [cal, setCal] = useState(edit?.inCalendar ?? false);
+  const calendar = me?.googleCalendar;
   if (data && !open.length) {
     return (
       <NeedsParent
@@ -231,8 +237,12 @@ export function TaskForm({
   }
   const save = async () => {
     const body = { epicId: f.epicId, title: f.title, description: f.description, priority: f.priority, dueDate: f.dueDate || null };
-    if (edit) await actions.updateTask(edit.id, body);
-    else await actions.createTask({ ...body, status: f.status });
+    const saved = edit ? await actions.updateTask(edit.id, body) : await actions.createTask({ ...body, status: f.status });
+    // Vincula/desvincula da agenda conforme a opção (só se conectada e com data).
+    if (calendar?.connected) {
+      if (cal && f.dueDate && !saved.inCalendar) await actions.addToCalendar(saved.id).catch(() => toast('Tarefa salva, mas não foi para a agenda.'));
+      else if (!cal && saved.inCalendar) await actions.removeFromCalendar(saved.id).catch(() => undefined);
+    }
     toast(edit ? 'Tarefa salva' : 'Tarefa criada');
     onClose();
   };
@@ -272,6 +282,26 @@ export function TaskForm({
             <input type="date" className={inputCls} value={f.dueDate} onChange={e => setF({ ...f, dueDate: e.target.value })} />
           </Field>
         </div>
+        {calendar?.connected ? (
+          f.dueDate && (
+            <label className="flex items-center gap-2.5 rounded-xl bg-sunk px-3.5 py-2.5 text-sm">
+              <input type="checkbox" checked={cal} onChange={e => setCal(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--p))]" />
+              <Icon n="calendar" className="h-4 w-4 text-primary" />
+              <span>Adicionar à minha Google Agenda</span>
+            </label>
+          )
+        ) : (
+          calendar?.available &&
+          f.dueDate && (
+            <p className="text-xs text-muted">
+              Quer isto na sua agenda?{' '}
+              <Link href="/perfil" onClick={onClose} className="font-semibold text-primary">
+                Conecte a Google Agenda
+              </Link>{' '}
+              nas Configurações.
+            </p>
+          )
+        )}
         {!edit && (
           <Field label="Onde colocar">
             <Seg

@@ -2,6 +2,7 @@ import { MASLOW_ITEM_KEYS, MAX_OPEN_DREAMS, SPRINT_LENGTH_DAYS } from '@circle/s
 import { Body, ConflictException, Controller, Delete, Get, HttpCode, Injectable, Module, Patch, Res } from '@nestjs/common';
 import { IsBoolean, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import type { Response } from 'express';
+import { CalendarService } from '../calendar/calendar.service';
 import { SessionModule } from '../auth/auth.module';
 import { SessionService } from '../auth/session.service';
 import { CurrentUser } from '../common/decorators';
@@ -32,6 +33,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly uploads: UploadsService,
+    private readonly calendar: CalendarService,
   ) {}
 
   /** O que o app recebe sobre a pessoa logada. */
@@ -46,6 +48,7 @@ export class UsersService {
       role: user.role,
       photoUrl: photo ? await this.uploads.url(photo) : null,
       googleConnected: Boolean(user.googleId),
+      googleCalendar: { available: this.calendar.available, connected: this.calendar.connected(user) },
       preferences: {
         palette: user.palette,
         randomTheme: user.randomTheme,

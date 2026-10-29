@@ -48,6 +48,17 @@ export default function PerfilPage() {
   const { data: usage } = useQuery({ queryKey: ['usage'], queryFn: () => api<Usage>('/me/usage') });
   const { data: activity } = useQuery({ queryKey: ['activity'], queryFn: () => api<Activity[]>('/me/activity') });
 
+  // Volta da conexão com a Google Agenda (?agenda=ok|erro).
+  useEffect(() => {
+    const r = new URLSearchParams(window.location.search).get('agenda');
+    if (!r) return;
+    history.replaceState(null, '', '/perfil');
+    if (r === 'ok') {
+      toast('Google Agenda conectada');
+      api<Me>('/me').then(m => qc.setQueryData(['me'], m));
+    } else toast('Não foi possível conectar a Google Agenda. Tente de novo.');
+  }, [qc, toast]);
+
   if (!me) return null;
 
   const prefs = me.preferences;
@@ -304,6 +315,39 @@ export default function PerfilPage() {
             })}
           </div>
         </Card>
+
+        {me.googleCalendar.available && (
+          <Card className="p-4">
+            <h2 className="font-semibold">Google Agenda</h2>
+            <p className="mb-3 text-xs text-muted">
+              Conecte para, ao pôr uma data numa tarefa, criar o evento na sua agenda (com o título e a descrição).
+            </p>
+            {me.googleCalendar.connected ? (
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                  <Icon n="verified" className="h-4 w-4" />
+                  Conectada
+                </span>
+                <Button
+                  variant="line"
+                  className="ml-auto"
+                  onClick={async () => {
+                    await api('/calendar', { method: 'DELETE' });
+                    qc.setQueryData(['me'], await api<Me>('/me'));
+                    toast('Google Agenda desconectada');
+                  }}
+                >
+                  Desconectar
+                </Button>
+              </div>
+            ) : (
+              <a href="/api/calendar/google" className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold shadow-soft hover:bg-sunk">
+                <Icon n="calendar" className="h-4 w-4" />
+                Conectar Google Agenda
+              </a>
+            )}
+          </Card>
+        )}
 
         <PushCard />
 

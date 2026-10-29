@@ -1,6 +1,7 @@
 import { INITIATIVE_MIN_TASKS, STATUS_LABEL, type TaskStatus } from '@circle/shared';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client';
+import { CalendarService } from '../calendar/calendar.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SprintsService } from '../sprints/sprints.service';
 import { UploadsService } from '../uploads/uploads.service';
@@ -29,7 +30,43 @@ export class BacklogService {
     private readonly xp: XpService,
     private readonly activity: ActivityService,
     private readonly uploads: UploadsService,
+    private readonly calendar: CalendarService,
   ) {}
+
+  /** Coloca a tarefa na Google Agenda da pessoa (a pessoa pede isso ao salvar com data). */
+  async addToCalendar(userId: string, id: string) {
+    const task = await this.task(userId, id);
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const eventId = await this.calendar.upsertEvent(user, task);
+    const updated = await this.prisma.task.update({ where: { id }, data: { calendarEventId: eventId }, include: { checklist: { select: { done: true } } } });
+    return toTaskDto(updated);
+  }
+
+  /** Tira a tarefa da Google Agenda. */
+  async removeFromCalendar(userId: string, id: string) {
+    const task = await this.task(userId, id);
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    await this.calendar.removeEvent(user, task);
+    const updated = await this.prisma.task.update({ where: { id }, data: { calendarEventId: null }, include: { checklist: { select: { done: true } } } });
+    return toTaskDto(updated);
+  }
+
+  /** Mantém o evento da agenda em dia quando a tarefa já está vinculada (melhor esforço). */
+  private async syncCalendar(userId: string, task: { id: string; calendarEventId: string | null; dueDate: Date | null; title: string; description: string }) {
+    if (!task.calendarEventId) return;
+    try {
+      const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+      if (!user.googleCalendarToken) return;
+      if (!task.dueDate) {
+        await this.calendar.removeEvent(user, task as never);
+        await this.prisma.task.update({ where: { id: task.id }, data: { calendarEventId: null } });
+      } else {
+        await this.calendar.upsertEvent(user, task as never);
+      }
+    } catch {
+      // Problema com a agenda nunca atrapalha a edição da tarefa.
+    }
+  }
 
   /** Apaga do storage as imagens anexadas às tarefas que vão ser excluídas. */
   private async removeAttachments(userId: string, where: Prisma.TaskWhereInput) {
@@ -310,11 +347,16 @@ export class BacklogService {
       },
       include: { checklist: { select: { done: true } } },
     });
+    await this.syncCalendar(userId, updated);
     return toTaskDto(updated);
   }
 
   async deleteTask(userId: string, id: string) {
-    await this.task(userId, id);
+    const task = await this.task(userId, id);
+    if (task.calendarEventId) {
+      const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+      await this.calendar.removeEvent(user, task).catch(() => undefined);
+    }
     await this.removeAttachments(userId, { id });
     await this.prisma.$transaction(async tx => {
       await this.revokeAll(tx, userId, { tasks: [id] });

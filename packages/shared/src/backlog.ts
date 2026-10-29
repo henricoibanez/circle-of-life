@@ -63,6 +63,8 @@ export type TaskDto = {
   position: number;
   createdAt: string;
   checklist: { done: number; total: number };
+  /** A tarefa está vinculada à Google Agenda da pessoa. */
+  inCalendar: boolean;
 };
 
 export type BacklogDto = { initiatives: InitiativeDto[]; epics: EpicDto[]; tasks: TaskDto[] };

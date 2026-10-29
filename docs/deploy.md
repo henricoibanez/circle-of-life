@@ -119,6 +119,18 @@ Teste: `https://circle-of-life-three.vercel.app/api/health` deve responder com `
 
 - **E-mail:** preencha `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` e `SMTP_FROM` (Resend, Brevo, e-mail da empresa…) e publique de novo.
 
+## Ligar o Google Agenda (opcional)
+
+Quando a pessoa põe uma data numa tarefa, o app pode criar o evento na Google Agenda dela (se ela conectar nas Configurações). Usa as **mesmas credenciais do login com Google**; só falta liberar o calendário no Google Cloud:
+
+1. **APIs e serviços → Biblioteca →** ative a **Google Calendar API**.
+2. **Tela de consentimento OAuth → Editar →** na etapa de escopos, adicione `.../auth/calendar.events`. Salve.
+3. **Usuários de teste:** enquanto o app não é verificado pelo Google, só e-mails adicionados como **usuários de teste** (até 100) conseguem conectar. Adicione os participantes.
+4. **Credenciais →** no **ID do cliente OAuth** do login, em **URIs de redirecionamento autorizados**, adicione:
+   `https://circle-of-life-app.vercel.app/api/calendar/google/callback` (troque pelo seu domínio do site).
+
+Sem `GOOGLE_CLIENT_ID`/`SECRET`, a opção de agenda nem aparece. O escopo `calendar.events` é "sensível" (não "restrito"), então não exige a verificação de segurança completa; só o aviso de "app não verificado" até você publicar.
+
 ## Ligar o envio de e-mails pelo Gmail
 
 Sem e-mail, a tela de login mostra só o Google. Com e-mail ligado, aparecem o cadastro com senha e o "Esqueci minha senha", e os convites chegam por e-mail. O Gmail manda até ~500 e-mails por dia, de graça.

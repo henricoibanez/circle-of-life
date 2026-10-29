@@ -37,6 +37,7 @@ export type Me = {
   role: 'member' | 'admin';
   photoUrl: string | null;
   googleConnected: boolean;
+  googleCalendar: { available: boolean; connected: boolean };
   preferences: {
     palette: 'natureza' | 'serenity' | 'soft' | 'dourado' | 'mindful' | 'premium';
     randomTheme: boolean;

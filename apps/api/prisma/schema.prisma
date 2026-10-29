@@ -49,6 +49,8 @@ model User {
   id                    String     @id @default(cuid())
   email                 String     @unique
   googleId              String?    @unique
+  /// Token para criar eventos na Google Agenda da pessoa (quando ela conecta nas Configurações). Null = não conectada.
+  googleCalendarToken   String?
   /// Resumo (scrypt) da senha, para quem entra com e-mail e senha. Nunca a senha em si.
   passwordHash          String?
   /// Quando aceitou os termos de uso (no cadastro com senha).
@@ -242,6 +244,8 @@ model Task {
   overdueNotifiedAt DateTime?
   /// Ordem dentro da coluna do quadro.
   position          Int              @default(0)
+  /// Id do evento na Google Agenda da pessoa (quando ela vincula a tarefa). Null = não está na agenda.
+  calendarEventId   String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   checklist         ChecklistItem[]

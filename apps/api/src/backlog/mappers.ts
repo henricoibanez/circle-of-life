@@ -43,6 +43,7 @@ export const toTaskDto = (t: Task & { checklist?: Pick<ChecklistItem, 'done'>[] 
   position: t.position,
   createdAt: t.createdAt.toISOString(),
   checklist: { done: t.checklist?.filter(c => c.done).length ?? 0, total: t.checklist?.length ?? 0 },
+  inCalendar: t.calendarEventId != null,
 });
 
 /** "AAAA-MM-DD" vira uma data (meio-dia UTC, para não mudar de dia por causa do fuso). */

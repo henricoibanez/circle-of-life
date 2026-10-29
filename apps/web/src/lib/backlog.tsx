@@ -95,6 +95,8 @@ export function useBacklogActions() {
     updateTask: (id: string, b: Body) => run(`/tasks/${id}`, 'PATCH', b) as Promise<TaskDto>,
     deleteTask: (id: string) => run(`/tasks/${id}`, 'DELETE'),
     duplicateTask: (id: string) => run(`/tasks/${id}/duplicate`) as Promise<TaskDto>,
+    addToCalendar: (id: string) => run(`/tasks/${id}/calendar`, 'POST') as Promise<TaskDto>,
+    removeFromCalendar: (id: string) => run(`/tasks/${id}/calendar`, 'DELETE') as Promise<TaskDto>,
     moveTask: (id: string, status: TaskStatus) => {
       // Atualiza a tela na hora (sem esperar a API), para o arrastar ficar fluido.
       qc.setQueryData<BacklogDto>(BACKLOG_KEY, b =>

@@ -146,6 +146,14 @@ class BacklogController {
   duplicateTask(@CurrentUser() u: User, @Param('id') id: string) {
     return this.backlog.duplicateTask(u.id, id);
   }
+  @Post('tasks/:id/calendar')
+  addToCalendar(@CurrentUser() u: User, @Param('id') id: string) {
+    return this.backlog.addToCalendar(u.id, id);
+  }
+  @Delete('tasks/:id/calendar')
+  removeFromCalendar(@CurrentUser() u: User, @Param('id') id: string) {
+    return this.backlog.removeFromCalendar(u.id, id);
+  }
   @Get('tasks/:id')
   taskDetail(@CurrentUser() u: User, @Param('id') id: string) {
     return this.detail.detail(u.id, id);
