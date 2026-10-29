@@ -2,13 +2,13 @@
 
 import { AREA, type TrilhaDto } from '@circle/shared';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
 import { PostCard } from '@/components/feed/post-card';
 import { usePostForm } from '@/components/feed/post-form';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
-import { Avatar, Card, Empty, IconBtn, Tag } from '@/components/primitives';
+import { Avatar, Card, Empty, IconBtn, inputCls, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { ForumSection, TopicSheet } from '@/components/social/forum';
 import { AddTrilhaSheet, GroupCover, GroupForm } from '@/components/social/group-sheets';
@@ -34,6 +34,7 @@ function Grupo() {
   const { id } = useParams<{ id: string }>();
   const topico = useSearchParams().get('topico');
   const openedTopic = useRef(false);
+  const [memberQuery, setMemberQuery] = useState('');
   const router = useRouter();
   const { data: g, error } = useGroup(id);
   const { data: me } = useMe();
@@ -209,8 +210,24 @@ function Grupo() {
         <section>
           <h2 className="text-[1.0625rem] font-semibold">Membros</h2>
           <p className="mb-2 text-xs text-muted">Gestores aprovam as trilhas sugeridas e cuidam das trilhas do grupo.{g.canManageGestores ? ' Toque em ⋯ para escolher os gestores.' : ''}</p>
+          {g.memberList.length > 5 && (
+            <div className="relative mb-2">
+              <Icon n="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input
+                value={memberQuery}
+                onChange={e => setMemberQuery(e.target.value)}
+                placeholder="Buscar membro por nome ou @"
+                className={`${inputCls} pl-9`}
+              />
+            </div>
+          )}
+          {(() => {
+            const q = memberQuery.trim().toLowerCase();
+            const filtered = q ? g.memberList.filter(m => m.name.toLowerCase().includes(q) || m.handle.toLowerCase().includes(q)) : g.memberList;
+            return (
           <Card className="divide-y divide-line">
-            {g.memberList.map(m => (
+            {filtered.length === 0 && <p className="p-3.5 text-sm text-muted">Ninguém encontrado para “{memberQuery.trim()}”.</p>}
+            {filtered.map(m => (
               <div key={m.id} className="flex items-center gap-3 p-3.5">
                 <Avatar name={m.name} photo={m.photoUrl} />
                 <div className="min-w-0 flex-1">
@@ -237,6 +254,8 @@ function Grupo() {
               </div>
             ))}
           </Card>
+            );
+          })()}
         </section>
       </div>
     </>
