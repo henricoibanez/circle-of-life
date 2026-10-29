@@ -22,6 +22,7 @@ export type InitiativeDto = {
   areas: AreaId[];
   isMaster: boolean;
   source: 'manual' | 'trilha' | 'ia' | 'duplicada';
+  position: number;
   completedAt: string | null;
   createdAt: string;
 };
@@ -32,6 +33,7 @@ export type EpicDto = {
   title: string;
   description: string;
   area: AreaId;
+  position: number;
   closedAt: string | null;
   createdAt: string;
 };
@@ -48,6 +50,7 @@ export type TaskDto = {
   doneAt: string | null;
   archivedAt: string | null;
   sprintId: string | null;
+  position: number;
   createdAt: string;
   checklist: { done: number; total: number };
 };

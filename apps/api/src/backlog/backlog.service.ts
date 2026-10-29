@@ -51,6 +51,35 @@ export class BacklogService {
     return { initiatives: initiatives.map(toInitiativeDto), epics: epics.map(toEpicDto), tasks: tasks.map(toTaskDto) };
   }
 
+  /**
+   * Salva a ordem escolhida (arrastar-e-soltar): position = 1, 2, 3… na ordem recebida.
+   * Com `reset`, volta tudo para 0 (o backlog mostra em ordem alfabética de novo).
+   * Só reordena itens da própria pessoa.
+   */
+  async reorder(userId: string, type: 'initiative' | 'epic' | 'task', ids: string[], reset = false) {
+    const own = async (n: number) => {
+      const found =
+        type === 'initiative'
+          ? await this.prisma.initiative.count({ where: { id: { in: ids }, userId } })
+          : type === 'epic'
+            ? await this.prisma.epic.count({ where: { id: { in: ids }, userId } })
+            : await this.prisma.task.count({ where: { id: { in: ids }, userId } });
+      if (found !== n) throw new NotFoundException('Alguns itens não foram encontrados.');
+    };
+    await own(ids.length);
+    await this.prisma.$transaction(
+      ids.map((id, i) => {
+        const data = { position: reset ? 0 : i + 1 };
+        return type === 'initiative'
+          ? this.prisma.initiative.update({ where: { id }, data })
+          : type === 'epic'
+            ? this.prisma.epic.update({ where: { id }, data })
+            : this.prisma.task.update({ where: { id }, data });
+      }),
+    );
+    return this.all(userId);
+  }
+
   // ---------- Busca com checagem de dono ----------
 
   private async initiative(userId: string, id: string, tx: Tx = this.prisma) {

@@ -12,6 +12,7 @@ export const toInitiativeDto = (i: Initiative): InitiativeDto => ({
   description: i.description,
   areas: i.areas,
   isMaster: i.isMaster,
+  position: i.position,
   source: i.source,
   completedAt: iso(i.completedAt),
   createdAt: i.createdAt.toISOString(),
@@ -23,6 +24,7 @@ export const toEpicDto = (e: Epic): EpicDto => ({
   title: e.title,
   description: e.description,
   area: e.area,
+  position: e.position,
   closedAt: iso(e.closedAt),
   createdAt: e.createdAt.toISOString(),
 });
@@ -38,6 +40,7 @@ export const toTaskDto = (t: Task & { checklist?: Pick<ChecklistItem, 'done'>[] 
   doneAt: iso(t.doneAt),
   archivedAt: iso(t.archivedAt),
   sprintId: t.sprintId,
+  position: t.position,
   createdAt: t.createdAt.toISOString(),
   checklist: { done: t.checklist?.filter(c => c.done).length ?? 0, total: t.checklist?.length ?? 0 },
 });

@@ -1,11 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Put } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { SprintsController } from '../sprints/sprints.controller';
 import { SprintsService } from '../sprints/sprints.service';
 import { MAX_IMPORT_ROWS } from '@circle/shared';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsBoolean, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { BacklogIoService } from './backlog-io.service';
 import { BacklogService } from './backlog.service';
 import { AttachDto, ChecklistItemDto, CreateEpicDto, CreateInitiativeDto, CreateTaskDto, MoveTaskDto, UpdateChecklistItemDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
@@ -34,6 +34,12 @@ class BacklogImportDto {
   /** false = só mostra o que vai entrar; true = grava. */
   @IsBoolean() apply!: boolean;
 }
+/** Nova ordem de uma lista (arrastar-e-soltar), ou voltar para alfabética com `reset`. */
+class ReorderDto {
+  @IsIn(['initiative', 'epic', 'task']) type!: 'initiative' | 'epic' | 'task';
+  @IsArray() @ArrayMaxSize(500) @IsString({ each: true }) ids!: string[];
+  @IsOptional() @IsBoolean() reset?: boolean;
+}
 
 /** Exportar e importar o backlog em planilha (modelo do app antigo). */
 @Controller('backlog')
@@ -59,6 +65,10 @@ class BacklogController {
   ) {}
 
   /** Backlog completo da pessoa logada. */
+  @Put('backlog/order')
+  reorder(@CurrentUser() u: User, @Body() dto: ReorderDto) {
+    return this.backlog.reorder(u.id, dto.type, dto.ids, dto.reset ?? false);
+  }
   @Get('backlog')
   all(@CurrentUser() u: User) {
     return this.backlog.all(u.id);
