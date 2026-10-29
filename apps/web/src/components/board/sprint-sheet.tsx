@@ -77,10 +77,15 @@ export function SprintSheet({ onClose }: { onClose: () => void }) {
         </div>
       </div>
       {confirm ? (
-        <p className="text-sm leading-relaxed">
-          As tarefas prontas saem do quadro e vão para os relatórios. As em aberto voltam para o backlog.
-          {full ? ' Sprint completa: todas as tarefas prontas.' : ''}
-        </p>
+        <div className="space-y-2 text-sm leading-relaxed">
+          <p>
+            As tarefas prontas saem do quadro e vão para os relatórios. As em aberto voltam para o backlog.
+            {full ? ' Sprint completa: todas as tarefas prontas.' : ''}
+          </p>
+          <p className="rounded-xl bg-primary/5 px-3 py-2.5 font-medium text-primary">
+            Ao encerrar, a <strong>Sprint {s.number + 1}</strong> começa na hora — você não fica sem sprint.
+          </p>
+        </div>
       ) : (
         <>
           <h3 className="mb-2 font-semibold">Sprints anteriores</h3>
