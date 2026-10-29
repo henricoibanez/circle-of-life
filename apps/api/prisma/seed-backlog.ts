@@ -117,7 +117,7 @@ export async function seedBacklog(prisma: PrismaClient, userId: string) {
   const ini: Record<string, string> = {};
   for (const [position, i] of INITIATIVES.entries()) {
     const { key, ...data } = i;
-    const created = await prisma.initiative.create({ data: { ...data, areas: [...data.areas] as never, userId, position, createdAt: ago(40) } });
+    const created = await prisma.initiative.create({ data: { ...data, areas: [...data.areas] as never, userId, position: position + 1, createdAt: ago(40) } });
     ini[key] = created.id;
   }
 
@@ -130,7 +130,7 @@ export async function seedBacklog(prisma: PrismaClient, userId: string) {
         title: e.title,
         area: e.area as never,
         description: e.description,
-        position,
+        position: position + 1,
         createdAt: ago(35),
         closedAt: e.closedDaysAgo !== undefined ? ago(e.closedDaysAgo) : null,
       },
@@ -145,7 +145,7 @@ export async function seedBacklog(prisma: PrismaClient, userId: string) {
           title,
           status,
           priority,
-          position: tPos,
+          position: tPos + 1,
           dueDate: o.due !== undefined ? dateIn(o.due) : null,
           createdAt: ago(o.created ?? 30),
           doneAt,

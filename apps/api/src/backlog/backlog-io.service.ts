@@ -166,7 +166,7 @@ export class BacklogIoService {
       async tx => {
         const needsSprint = newTasks.some(t => t.status === 'todo' || t.status === 'doing');
         const sprint = needsSprint ? await this.sprints.current(userId, tx) : null;
-        let iniPos = await tx.initiative.count({ where: { userId } });
+        let iniPos = (await tx.initiative.count({ where: { userId } })) + 1;
         const now = new Date();
         for (const p of all) {
           if (!p.id) {
@@ -175,14 +175,14 @@ export class BacklogIoService {
             });
             p.id = created.id;
           }
-          let epicPos = await tx.epic.count({ where: { initiativeId: p.id } });
+          let epicPos = (await tx.epic.count({ where: { initiativeId: p.id } })) + 1;
           for (const e of p.epics.values()) {
             if (!e.id) {
               const created = await tx.epic.create({ data: { userId, initiativeId: p.id, title: e.title.slice(0, 200), description: e.description, area: e.area!, position: epicPos++ } });
               e.id = created.id;
             }
             if (!e.tasks.length) continue;
-            const taskPos = await tx.task.count({ where: { epicId: e.id } });
+            const taskPos = (await tx.task.count({ where: { epicId: e.id } })) + 1;
             const created = await tx.task.createManyAndReturn({
               data: e.tasks.map((t, j) => ({
                 userId,

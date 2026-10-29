@@ -16,8 +16,15 @@ export function useBacklog() {
 
 // ---------- Seletores (iguais aos do protótipo) ----------
 
-export const epicTasks = (b: BacklogDto, epicId: string) => b.tasks.filter(t => t.epicId === epicId);
-export const initEpics = (b: BacklogDto, initiativeId: string) => b.epics.filter(e => e.initiativeId === initiativeId);
+/** Ordem salva (quando a pessoa arrastou) ou, se ninguém reordenou, ordem alfabética. */
+export function sortByOrder<T extends { position: number; title: string }>(items: T[]): T[] {
+  const custom = items.some(i => i.position > 0);
+  const key = (p: number) => (p > 0 ? p : Infinity); // itens novos (0) vão para o fim da ordem manual
+  return [...items].sort((a, b) => (custom ? key(a.position) - key(b.position) : 0) || a.title.localeCompare(b.title, 'pt-BR'));
+}
+
+export const epicTasks = (b: BacklogDto, epicId: string) => sortByOrder(b.tasks.filter(t => t.epicId === epicId));
+export const initEpics = (b: BacklogDto, initiativeId: string) => sortByOrder(b.epics.filter(e => e.initiativeId === initiativeId));
 export const taskArea = (b: BacklogDto, t: TaskDto): AreaId | undefined => b.epics.find(e => e.id === t.epicId)?.area;
 export const progress = (list: TaskDto[]) => {
   const done = list.filter(t => t.status === 'done').length;
@@ -52,8 +59,24 @@ export function useBacklogActions() {
   });
   const run = (path: string, method = 'POST', body?: Body) => mutation.mutateAsync({ path, method, body });
 
+  /** Salva a ordem (arrastar) ou volta pra A–Z (reset). Atualiza a tela na hora. */
+  const reorder = (type: 'initiative' | 'epic' | 'task', ids: string[], reset = false) => {
+    qc.setQueryData<BacklogDto>(BACKLOG_KEY, b => {
+      if (!b) return b;
+      const pos = new Map(ids.map((id, i) => [id, reset ? 0 : i + 1]));
+      const fix = <T extends { id: string; position: number }>(x: T) => (pos.has(x.id) ? { ...x, position: pos.get(x.id)! } : x);
+      return type === 'initiative'
+        ? { ...b, initiatives: b.initiatives.map(fix) }
+        : type === 'epic'
+          ? { ...b, epics: b.epics.map(fix) }
+          : { ...b, tasks: b.tasks.map(fix) };
+    });
+    return run('/backlog/order', 'PUT', { type, ids, reset });
+  };
+
   return {
     busy: mutation.isPending,
+    reorder,
     createInitiative: (b: Body) => run('/initiatives', 'POST', b) as Promise<InitiativeDto>,
     updateInitiative: (id: string, b: Body) => run(`/initiatives/${id}`, 'PATCH', b) as Promise<InitiativeDto>,
     deleteInitiative: (id: string) => run(`/initiatives/${id}`, 'DELETE'),

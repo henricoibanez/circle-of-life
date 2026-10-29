@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { EpicCard, TaskLine } from '@/components/backlog/backlog-items';
 import { ImportSheet } from '@/components/backlog/import-sheet';
+import { Reorderable } from '@/components/backlog/reorderable';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { useCelebrate } from '@/components/celebrate';
 import { useGoBack } from '@/components/header';
@@ -13,7 +14,7 @@ import { Bar, Card, Empty, IconBtn, inputCls, Seg, Tag } from '@/components/prim
 import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
-import { epicTasks, initEpics, progress, taskArea, useBacklog, useBacklogActions } from '@/lib/backlog';
+import { epicTasks, initEpics, progress, sortByOrder, taskArea, useBacklog, useBacklogActions } from '@/lib/backlog';
 import { downloadBacklogSpreadsheet } from '@/lib/backlog-io';
 
 type Tab = 'ini' | 'epi' | 'tar';
@@ -61,9 +62,17 @@ export default function BacklogPage() {
 
   const m = (t: string) => !q || t.toLowerCase().includes(q.toLowerCase());
   const epOk = (e: (typeof data.epics)[number]) => (area === 'all' || e.area === area) && (m(e.title) || epicTasks(data, e.id).some(t => m(t.title)));
-  const inis = data.initiatives.filter(
+  const inis = sortByOrder(data.initiatives).filter(
     i => (area === 'all' || i.areas.includes(area) || initEpics(data, i.id).some(e => e.area === area)) && (m(i.title) || initEpics(data, i.id).some(epOk)),
   );
+  // Arrastar para reordenar vale na aba Iniciativas, sem filtro nem busca (dentro de cada "pai").
+  const canReorder = tab === 'ini' && !q && area === 'all';
+  const resetOrder = () =>
+    Promise.all([
+      actions.reorder('initiative', data.initiatives.map(i => i.id), true),
+      actions.reorder('epic', data.epics.map(e => e.id), true),
+      actions.reorder('task', data.tasks.map(t => t.id), true),
+    ]).then(() => toast('Ordem alfabética restaurada'));
   const tks = data.tasks.filter(
     t =>
       (area === 'all' || taskArea(data, t) === area) &&
@@ -117,6 +126,7 @@ export default function BacklogPage() {
                 ),
             },
             { icon: 'filter', label: 'Filtrar por área', run: areaFilter },
+            { icon: 'list', label: 'Ordenar tudo por A–Z', run: resetOrder },
             { icon: 'chevD', label: 'Expandir todas as iniciativas', run: () => setOpen(Object.fromEntries(data.initiatives.map(i => [i.id, true]))) },
             { icon: 'chevU', label: 'Recolher todas', run: () => setOpen({}) },
           ])
@@ -129,14 +139,16 @@ export default function BacklogPage() {
       <div className="space-y-4 px-4 pb-8">
         {tab === 'ini' && (
           <>
-            {inis.map(i => {
+            {canReorder && inis.length > 1 && <p className="-mt-1 text-xs text-muted">Segure e arraste uma iniciativa, épico ou tarefa para reordenar.</p>}
+            <Reorderable items={inis} enabled={canReorder} onReorder={ids => actions.reorder('initiative', ids)} className="space-y-4">
+            {(i: (typeof inis)[number]) => {
               const ie = initEpics(data, i.id).filter(epOk);
               const all = initEpics(data, i.id);
               const pr = progress(all.flatMap(e => epicTasks(data, e.id)));
               const opened = isOpen(i.id) || Boolean(q);
               const canComplete = !i.completedAt && all.length > 0 && all.every(e => e.closedAt);
               return (
-                <Card key={i.id} className="rounded-3xl p-4">
+                <Card className="rounded-3xl p-4">
                   <div className="flex items-start gap-3">
                     <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                       <Icon n="target" className="h-6 w-6" />
@@ -162,17 +174,17 @@ export default function BacklogPage() {
                   {opened && (
                     <div className="relative mt-4 pl-6">
                       <span className="absolute -top-2 bottom-8 left-[1.4375rem] w-px bg-line" />
-                      <div className="space-y-3">
-                        {ie.map((e, idx) => (
-                          <div key={e.id} className="relative">
+                      <Reorderable items={ie} enabled={canReorder} onReorder={ids => actions.reorder('epic', ids)} className="space-y-3">
+                        {(e, dragging) => (
+                          <div className="relative">
                             <span className="absolute -left-[0.0625rem] top-9 h-px w-5 bg-line" />
                             <span className="absolute left-[-5px] top-[2.0625rem] h-2.5 w-2.5 rounded-full bg-line" />
                             <div className="ml-5">
-                              <EpicCard e={e} data={data} nested={idx === 0} />
+                              <EpicCard e={e} data={data} nested={!dragging && ie[0]?.id === e.id} reorder={canReorder} />
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        )}
+                      </Reorderable>
                       {ie.length === 0 && <p className="ml-5 text-sm text-muted">Nenhum épico ainda.</p>}
                       <div className="ml-5 mt-3 flex flex-wrap gap-2">
                         <Button variant="soft" className="px-3 py-2" onClick={() => sheets.openEpic({ initiativeId: i.id })}>
@@ -198,7 +210,8 @@ export default function BacklogPage() {
                   )}
                 </Card>
               );
-            })}
+            }}
+            </Reorderable>
             {inis.length === 0 && (
               <Empty action={<Button onClick={() => sheets.openInitiative()}>Criar iniciativa</Button>}>
                 Nenhuma iniciativa {q || area !== 'all' ? 'com esse filtro' : 'ainda'}.

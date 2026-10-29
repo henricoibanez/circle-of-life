@@ -11,6 +11,7 @@ import { PublishSheet } from '@/components/trilhas/trilha-sheets';
 import { Button } from '@/components/ui/button';
 import { epicTasks, progress, useBacklogActions } from '@/lib/backlog';
 import { tint } from '@/lib/color';
+import { Reorderable } from './reorderable';
 import { useBacklogSheets } from './use-backlog-sheets';
 
 /** Linha de tarefa do backlog: bolinha de concluir, título, prioridade e menu. */
@@ -66,7 +67,7 @@ export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
 }
 
 /** Cartão de épico: área, progresso e (aberto) as tarefas e ações. */
-export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: BacklogDto; nested?: boolean; showIni?: boolean }) {
+export function EpicCard({ e, data, nested, showIni, reorder }: { e: EpicDto; data: BacklogDto; nested?: boolean; showIni?: boolean; reorder?: boolean }) {
   const actions = useBacklogActions();
   const sheets = useBacklogSheets();
   const { openActions, openSheet } = useSheets();
@@ -112,11 +113,17 @@ export function EpicCard({ e, data, nested, showIni }: { e: EpicDto; data: Backl
       </div>
       {open && (
         <div className="border-t border-line px-4 pb-3">
-          <div className="divide-y divide-line">
-            {shown.map((t, i) => (
-              <TaskLine key={t.id} t={t} last={i === shown.length - 1} />
-            ))}
-          </div>
+          {reorder && (all || ts.length <= 5) && ts.length > 1 ? (
+            <Reorderable items={shown} enabled onReorder={ids => actions.reorder('task', ids)} className="divide-y divide-line">
+              {t => <TaskLine t={t} last />}
+            </Reorderable>
+          ) : (
+            <div className="divide-y divide-line">
+              {shown.map((t, i) => (
+                <TaskLine key={t.id} t={t} last={i === shown.length - 1} />
+              ))}
+            </div>
+          )}
           {ts.length === 0 && <p className="py-3 text-sm text-muted">Nenhuma tarefa ainda.</p>}
           {ts.length > 5 && (
             <button onClick={() => setAll(!all)} className="inline-flex w-full items-center justify-center gap-1 py-2 text-sm font-medium" style={{ color: a.color }}>

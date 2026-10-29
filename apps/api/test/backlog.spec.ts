@@ -164,4 +164,28 @@ describe('Backlog: iniciativas, épicos e tarefas', () => {
     assert.equal(r.body.dueDate, null);
     assert.equal(r.body.priority, 'baixa');
   });
+
+  test('reordenar salva a ordem (position) e o reset volta pra zero', async () => {
+    const ini = (await me.c.request('POST', '/initiatives', { title: 'Ordenar', areas: ['saude'] })).body;
+    const a = (await me.c.request('POST', '/epics', { initiativeId: ini.id, title: 'Alfa', area: 'saude' })).body;
+    const b = (await me.c.request('POST', '/epics', { initiativeId: ini.id, title: 'Beta', area: 'saude' })).body;
+    const c = (await me.c.request('POST', '/epics', { initiativeId: ini.id, title: 'Gama', area: 'saude' })).body;
+    // Começa tudo em position 0 (o site mostra em ordem alfabética).
+    assert.equal(a.position, 0);
+
+    // Nova ordem: c, a, b → position 1, 2, 3.
+    const r = await me.c.request('PUT', '/backlog/order', { type: 'epic', ids: [c.id, a.id, b.id] });
+    assert.equal(r.status, 200);
+    const pos = (id: string) => r.body.epics.find((e: { id: string }) => e.id === id).position;
+    assert.equal(pos(c.id), 1);
+    assert.equal(pos(a.id), 2);
+    assert.equal(pos(b.id), 3);
+
+    // Não reordena itens de outra pessoa.
+    assert.equal((await other.c.request('PUT', '/backlog/order', { type: 'epic', ids: [a.id] })).status, 404);
+
+    // Reset volta tudo pra 0.
+    const back = await me.c.request('PUT', '/backlog/order', { type: 'epic', ids: [a.id, b.id, c.id], reset: true });
+    assert.equal(back.body.epics.find((e: { id: string }) => e.id === c.id).position, 0);
+  });
 });
