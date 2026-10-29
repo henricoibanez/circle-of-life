@@ -10,7 +10,7 @@ export const IMAGE_SIZE: Record<UploadPurpose, [size: string, note?: string]> = 
   dream: ['1200 × 900 px (horizontal)'],
   task: ['até 1200 px no lado maior'],
   post: ['1080 × 1080, 1080 × 1350 ou 1080 × 566 px', 'O app ajusta sozinho ao formato mais próximo.'],
-  story: ['1080 × 1920 px (vertical)', 'O app ajusta sozinho.'],
+  story: ['1080 × 1920 px (vertical)', 'Arraste e dê zoom para enquadrar.'],
   group: ['1200 × 600 px (horizontal)', 'Deixe o assunto no centro: ela também aparece num círculo.'],
   trilha: ['1200 × 675 px (horizontal)'],
 };
@@ -69,12 +69,10 @@ export function shrinkImage(file: File, max = 900, formats?: ImageFormat[]): Pro
 }
 
 /**
- * Envia uma imagem: pede à API uma URL temporária, manda o arquivo direto
- * para o storage e confirma. Devolve o id do arquivo e a URL para mostrar.
+ * Envia um JPEG já pronto (ex.: recortado pela pessoa no story): pede à API uma
+ * URL temporária, manda o arquivo direto para o storage e confirma.
  */
-export async function uploadImage(file: File, purpose: UploadPurpose, max = 900) {
-  const blob = await shrinkImage(file, max, FORMATS[purpose]);
-  const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+export async function uploadBlob(blob: Blob, purpose: UploadPurpose, name = 'imagem.jpg') {
   const { fileId, uploadUrl, headers } = await api<{ fileId: string; uploadUrl: string; headers: Record<string, string> }>('/uploads', {
     method: 'POST',
     body: { purpose, mime: 'image/jpeg', size: blob.size, name },
@@ -82,4 +80,14 @@ export async function uploadImage(file: File, purpose: UploadPurpose, max = 900)
   const put = await fetch(uploadUrl, { method: 'PUT', headers, body: blob });
   if (!put.ok) throw new Error('Não foi possível enviar a imagem. Tente de novo.');
   return api<{ id: string; name: string; url: string }>(`/uploads/${fileId}/confirm`, { method: 'POST' });
+}
+
+/**
+ * Envia uma imagem: reduz/recorta no navegador e manda para o storage.
+ * Devolve o id do arquivo e a URL para mostrar.
+ */
+export async function uploadImage(file: File, purpose: UploadPurpose, max = 900) {
+  const blob = await shrinkImage(file, max, FORMATS[purpose]);
+  const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+  return uploadBlob(blob, purpose, name);
 }

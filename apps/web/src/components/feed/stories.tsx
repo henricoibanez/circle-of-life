@@ -13,7 +13,8 @@ import { ApiError } from '@/lib/api';
 import { useMe } from '@/lib/me';
 import { useStories, useStoryActions, useStoryViewers } from '@/lib/stories';
 import { since } from '@/lib/time';
-import { uploadImage } from '@/lib/upload';
+import { uploadBlob } from '@/lib/upload';
+import { StoryCropper } from '@/components/feed/story-cropper';
 
 const STORY_MS = 5000;
 const noop = () => () => undefined;
@@ -295,11 +296,33 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
   const actions = useStoryActions();
   const toast = useToast();
   const [photo, setPhoto] = useState<{ id: string; url: string } | null>(null);
+  const [rawFile, setRawFile] = useState<File | null>(null);
+  const [cropping, setCropping] = useState(false);
   const [areas, setAreas] = useState<AreaId[]>([]);
   const [caption, setCaption] = useState('');
   const [visibility, setVisibility] = useState<Visibility>(me?.preferences.defaultPostVisibility ?? 'publico');
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pickFile = (file: File | undefined) => {
+    if (!file) return;
+    setRawFile(file);
+    setCropping(true);
+  };
+
+  const useCrop = async (blob: Blob) => {
+    setCropping(false);
+    setUploading(true);
+    try {
+      const up = await uploadBlob(blob, 'story', 'story.jpg');
+      setPhoto({ id: up.id, url: up.url });
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível enviar a foto.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const toggle = (a: AreaId) =>
     setAreas(x => (x.includes(a) ? x.filter(y => y !== a) : x.length < STORY_MAX_AREAS ? [...x, a] : (toast(`Escolha até ${STORY_MAX_AREAS} áreas`), x)));
@@ -334,42 +357,53 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="space-y-4">
-        <label className="relative mx-auto block aspect-[9/16] w-48 cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed border-line bg-sunk">
-          {photo ? (
-            <>
+        {/* Campo de arquivo sempre montado, acionado pelos botões abaixo. */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={e => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            pickFile(file);
+          }}
+        />
+        {cropping && rawFile ? (
+          <StoryCropper
+            file={rawFile}
+            onCancel={() => fileRef.current?.click()}
+            onDone={useCrop}
+          />
+        ) : photo ? (
+          <>
+            <div className="relative mx-auto aspect-[9/16] w-48 overflow-hidden rounded-2xl bg-black">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo.url} alt="" className="h-full w-full object-cover" />
               <AreaWatermark areas={areas} className="absolute bottom-2 right-2" />
-            </>
-          ) : (
-            <span className="absolute inset-0 grid place-items-center p-4 text-center text-sm text-muted">
-              <span>
-                <Icon n="camera" className="mx-auto mb-2 h-8 w-8" />
-                {uploading ? 'Enviando…' : 'Escolher foto'}
-              </span>
+            </div>
+            <div className="mx-auto flex w-48 gap-2">
+              <Button variant="line" className="flex-1" onClick={() => rawFile && setCropping(true)} disabled={!rawFile}>
+                Ajustar
+              </Button>
+              <Button variant="line" className="flex-1" onClick={() => fileRef.current?.click()}>
+                Trocar
+              </Button>
+            </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="relative mx-auto grid aspect-[9/16] w-48 place-items-center rounded-2xl border-2 border-dashed border-line bg-sunk p-4 text-center text-sm text-muted"
+          >
+            <span>
+              <Icon n="camera" className="mx-auto mb-2 h-8 w-8" />
+              {uploading ? 'Enviando…' : 'Escolher foto'}
             </span>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={async e => {
-              const file = e.target.files?.[0];
-              e.target.value = '';
-              if (!file) return;
-              setUploading(true);
-              try {
-                const up = await uploadImage(file, 'story', 1920);
-                setPhoto({ id: up.id, url: up.url });
-              } catch (err) {
-                toast(err instanceof Error ? err.message : 'Não foi possível enviar a foto.');
-              } finally {
-                setUploading(false);
-              }
-            }}
-          />
-        </label>
-        <ImageHint purpose="story" className="text-center" />
+          </button>
+        )}
+        {!cropping && <ImageHint purpose="story" className="justify-center" />}
         <p className="text-center text-xs text-muted">O story some sozinho em 24 horas.</p>
         <Field label={`Áreas da vida (1 a ${STORY_MAX_AREAS})`}>
           <div className="flex flex-wrap gap-2">
