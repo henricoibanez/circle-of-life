@@ -238,15 +238,38 @@ function Grupo() {
                   <p className="truncate text-xs text-muted">@{m.handle}</p>
                 </div>
                 {m.role === 'admin' && <Tag c="rgb(var(--a))">{m.creator ? 'Criador • Gestor' : 'Gestor'}</Tag>}
-                {g.canManageGestores && !m.creator && (
+                {g.admin && !m.creator && m.id !== me?.id && (g.canManageGestores || m.role !== 'admin') && (
                   <IconBtn
                     n="more"
                     label={`Opções de ${m.name}`}
                     onClick={() =>
                       openActions(m.name, [
-                        m.role === 'admin'
-                          ? { icon: 'x', label: 'Tirar de gestor', run: () => run(() => actions.setRole(g.id, m.id, 'member'), `${m.name} não é mais gestor`) }
-                          : { icon: 'verified', label: 'Tornar gestor', run: () => run(() => actions.setRole(g.id, m.id, 'admin'), `${m.name} agora é gestor`) },
+                        g.canManageGestores &&
+                          (m.role === 'admin'
+                            ? { icon: 'x', label: 'Tirar de gestor', run: () => run(() => actions.setRole(g.id, m.id, 'member'), `${m.name} não é mais gestor`) }
+                            : { icon: 'verified', label: 'Tornar gestor', run: () => run(() => actions.setRole(g.id, m.id, 'admin'), `${m.name} agora é gestor`) }),
+                        m.role !== 'admin' && {
+                          icon: 'x',
+                          label: 'Remover do grupo',
+                          run: () => run(() => actions.removeMember(g.id, m.id), `${m.name} saiu do grupo (pode voltar)`),
+                        },
+                        m.role !== 'admin' && {
+                          icon: 'lock',
+                          label: 'Banir do grupo',
+                          danger: true,
+                          run: () =>
+                            openSheet(close => (
+                              <ConfirmSheet
+                                title={`Banir ${m.name}?`}
+                                confirm="Banir"
+                                danger
+                                onConfirm={() => run(() => actions.banMember(g.id, m.id), `${m.name} foi banido do grupo`)}
+                                onClose={close}
+                              >
+                                A pessoa sai do grupo e não consegue entrar de novo até um gestor desbanir.
+                              </ConfirmSheet>
+                            )),
+                        },
                       ])
                     }
                   />
@@ -256,6 +279,25 @@ function Grupo() {
           </Card>
             );
           })()}
+          {g.admin && g.bans.length > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-2 text-sm font-semibold">Banidos</h3>
+              <Card className="divide-y divide-line">
+                {g.bans.map(b => (
+                  <div key={b.id} className="flex items-center gap-3 p-3.5">
+                    <Avatar name={b.name} photo={b.photoUrl} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{b.name}</p>
+                      <p className="truncate text-xs text-muted">@{b.handle}</p>
+                    </div>
+                    <Button variant="line" onClick={() => run(() => actions.unban(g.id, b.id), `${b.name} pode entrar de novo`)}>
+                      Desbanir
+                    </Button>
+                  </div>
+                ))}
+              </Card>
+            </div>
+          )}
         </section>
       </div>
     </>

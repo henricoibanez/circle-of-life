@@ -117,6 +117,21 @@ class GroupsController {
   setRole(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string, @Body() dto: MemberRoleDto) {
     return this.groups.setRole(u, id, userId, dto.role);
   }
+  /** Remover do grupo (pode voltar). */
+  @Delete(':id/members/:userId')
+  removeMember(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string) {
+    return this.groups.removeMember(u, id, userId);
+  }
+  /** Banir (não volta até desbanir). */
+  @Post(':id/members/:userId/ban')
+  banMember(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string) {
+    return this.groups.banMember(u, id, userId);
+  }
+  /** Desbanir. */
+  @Delete(':id/bans/:userId')
+  unban(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string) {
+    return this.groups.unban(u, id, userId);
+  }
 }
 
 /** Fórum do grupo: tópicos e respostas, só para membros. */

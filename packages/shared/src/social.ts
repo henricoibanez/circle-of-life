@@ -34,6 +34,8 @@ export type GroupDetailDto = GroupDto & {
   memberList: (PersonDto & { role: 'admin' | 'member'; creator: boolean })[];
   /** Posso escolher quem é gestor (o criador; se ele saiu, os gestores). */
   canManageGestores: boolean;
+  /** Pessoas banidas do grupo (só preenchido para gestores, para poder desbanir). */
+  bans: PersonDto[];
   trilhaList: TrilhaDto[];
   /** Gestor: todas as sugestões aguardando. Membro: as suas (em análise ou recusadas). */
   suggestions: TrilhaDto[];

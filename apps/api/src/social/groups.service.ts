@@ -70,12 +70,46 @@ export class GroupsService {
     const people = await this.people.many(members.map(m => m.user));
     const gestor = g.members[0]?.role === 'admin';
     const lists = g.members.length ? await this.trilhas.groupLists(user, id, gestor) : { trilhaList: [], suggestions: [] };
+    // A lista de banidos (para desbanir) só aparece para os gestores.
+    const bans = gestor
+      ? await this.prisma.groupBan.findMany({ where: { groupId: id }, include: { user: { select: PERSON_SELECT } }, orderBy: { createdAt: 'desc' } })
+      : [];
     return {
       ...(await this.toDto(g)),
       memberList: people.map((p, i) => ({ ...p, role: members[i]!.role, creator: p.id === g.createdById })),
       canManageGestores: this.canManage(g, user.id, members.map(m => m.userId)),
+      bans: await this.people.many(bans.map(b => b.user)),
       ...lists,
     };
+  }
+
+  /** Remover (sai, mas pode voltar) ou banir (não volta até desbanir). Só gestores; não atinge o criador nem outro gestor. */
+  private async kick(user: User, id: string, memberId: string, ban: boolean) {
+    const g = await this.requireAdmin(user.id, id);
+    if (memberId === user.id) throw new BadRequestException('Para sair do grupo, use "Sair".');
+    if (memberId === g.createdById) throw new BadRequestException('Quem criou o grupo não pode ser removido.');
+    const target = await this.prisma.groupMember.findUnique({ where: { groupId_userId: { groupId: id, userId: memberId } } });
+    if (!target) throw new NotFoundException('Essa pessoa não está no grupo.');
+    if (target.role === 'admin') throw new BadRequestException('Tire a pessoa de gestor antes de remover ou banir.');
+    await this.prisma.$transaction(async tx => {
+      await tx.groupMember.delete({ where: { groupId_userId: { groupId: id, userId: memberId } } });
+      if (ban) await tx.groupBan.upsert({ where: { groupId_userId: { groupId: id, userId: memberId } }, create: { groupId: id, userId: memberId }, update: {} });
+    });
+    return this.detail(user, id);
+  }
+
+  async removeMember(user: User, id: string, memberId: string) {
+    return this.kick(user, id, memberId, false);
+  }
+
+  async banMember(user: User, id: string, memberId: string) {
+    return this.kick(user, id, memberId, true);
+  }
+
+  async unban(user: User, id: string, memberId: string) {
+    await this.requireAdmin(user.id, id);
+    await this.prisma.groupBan.deleteMany({ where: { groupId: id, userId: memberId } });
+    return this.detail(user, id);
   }
 
   async create(user: User, input: GroupInput) {
@@ -123,6 +157,9 @@ export class GroupsService {
   async join(user: User, id: string) {
     const g = await this.get(user.id, id);
     if (g.members.length) return this.detail(user, id);
+    if (await this.prisma.groupBan.findUnique({ where: { groupId_userId: { groupId: id, userId: user.id } } })) {
+      throw new ForbiddenException('Você foi banido deste grupo e não pode entrar.');
+    }
     await this.prisma.groupMember.create({ data: { groupId: id, userId: user.id } });
     const admins = await this.prisma.groupMember.findMany({ where: { groupId: id, role: 'admin' }, select: { userId: true } });
     for (const a of admins) {

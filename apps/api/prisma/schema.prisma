@@ -98,6 +98,7 @@ model User {
   friendRequestsSent     Friendship[]        @relation("FriendRequestsSent")
   friendRequestsReceived Friendship[]        @relation("FriendRequestsReceived")
   groupMemberships       GroupMember[]
+  groupBans              GroupBan[]
   posts                  Post[]
   postLikes              PostLike[]
   postSaves              PostSave[]
@@ -667,8 +668,22 @@ model Group {
   trilhas     Trilha[]
   posts       PostGroup[]
   topics      GroupTopic[]
+  bans        GroupBan[]
 
   @@map("groups")
+}
+
+/// Pessoas banidas de um grupo: não conseguem entrar de novo até um gestor desbanir.
+model GroupBan {
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([groupId, userId])
+  @@index([userId])
+  @@map("group_bans")
 }
 
 model GroupMember {

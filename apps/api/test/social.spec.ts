@@ -117,4 +117,43 @@ describe('Amigos e grupos', () => {
     assert.equal(d.admin, true);
     assert.equal(d.members, 2);
   });
+
+  test('gestor remove (pode voltar) e bane (não volta até desbanir)', async () => {
+    const g = (await ana.c.request('POST', '/groups', { name: 'Foco', description: '', area: 'profissional' })).body;
+    await bia.c.request('POST', `/groups/${g.id}/join`);
+    await caio.c.request('POST', `/groups/${g.id}/join`);
+
+    // Só gestor remove/bane.
+    assert.equal((await bia.c.request('DELETE', `/groups/${g.id}/members/${caio.user.id}`)).status, 403);
+    // Não dá para remover o criador nem a si mesmo.
+    assert.equal((await ana.c.request('DELETE', `/groups/${g.id}/members/${ana.user.id}`)).status, 400);
+
+    // Remover: Bia sai, mas consegue voltar.
+    assert.equal((await ana.c.request('DELETE', `/groups/${g.id}/members/${bia.user.id}`)).body.members, 2);
+    assert.equal((await bia.c.request('POST', `/groups/${g.id}/join`)).body.member, true);
+
+    // Banir: Caio sai e não volta.
+    const afterBan = (await ana.c.request('POST', `/groups/${g.id}/members/${caio.user.id}/ban`)).body;
+    assert.equal(afterBan.members, 2);
+    assert.equal(afterBan.bans.length, 1);
+    assert.equal(afterBan.bans[0].id, caio.user.id);
+    assert.equal((await caio.c.request('POST', `/groups/${g.id}/join`)).status, 403);
+
+    // Desbanir: Caio volta a entrar.
+    const afterUnban = (await ana.c.request('DELETE', `/groups/${g.id}/bans/${caio.user.id}`)).body;
+    assert.equal(afterUnban.bans.length, 0);
+    assert.equal((await caio.c.request('POST', `/groups/${g.id}/join`)).body.member, true);
+
+    // Não dá para banir um gestor: tem que tirar de gestor antes.
+    await ana.c.request('PUT', `/groups/${g.id}/members/${bia.user.id}/role`, { role: 'admin' });
+    assert.equal((await ana.c.request('POST', `/groups/${g.id}/members/${bia.user.id}/ban`)).status, 400);
+
+    // Membro comum não vê a lista de banidos.
+    await ana.c.request('POST', `/groups/${g.id}/members/${caio.user.id}/ban`);
+    assert.equal((await caio.c.request('GET', `/groups/${g.id}`)).status, 200);
+    assert.equal((await bia.c.request('GET', `/groups/${g.id}`)).body.bans.length, 1, 'gestor vê');
+    const asMember = await loginAs(api, 'ana2');
+    await asMember.c.request('POST', `/groups/${g.id}/join`);
+    assert.equal((await asMember.c.request('GET', `/groups/${g.id}`)).body.bans.length, 0, 'membro comum não vê');
+  });
 });
