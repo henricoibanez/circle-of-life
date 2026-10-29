@@ -4,8 +4,37 @@ import type { TrilhaDto } from './trilhas';
 /** Uma pessoa como aparece nas listas sociais. */
 export type PersonDto = { id: string; name: string; handle: string; photoUrl: string | null };
 
+/** Relação de amizade entre mim e outra pessoa. */
+export type FriendRelation = 'amigo' | 'enviado' | 'recebido' | null;
+
 /** Resultado da busca de pessoas ao adicionar amigo. */
-export type PersonSearchDto = PersonDto & { relation: 'amigo' | 'enviado' | 'recebido' | null; requestId: string | null };
+export type PersonSearchDto = PersonDto & { relation: FriendRelation; requestId: string | null };
+
+/**
+ * Mini-perfil mostrado ao tocar na foto de alguém (modal). Só traz o que é público.
+ * Quando `blocked` é true, os números não vêm (a pessoa está bloqueada).
+ */
+export type MiniProfileDto = PersonDto & {
+  bio: string;
+  isMe: boolean;
+  /** Eu bloqueei essa pessoa (mostra "Desbloquear"). */
+  blocked: boolean;
+  /** Dá para enviar pedido de amizade (não sou eu, ninguém bloqueou, ainda não há vínculo). */
+  canAddFriend: boolean;
+  relation: FriendRelation;
+  requestId: string | null;
+  /** Mês/ano de entrada (ISO), ex.: "membro desde". */
+  memberSince: string;
+  xpTotal: number;
+  /** Épicos encerrados + iniciativas concluídas. */
+  achievements: number;
+  /** Até 3 áreas da vida em que a pessoa mais evoluiu (conquistas). */
+  topAreas: AreaId[];
+  /** Quantos amigos vocês têm em comum. */
+  mutualFriends: number;
+  /** Nomes de grupos em que vocês dois estão. */
+  sharedGroups: string[];
+};
 
 export type FriendsDto = {
   friends: PersonDto[];

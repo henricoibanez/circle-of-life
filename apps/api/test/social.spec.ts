@@ -118,6 +118,54 @@ describe('Amigos e grupos', () => {
     assert.equal(d.members, 2);
   });
 
+  test('bloquear: desfaz amizade, some do feed e da busca, impede pedido; desbloquear volta', async () => {
+    const x = await loginAs(api, 'blkx');
+    const y = await loginAs(api, 'blky');
+    // Viram amigos.
+    await x.c.request('POST', '/friends/requests', { who: 'blky' });
+    await y.c.request('POST', '/friends/requests', { who: 'blkx' });
+    assert.equal((await x.c.request('GET', '/friends')).body.friends.length, 1);
+    // Post público da Y, visível para a X antes do bloqueio.
+    await y.c.request('POST', '/posts', { text: 'Post da Y' });
+    assert.ok((await x.c.request('GET', '/feed')).body.posts.some((p: { text: string }) => p.text === 'Post da Y'));
+
+    // X bloqueia Y.
+    const blocked = await x.c.request('POST', `/people/${y.user.id}/block`);
+    assert.equal(blocked.body.blocked, true);
+    assert.equal(blocked.body.canAddFriend, false);
+
+    // Amizade desfeita nos dois lados.
+    assert.equal((await x.c.request('GET', '/friends')).body.friends.length, 0);
+    assert.equal((await y.c.request('GET', '/friends')).body.friends.length, 0);
+    // Some do feed nos dois sentidos.
+    assert.equal((await x.c.request('GET', '/feed')).body.posts.some((p: { text: string }) => p.text === 'Post da Y'), false);
+    // Some da busca nos dois sentidos.
+    assert.equal((await x.c.request('GET', '/friends/search?q=blky')).body.length, 0);
+    assert.equal((await y.c.request('GET', '/friends/search?q=blkx')).body.length, 0);
+    // Não dá para pedir amizade (nos dois sentidos).
+    assert.equal((await x.c.request('POST', '/friends/requests', { who: 'blky' })).status, 400);
+    assert.equal((await y.c.request('POST', '/friends/requests', { who: 'blkx' })).status, 400);
+    // Para a Y, a X aparece sem estatísticas e sem botão de amizade (sem revelar que foi bloqueada).
+    const yView = (await y.c.request('GET', `/people/${x.user.id}`)).body;
+    assert.equal(yView.canAddFriend, false);
+    assert.equal(yView.blocked, false);
+
+    // Desbloquear volta tudo.
+    assert.equal((await x.c.request('DELETE', `/people/${y.user.id}/block`)).body.blocked, false);
+    assert.equal((await x.c.request('POST', '/friends/requests', { who: 'blky' })).status, 201);
+  });
+
+  test('mini-perfil traz nome, @, membro desde e conquistas', async () => {
+    const r = await bia.c.request('GET', `/people/${caio.user.id}`);
+    assert.equal(r.status, 200);
+    assert.equal(r.body.handle, 'caio');
+    assert.equal(typeof r.body.memberSince, 'string');
+    assert.equal(typeof r.body.achievements, 'number');
+    assert.ok(Array.isArray(r.body.topAreas));
+    // O meu próprio perfil vem marcado como isMe.
+    assert.equal((await bia.c.request('GET', `/people/${bia.user.id}`)).body.isMe, true);
+  });
+
   test('gestor remove (pode voltar) e bane (não volta até desbanir)', async () => {
     const g = (await ana.c.request('POST', '/groups', { name: 'Foco', description: '', area: 'profissional' })).body;
     await bia.c.request('POST', `/groups/${g.id}/join`);

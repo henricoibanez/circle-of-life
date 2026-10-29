@@ -97,6 +97,8 @@ model User {
   trilhaAcquisitions     TrilhaAcquisition[]
   friendRequestsSent     Friendship[]        @relation("FriendRequestsSent")
   friendRequestsReceived Friendship[]        @relation("FriendRequestsReceived")
+  blocksMade             Block[]             @relation("BlocksMade")
+  blocksGot              Block[]             @relation("BlocksGot")
   groupMemberships       GroupMember[]
   groupBans              GroupBan[]
   posts                  Post[]
@@ -645,6 +647,20 @@ model Friendship {
   @@unique([requesterId, addresseeId])
   @@index([addresseeId])
   @@map("friendships")
+}
+
+/// Bloqueio entre pessoas (completo e nos dois sentidos quando existe em qualquer direção):
+/// somem uma para a outra no feed, stories, busca e não podem virar amigas.
+model Block {
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlocksGot", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("blocks")
 }
 
 /// admin = Gestor do grupo (aprova trilhas, modera o fórum). O criador escolhe os gestores.

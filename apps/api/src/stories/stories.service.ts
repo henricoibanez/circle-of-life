@@ -28,9 +28,11 @@ export class StoriesService {
   ) {}
 
   private async visibleWhere(userId: string): Promise<Prisma.StoryWhereInput> {
-    const friends = await this.people.friendIds(userId);
+    const [friends, blocked] = await Promise.all([this.people.friendIds(userId), this.people.blockedIds(userId)]);
     return {
       expiresAt: { gt: new Date() },
+      // Quem bloqueou (ou foi bloqueado) não aparece, nos dois sentidos.
+      authorId: { notIn: blocked },
       OR: [{ authorId: userId }, { visibility: 'publico' }, { visibility: 'amigos', authorId: { in: friends } }],
     };
   }

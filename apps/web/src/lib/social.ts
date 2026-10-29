@@ -1,6 +1,6 @@
 'use client';
 
-import type { AreaId, FriendsDto, GroupDetailDto, GroupDto } from '@circle/shared';
+import type { AreaId, FriendsDto, GroupDetailDto, GroupDto, MiniProfileDto } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
 
@@ -55,5 +55,22 @@ export function useSocialActions() {
     removeMember: (id: string, userId: string) => api<GroupDetailDto>(`/groups/${id}/members/${userId}`, { method: 'DELETE' }).then(groups),
     banMember: (id: string, userId: string) => api<GroupDetailDto>(`/groups/${id}/members/${userId}/ban`, { method: 'POST' }).then(groups),
     unban: (id: string, userId: string) => api<GroupDetailDto>(`/groups/${id}/bans/${userId}`, { method: 'DELETE' }).then(groups),
+
+    /** Bloquear/desbloquear: o bloqueio mexe em feed, stories, busca e amizade. */
+    block: (id: string) => api<MiniProfileDto>(`/people/${id}/block`, { method: 'POST' }).then(afterBlock),
+    unblock: (id: string) => api<MiniProfileDto>(`/people/${id}/block`, { method: 'DELETE' }).then(afterBlock),
   };
+  function afterBlock(p: MiniProfileDto) {
+    qc.setQueryData(['profile', p.id], p);
+    friends();
+    qc.invalidateQueries({ queryKey: GROUPS_KEY });
+    qc.invalidateQueries({ queryKey: ['feed'] });
+    qc.invalidateQueries({ queryKey: ['stories'] });
+    return p;
+  }
+}
+
+/** Mini-perfil (modal ao tocar na foto). */
+export function useProfile(id: string | null) {
+  return useQuery({ queryKey: ['profile', id], queryFn: () => api<MiniProfileDto>(`/people/${id}`), enabled: Boolean(id) });
 }

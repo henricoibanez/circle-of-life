@@ -34,4 +34,13 @@ export class PeopleService {
     });
     return rows.map(r => (r.requesterId === userId ? r.addresseeId : r.requesterId));
   }
+
+  /** Ids de quem a pessoa bloqueou OU que a bloquearam (o bloqueio vale nos dois sentidos). */
+  async blockedIds(userId: string): Promise<string[]> {
+    const rows = await this.prisma.block.findMany({
+      where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    return [...new Set(rows.map(r => (r.blockerId === userId ? r.blockedId : r.blockerId)))];
+  }
 }

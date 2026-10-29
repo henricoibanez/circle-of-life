@@ -11,6 +11,7 @@ import { Icon } from '@/components/icon';
 import { Avatar, Card, Empty, IconBtn, inputCls, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { ForumSection, TopicSheet } from '@/components/social/forum';
+import { useMiniProfile } from '@/components/social/mini-profile';
 import { AddTrilhaSheet, GroupCover, GroupForm } from '@/components/social/group-sheets';
 import { useToast } from '@/components/toasts';
 import { Cover, PublishSheet, statusTag, TrilhaSheet } from '@/components/trilhas/trilha-sheets';
@@ -41,6 +42,7 @@ function Grupo() {
   const actions = useSocialActions();
   const toast = useToast();
   const { openSheet, openActions } = useSheets();
+  const openProfile = useMiniProfile();
   const newPost = usePostForm();
   const posts = useFeed({ group: id });
 
@@ -229,7 +231,9 @@ function Grupo() {
             {filtered.length === 0 && <p className="p-3.5 text-sm text-muted">Ninguém encontrado para “{memberQuery.trim()}”.</p>}
             {filtered.map(m => (
               <div key={m.id} className="flex items-center gap-3 p-3.5">
-                <Avatar name={m.name} photo={m.photoUrl} />
+                <button onClick={() => openProfile(m.id)} aria-label={`Ver perfil de ${m.name}`} className="shrink-0">
+                  <Avatar name={m.name} photo={m.photoUrl} />
+                </button>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">
                     {m.name}

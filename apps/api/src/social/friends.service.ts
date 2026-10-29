@@ -46,9 +46,10 @@ export class FriendsService {
   async search(me: User, q: string): Promise<PersonSearchDto[]> {
     const term = q.trim().replace(/^@/, '');
     if (term.length < 2) return [];
+    const blocked = await this.people.blockedIds(me.id);
     const rows = await this.prisma.user.findMany({
       where: {
-        id: { not: me.id },
+        id: { not: me.id, notIn: blocked },
         OR: [{ name: { contains: term, mode: 'insensitive' } }, { handle: { contains: term.toLowerCase() } }],
       },
       select: PERSON_SELECT,
@@ -77,6 +78,7 @@ export class FriendsService {
     const target = await this.prisma.user.findFirst({ where: key.includes('@') ? { email: key } : { handle: key } });
     if (!target) throw new NotFoundException('Essa pessoa ainda não está no Circle of Life. Por enquanto, só administradores convidam pessoas novas.');
     if (target.id === me.id) throw new BadRequestException('Você não pode adicionar a si mesmo.');
+    if ((await this.people.blockedIds(me.id)).includes(target.id)) throw new BadRequestException('Não é possível adicionar essa pessoa.');
 
     const existing = await this.prisma.friendship.findFirst({
       where: { OR: [{ requesterId: me.id, addresseeId: target.id }, { requesterId: target.id, addresseeId: me.id }] },

@@ -8,6 +8,7 @@ import { ForumService } from './forum.service';
 import { FriendsService } from './friends.service';
 import { GroupsService } from './groups.service';
 import { PeopleService } from './people.service';
+import { ProfileService } from './profile.service';
 
 class FriendRequestDto {
   @IsString() @MinLength(2, { message: 'digite o e-mail ou o @ID da pessoa' }) @MaxLength(200) who!: string;
@@ -166,10 +167,29 @@ class ForumController {
   }
 }
 
+@Controller('people')
+class PeopleController {
+  constructor(private readonly profile: ProfileService) {}
+
+  /** Mini-perfil mostrado ao tocar na foto de alguém. */
+  @Get(':id')
+  get(@CurrentUser() u: User, @Param('id') id: string) {
+    return this.profile.profile(u, id);
+  }
+  @Post(':id/block')
+  block(@CurrentUser() u: User, @Param('id') id: string) {
+    return this.profile.block(u, id);
+  }
+  @Delete(':id/block')
+  unblock(@CurrentUser() u: User, @Param('id') id: string) {
+    return this.profile.unblock(u, id);
+  }
+}
+
 @Module({
   imports: [TrilhasModule],
-  controllers: [FriendsController, GroupsController, ForumController],
-  providers: [PeopleService, FriendsService, GroupsService, ForumService],
+  controllers: [FriendsController, GroupsController, ForumController, PeopleController],
+  providers: [PeopleService, FriendsService, GroupsService, ForumService, ProfileService],
   exports: [PeopleService, FriendsService, GroupsService],
 })
 export class SocialModule {}

@@ -54,15 +54,18 @@ export class FeedService {
   ) {}
 
   private async circle(userId: string) {
-    const [friends, groups] = await Promise.all([
+    const [friends, groups, blocked] = await Promise.all([
       this.people.friendIds(userId),
       this.prisma.groupMember.findMany({ where: { userId }, select: { groupId: true } }).then(r => r.map(m => m.groupId)),
+      this.people.blockedIds(userId),
     ]);
-    return { friends, groups };
+    return { friends, groups, blocked };
   }
 
-  private visibleWhere(userId: string, c: { friends: string[]; groups: string[] }): Prisma.PostWhereInput {
+  private visibleWhere(userId: string, c: { friends: string[]; groups: string[]; blocked: string[] }): Prisma.PostWhereInput {
     return {
+      // Quem você bloqueou (ou te bloqueou) some do feed, nos dois sentidos.
+      authorId: { notIn: c.blocked },
       OR: [
         { authorId: userId },
         { groups: { some: { groupId: { in: c.groups } } } },

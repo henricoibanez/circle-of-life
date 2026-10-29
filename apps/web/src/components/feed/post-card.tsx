@@ -7,6 +7,7 @@ import { PostForm } from '@/components/feed/post-form';
 import { Icon, type IconName } from '@/components/icon';
 import { Avatar, Card, IconBtn, inputCls } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
+import { useMiniProfile } from '@/components/social/mini-profile';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
@@ -20,6 +21,7 @@ export function PostCard({ p }: { p: PostDto }) {
   const actions = useFeedActions();
   const toast = useToast();
   const { openSheet, openActions } = useSheets();
+  const openProfile = useMiniProfile();
   const groups = p.groups;
   const areas = p.areas.map(id => AREA[id]);
   const media = p.media;
@@ -57,7 +59,9 @@ export function PostCard({ p }: { p: PostDto }) {
   return (
     <Card className="p-4">
       <div className="flex items-start gap-3">
-        <Avatar name={p.author.name} photo={p.author.photoUrl} size="w-11 h-11 text-sm" />
+        <button onClick={() => openProfile(p.author.id)} aria-label={`Ver perfil de ${p.author.name}`} className="shrink-0">
+          <Avatar name={p.author.name} photo={p.author.photoUrl} size="w-11 h-11 text-sm" />
+        </button>
         <div className="min-w-0 flex-1">
           <p className="font-semibold leading-tight">{p.mine ? 'Você' : p.author.name}</p>
           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-muted">
@@ -203,6 +207,7 @@ function Gallery({ media, start, onClose }: { media: PostDto['media']; start: nu
 
 export function CommentsSheet({ id, onClose }: { id: string; onClose: () => void }) {
   const { data } = useComments(id);
+  const openProfile = useMiniProfile();
   const actions = useFeedActions();
   const toast = useToast();
   const [t, setT] = useState('');
@@ -242,7 +247,9 @@ export function CommentsSheet({ id, onClose }: { id: string; onClose: () => void
       <div className="space-y-4">
         {data?.map(c => (
           <div key={c.id} className="flex gap-3">
-            <Avatar name={c.author.name} photo={c.author.photoUrl} size="w-9 h-9 text-xs" />
+            <button onClick={() => openProfile(c.author.id)} aria-label={`Ver perfil de ${c.author.name}`} className="shrink-0">
+              <Avatar name={c.author.name} photo={c.author.photoUrl} size="w-9 h-9 text-xs" />
+            </button>
             <div className="flex-1 rounded-2xl bg-sunk px-3.5 py-2.5">
               <p className="text-sm font-semibold">
                 {c.mine ? 'Você' : c.author.name} <span className="text-xs font-normal text-muted">{since(c.createdAt)}</span>
