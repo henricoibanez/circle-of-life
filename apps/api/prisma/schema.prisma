@@ -64,6 +64,8 @@ model User {
   randomTheme           Boolean    @default(false)
   themeMode             ThemeMode  @default(auto)
   defaultPostVisibility Visibility @default(publico)
+  /// Duração da sprint em dias: 7, 14 (padrão) ou 30; 0 = indeterminada (sem prazo, encerra quando quiser).
+  sprintLength          Int        @default(14)
   timezone              String     @default("America/Sao_Paulo")
   /// Tudo que a pessoa já ganhou de XP (cópia rápida da soma do extrato, etapa 6).
   xpTotal               Int        @default(0)
@@ -282,8 +284,8 @@ model Sprint {
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   number     Int
   startAt    DateTime
-  /// startAt + 13 dias (14 dias no total).
-  plannedEnd DateTime
+  /// Fim previsto (startAt + duração − 1 dia). Null quando a sprint é indeterminada (sem prazo).
+  plannedEnd DateTime?
   closedAt   DateTime?
   /// Preenchidos ao encerrar: "prontas/total".
   doneCount  Int?

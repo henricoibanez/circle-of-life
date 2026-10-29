@@ -45,7 +45,7 @@ describe('Perfil e configurações', () => {
   test('preferências de tema e visibilidade padrão dos posts', async () => {
     const { c } = await loginAs(api, 'perf4');
     const r = await c.request('PATCH', '/me/preferences', { palette: 'serenity', randomTheme: true, themeMode: 'dark', defaultPostVisibility: 'amigos' });
-    assert.deepEqual(r.body.preferences, { palette: 'serenity', randomTheme: true, themeMode: 'dark', defaultPostVisibility: 'amigos' });
+    assert.deepEqual(r.body.preferences, { palette: 'serenity', randomTheme: true, themeMode: 'dark', defaultPostVisibility: 'amigos', sprintLength: 14 });
     assert.equal((await c.request('PATCH', '/me/preferences', { palette: 'rosa' })).status, 400);
   });
 

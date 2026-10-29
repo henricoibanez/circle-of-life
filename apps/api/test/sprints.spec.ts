@@ -32,6 +32,32 @@ describe('Sprints de 14 dias', () => {
     assert.deepEqual(r.body.history, []);
   });
 
+  test('duração da sprint: padrão 14 dias; a nova duração vale na próxima sprint; indeterminada fica sem prazo', async () => {
+    const { me } = await setup('duracao');
+    const dias = (a: string, b: string) => Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000) + 1;
+
+    // Padrão: 14 dias.
+    const s1 = (await me.c.request('GET', '/sprints')).body.current;
+    assert.equal(dias(s1.startAt, s1.plannedEnd), 14);
+
+    // Troca para semanal (7). A sprint atual não muda.
+    assert.equal((await me.c.request('PATCH', '/me/preferences', { sprintLength: 7 })).body.preferences.sprintLength, 7);
+    const atual = (await me.c.request('GET', '/sprints')).body.current;
+    assert.equal(dias(atual.startAt, atual.plannedEnd), 14, 'a sprint atual continua 14');
+
+    // Ao encerrar, a próxima usa 7 dias.
+    const prox = (await me.c.request('POST', '/sprints/current/close')).body.next;
+    assert.equal(dias(prox.startAt, prox.plannedEnd), 7);
+
+    // Indeterminada (0): a próxima sprint nasce sem prazo.
+    await me.c.request('PATCH', '/me/preferences', { sprintLength: 0 });
+    const semPrazo = (await me.c.request('POST', '/sprints/current/close')).body.next;
+    assert.equal(semPrazo.plannedEnd, null);
+
+    // Valor inválido é recusado.
+    assert.equal((await me.c.request('PATCH', '/me/preferences', { sprintLength: 3 })).status, 400);
+  });
+
   test('encerrar: prontas arquivadas, abertas voltam ao backlog com histórico, próxima sprint aberta', async () => {
     const { me, task } = await setup('davi');
     const done = await task('Pronta', 'done');

@@ -42,6 +42,7 @@ export type Me = {
     randomTheme: boolean;
     themeMode: 'auto' | 'light' | 'dark';
     defaultPostVisibility: 'publico' | 'amigos' | 'privado';
+    sprintLength: number;
   };
   xp: { total: number; disponivel: number };
 };

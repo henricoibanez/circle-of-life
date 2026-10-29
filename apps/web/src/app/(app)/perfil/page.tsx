@@ -1,6 +1,6 @@
 'use client';
 
-import { PALETTES, type PaletteId } from '@circle/shared';
+import { PALETTES, type PaletteId, SPRINT_LENGTHS } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -282,6 +282,27 @@ export default function PerfilPage() {
           <h2 className="font-semibold">Privacidade</h2>
           <p className="mb-3 text-xs text-muted">Quem vê os seus posts e stories, por padrão. Dá para mudar em cada post.</p>
           <Seg items={VISIBILITY} value={prefs.defaultPostVisibility} onChange={defaultPostVisibility => setPrefs({ defaultPostVisibility })} />
+        </Card>
+
+        <Card className="p-4">
+          <h2 className="font-semibold">Duração da sprint</h2>
+          <p className="mb-3 text-xs text-muted">Vale para a próxima sprint; a atual segue até você encerrar.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {SPRINT_LENGTHS.map(s => {
+              const on = prefs.sprintLength === s.days;
+              return (
+                <button
+                  key={s.days}
+                  onClick={() => setPrefs({ sprintLength: s.days })}
+                  aria-pressed={on}
+                  className={`rounded-xl border p-3 text-left transition ${on ? 'border-primary bg-primary/5' : 'border-line hover:bg-sunk'}`}
+                >
+                  <span className={`block text-sm font-semibold ${on ? 'text-primary' : ''}`}>{s.label}</span>
+                  <span className="block text-xs text-muted">{s.hint}</span>
+                </button>
+              );
+            })}
+          </div>
         </Card>
 
         <PushCard />

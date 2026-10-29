@@ -12,8 +12,18 @@ export const STATUS_LABEL: Record<TaskStatus, string> = {
   done: 'Pronto',
 };
 
-/** Duração de uma sprint, em dias. */
+/** Duração padrão de uma sprint, em dias (quando a pessoa não escolheu outra). */
 export const SPRINT_DAYS = 14;
+
+/** Opções de duração da sprint, escolhidas nas Configurações. 0 = indeterminada (sem prazo). */
+export const SPRINT_LENGTHS = [
+  { days: 7, label: 'Semanal', hint: '7 dias' },
+  { days: 14, label: 'Quinzenal', hint: '14 dias' },
+  { days: 30, label: 'Mensal', hint: '30 dias' },
+  { days: 0, label: 'Indeterminada', hint: 'sem prazo; você encerra quando quiser' },
+] as const;
+
+export const SPRINT_LENGTH_DAYS = SPRINT_LENGTHS.map(s => s.days);
 
 export type InitiativeDto = {
   id: string;
@@ -67,7 +77,7 @@ export type SprintDto = {
   id: string;
   number: number;
   startAt: string;
-  plannedEnd: string;
+  plannedEnd: string | null;
   closedAt: string | null;
   doneCount: number | null;
   totalCount: number | null;

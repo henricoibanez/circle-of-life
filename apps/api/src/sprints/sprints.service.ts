@@ -1,4 +1,4 @@
-import { SPRINT_DAYS, type SprintDto } from '@circle/shared';
+import { type SprintDto } from '@circle/shared';
 import { Injectable } from '@nestjs/common';
 import type { Prisma, Sprint } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -7,13 +7,14 @@ import { XpService } from '../xp/xp.service';
 
 type Tx = Prisma.TransactionClient;
 
-export const plannedEnd = (start: Date) => new Date(start.getTime() + (SPRINT_DAYS - 1) * 24 * 3600 * 1000);
+/** Fim previsto a partir da duração escolhida (em dias). 0 = indeterminada (sem prazo). */
+export const plannedEnd = (start: Date, days: number) => (days > 0 ? new Date(start.getTime() + (days - 1) * 24 * 3600 * 1000) : null);
 
 export const toSprintDto = (s: Sprint): SprintDto => ({
   id: s.id,
   number: s.number,
   startAt: s.startAt.toISOString(),
-  plannedEnd: s.plannedEnd.toISOString(),
+  plannedEnd: s.plannedEnd?.toISOString() ?? null,
   closedAt: s.closedAt?.toISOString() ?? null,
   doneCount: s.doneCount,
   totalCount: s.totalCount,
@@ -33,7 +34,13 @@ export class SprintsService {
     if (open) return open;
     const last = await tx.sprint.findFirst({ where: { userId }, orderBy: { number: 'desc' } });
     const startAt = new Date();
-    return tx.sprint.create({ data: { userId, number: (last?.number ?? 0) + 1, startAt, plannedEnd: plannedEnd(startAt) } });
+    const length = await this.sprintLength(userId, tx);
+    return tx.sprint.create({ data: { userId, number: (last?.number ?? 0) + 1, startAt, plannedEnd: plannedEnd(startAt, length) } });
+  }
+
+  /** Duração da sprint escolhida pela pessoa (em dias; 0 = sem prazo). */
+  private async sprintLength(userId: string, tx: Tx = this.prisma) {
+    return (await tx.user.findUnique({ where: { id: userId }, select: { sprintLength: true } }))?.sprintLength ?? 14;
   }
 
   /** Sprint atual e histórico das anteriores (mais recente primeiro). */
@@ -72,8 +79,9 @@ export class SprintsService {
         where: { id: sprint.id },
         data: { closedAt: now, doneCount: done.length, totalCount: board.length },
       });
+      const length = await this.sprintLength(userId, tx);
       const next = await tx.sprint.create({
-        data: { userId, number: sprint.number + 1, startAt: now, plannedEnd: plannedEnd(now) },
+        data: { userId, number: sprint.number + 1, startAt: now, plannedEnd: plannedEnd(now, length) },
       });
       const full = board.length > 0 && open.length === 0;
       const gained = full ? await this.xp.grant(tx, userId, 'sprint', sprint.id) : 0;

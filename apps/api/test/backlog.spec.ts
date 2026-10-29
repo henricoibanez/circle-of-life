@@ -45,7 +45,7 @@ describe('Backlog: iniciativas, épicos e tarefas', () => {
     const sprints = await api.prisma.sprint.findMany({ where: { userId: me.user.id } });
     assert.equal(sprints.length, 1);
     assert.equal(sprints[0]!.number, 1);
-    const days = (sprints[0]!.plannedEnd.getTime() - sprints[0]!.startAt.getTime()) / 86400000;
+    const days = (sprints[0]!.plannedEnd!.getTime() - sprints[0]!.startAt.getTime()) / 86400000;
     assert.equal(days, 13);
   });
 

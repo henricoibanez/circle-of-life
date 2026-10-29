@@ -192,7 +192,7 @@ export default function BoardPage() {
           <button className="min-w-0 flex-1 text-left" onClick={() => openSheet(close => <SprintSheet onClose={close} />)}>
             <p className="text-[1.375rem] font-bold leading-tight">Quadro Kanban</p>
             <p className="flex items-center gap-1 text-sm text-muted">
-              {s ? `Sprint ${s.number} • ${fmtShort(s.startAt)} a ${fmtShort(s.plannedEnd)}` : ' '}
+              {s ? `Sprint ${s.number} • ${s.plannedEnd ? `${fmtShort(s.startAt)} a ${fmtShort(s.plannedEnd)}` : `desde ${fmtShort(s.startAt)} · sem prazo`}` : ' '}
               <Icon n="chevD" className="h-4 w-4" />
             </p>
           </button>

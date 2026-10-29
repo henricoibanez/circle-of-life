@@ -1,4 +1,4 @@
-import { MASLOW_ITEM_KEYS, MAX_OPEN_DREAMS } from '@circle/shared';
+import { MASLOW_ITEM_KEYS, MAX_OPEN_DREAMS, SPRINT_LENGTH_DAYS } from '@circle/shared';
 import { Body, ConflictException, Controller, Delete, Get, HttpCode, Injectable, Module, Patch, Res } from '@nestjs/common';
 import { IsBoolean, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import type { Response } from 'express';
@@ -24,6 +24,7 @@ class PreferencesDto {
   @IsOptional() @IsBoolean() randomTheme?: boolean;
   @IsOptional() @IsIn(['auto', 'light', 'dark'], { message: 'aparência inválida' }) themeMode?: 'auto' | 'light' | 'dark';
   @IsOptional() @IsIn(['publico', 'amigos', 'privado'], { message: 'visibilidade inválida' }) defaultPostVisibility?: 'publico' | 'amigos' | 'privado';
+  @IsOptional() @IsIn(SPRINT_LENGTH_DAYS, { message: 'duração de sprint inválida' }) sprintLength?: number;
 }
 
 @Injectable()
@@ -50,6 +51,7 @@ export class UsersService {
         randomTheme: user.randomTheme,
         themeMode: user.themeMode,
         defaultPostVisibility: user.defaultPostVisibility,
+        sprintLength: user.sprintLength,
       },
       xp: { total: user.xpTotal, disponivel: Math.max(0, user.xpTotal - user.xpSpent) },
     };

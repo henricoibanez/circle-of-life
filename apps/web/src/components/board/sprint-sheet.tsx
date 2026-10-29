@@ -1,6 +1,6 @@
 'use client';
 
-import { SPRINT_DAYS, type BacklogDto } from '@circle/shared';
+import { type BacklogDto } from '@circle/shared';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useCelebrate } from '@/components/celebrate';
@@ -64,7 +64,7 @@ export function SprintSheet({ onClose }: { onClose: () => void }) {
       }
     >
       <p className="text-sm text-muted">
-        {fmtShort(s.startAt)} a {fmtShort(s.plannedEnd)}, {SPRINT_DAYS} dias
+        {s.plannedEnd ? `${fmtShort(s.startAt)} a ${fmtShort(s.plannedEnd)}` : `Começou em ${fmtShort(s.startAt)} · sem prazo definido`}
       </p>
       <div className="my-4 grid grid-cols-2 gap-3">
         <div className="rounded-2xl bg-sunk p-4">
@@ -94,7 +94,8 @@ export function SprintSheet({ onClose }: { onClose: () => void }) {
               <div key={h.id} className="flex items-center gap-3 py-2.5 text-sm">
                 <span className="w-20 font-semibold">Sprint {h.number}</span>
                 <span className="flex-1 text-muted">
-                  {fmtShort(h.startAt)} a {fmtShort(h.closedAt ?? h.plannedEnd)}
+                  {fmtShort(h.startAt)}
+                  {(h.closedAt ?? h.plannedEnd) && ` a ${fmtShort(h.closedAt ?? h.plannedEnd!)}`}
                 </span>
                 <span className="tabular-nums">
                   {h.doneCount}/{h.totalCount}
