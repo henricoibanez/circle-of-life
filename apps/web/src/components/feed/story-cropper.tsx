@@ -25,14 +25,19 @@ export function StoryCropper({ file, onCancel, onDone }: { file: File; onCancel:
   const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
   const gesture = useRef<{ x: number; y: number; ox: number; oy: number; dist: number; zoom: number } | null>(null);
 
+  // Sempre a versão mais nova de onCancel, sem recarregar a foto quando a tela se redesenha
+  // (ex.: ao selecionar uma área) — era o que fazia a imagem voltar ao centro.
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
+
   useEffect(() => {
     const url = URL.createObjectURL(file);
     const im = new Image();
     im.onload = () => setImg(im);
-    im.onerror = () => onCancel();
+    im.onerror = () => onCancelRef.current();
     im.src = url;
     return () => URL.revokeObjectURL(url);
-  }, [file, onCancel]);
+  }, [file]);
 
   useEffect(() => {
     const el = frameRef.current;
