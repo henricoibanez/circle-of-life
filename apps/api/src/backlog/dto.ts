@@ -38,6 +38,7 @@ export class CreateTaskDto {
   @IsString({ message: 'escolha o épico' }) epicId!: string;
   @IsString(TITLE) @MinLength(1, TITLE) @MaxLength(120, TITLE) title!: string;
   @IsOptional() @IsString() @MaxLength(4000, { message: 'a descrição pode ter até 4.000 caracteres' }) description?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(3, { message: 'escolha até 3 áreas' }) @IsIn(AREA_IDS, { each: true, ...AREA_MSG }) areas?: AreaId[];
   @IsOptional() @IsIn(PRIORITIES, { message: 'prioridade inválida' }) priority?: (typeof PRIORITIES)[number];
   @IsOptional() @ValidateIf((_, v) => v !== null) @Matches(DATE, { message: 'data inválida' }) dueDate?: string | null;
   /** Onde colocar: no backlog ou já na sprint atual (A Fazer). */
@@ -47,6 +48,7 @@ export class UpdateTaskDto {
   @IsOptional() @IsString() epicId?: string;
   @IsOptional() @IsString(TITLE) @MinLength(1, TITLE) @MaxLength(120, TITLE) title?: string;
   @IsOptional() @IsString() @MaxLength(4000) description?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(3, { message: 'escolha até 3 áreas' }) @IsIn(AREA_IDS, { each: true, ...AREA_MSG }) areas?: AreaId[];
   @IsOptional() @IsIn(PRIORITIES, { message: 'prioridade inválida' }) priority?: (typeof PRIORITIES)[number];
   @IsOptional() @ValidateIf((_, v) => v !== null) @Matches(DATE, { message: 'data inválida' }) dueDate?: string | null;
 }

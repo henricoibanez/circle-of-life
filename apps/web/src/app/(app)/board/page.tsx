@@ -9,7 +9,7 @@ import { useGoBack } from '@/components/header';
 import { Icon } from '@/components/icon';
 import { AreaIcon, Bar, Card, IconBtn, inputCls, Prio } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
-import { taskArea, useBacklog, useBacklogActions } from '@/lib/backlog';
+import { taskAreas, useBacklog, useBacklogActions } from '@/lib/backlog';
 import { fmtDay, fmtShort, useSprints } from '@/lib/sprints';
 
 const COLS: { id: 'todo' | 'doing' | 'done'; label: string; c: string }[] = [
@@ -45,7 +45,7 @@ export default function BoardPage() {
     return () => window.removeEventListener('touchmove', block);
   }, []);
 
-  const tasks = data ? boardTasks(data).filter(t => (area === 'all' || taskArea(data, t) === area) && (!q || t.title.toLowerCase().includes(q.toLowerCase()))) : [];
+  const tasks = data ? boardTasks(data).filter(t => (area === 'all' || taskAreas(data, t).includes(area)) && (!q || t.title.toLowerCase().includes(q.toLowerCase()))) : [];
   const late = data ? data.tasks.filter(t => !t.archivedAt && isLate(t)) : [];
   const epicOf = (t: TaskDto) => data?.epics.find(e => e.id === t.epicId);
 
@@ -114,7 +114,7 @@ export default function BoardPage() {
     ]);
 
   const renderCard = (t: TaskDto, ghost?: boolean) => {
-    const ep = epicOf(t);
+    const areas = data ? taskAreas(data, t) : [];
     const ck = t.checklist;
     const ckp = ck.total ? ck.done / ck.total : 0;
     const isLateNow = isLate(t);
@@ -156,9 +156,11 @@ export default function BoardPage() {
               {ck.done}/{ck.total}
             </span>
           )}
-          {ep && (
-            <span className="ml-auto" style={{ color: AREA[ep.area].color }}>
-              <Icon n={AREA[ep.area].icon} className="h-4 w-4" />
+          {areas.length > 0 && (
+            <span className="ml-auto flex gap-0.5">
+              {areas.map(id => (
+                <Icon key={id} n={AREA[id].icon} className="h-4 w-4" style={{ color: AREA[id].color }} />
+              ))}
             </span>
           )}
         </div>
@@ -313,7 +315,7 @@ export default function BoardPage() {
                     const ep = epicOf(t);
                     return (
                       <button key={t.id} onClick={() => openTask(t.id)} className="flex w-full items-center gap-3 p-3.5 text-left">
-                        <AreaIcon id={ep?.area} size="w-9 h-9" icon="w-4 h-4" />
+                        <AreaIcon id={data ? taskAreas(data, t)[0] : undefined} size="w-9 h-9" icon="w-4 h-4" />
                         <span className="min-w-0 flex-1">
                           <span className={`block truncate font-medium ${t.status === 'done' ? 'text-muted line-through' : ''}`}>{t.title}</span>
                           <span className="block truncate text-xs text-muted">{ep?.title}</span>

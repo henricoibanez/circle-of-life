@@ -34,6 +34,7 @@ export const toTaskDto = (t: Task & { checklist?: Pick<ChecklistItem, 'done'>[] 
   epicId: t.epicId,
   title: t.title,
   description: t.description,
+  areas: t.areas,
   status: t.status,
   priority: t.priority,
   dueDate: day(t.dueDate),

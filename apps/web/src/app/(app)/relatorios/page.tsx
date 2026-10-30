@@ -6,7 +6,7 @@ import { Donut, LineChart } from '@/components/charts';
 import { Header } from '@/components/header';
 import { Icon, type IconName } from '@/components/icon';
 import { AreaIcon, Bar, Card, inputCls, Ring, Seg } from '@/components/primitives';
-import { taskArea, useBacklog } from '@/lib/backlog';
+import { taskAreas, useBacklog } from '@/lib/backlog';
 import { useRoda } from '@/lib/roda';
 import { fmtDay, useSprints } from '@/lib/sprints';
 
@@ -43,7 +43,7 @@ export default function RelatoriosPage() {
         {data && tab === 'area' && (
           <Card className="divide-y divide-line">
             {AREAS.map(a => {
-              const all = data.tasks.filter(t => taskArea(data, t) === a.id);
+              const all = data.tasks.filter(t => taskAreas(data, t).includes(a.id));
               const n = all.filter(t => t.status === 'done').length;
               return (
                 <div key={a.id} className="flex items-center gap-3 p-3.5">
@@ -155,7 +155,7 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
     const n = data.tasks.filter(x => x.doneAt && at(x.doneAt) <= t).length;
     return { v: total ? n / total : 0, label: i % 2 === 0 ? fmtDay(new Date(t)) : '' };
   });
-  const byArea = AREAS.map(a => ({ a, n: done.filter(t => taskArea(data, t) === a.id).length })).sort((x, y) => y.n - x.n);
+  const byArea = AREAS.map(a => ({ a, n: done.filter(t => taskAreas(data, t).includes(a.id)).length })).sort((x, y) => y.n - x.n);
   const pctA = (n: number) => (done.length ? Math.round((n / done.length) * 100) : 0);
   const iniOf = (epicId: string) => data.epics.find(e => e.id === epicId)?.initiativeId;
   const byIni = data.initiatives
@@ -316,7 +316,7 @@ function Entregas({ data }: { data: BacklogDto }) {
   const end = new Date(`${to}T23:59:59`).getTime();
   const list = data.tasks
     .filter(t => t.doneAt && new Date(t.doneAt).getTime() >= start && new Date(t.doneAt).getTime() <= end)
-    .filter(t => area === 'all' || taskArea(data, t) === area)
+    .filter(t => area === 'all' || taskAreas(data, t).includes(area))
     .sort((a, b) => new Date(b.doneAt!).getTime() - new Date(a.doneAt!).getTime());
 
   return (

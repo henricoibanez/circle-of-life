@@ -73,9 +73,9 @@ Cada área tem também uma pergunta principal, um slogan e duas perguntas de ref
 
 - **Iniciativa**: objetivo estratégico de alto nível (ex.: "Vida longa e próspera"). Tem uma ou mais áreas da vida. Pode ser marcada como **Objetivo Master**. **Não** é publicada como trilha (é algo muito pessoal). Quando todos os seus épicos estão encerrados, pode ser **concluída** (vira conquista).
 - **Épico**: conjunto de entregas relacionadas, dentro de uma iniciativa (ex.: "Comprar uma casa"). Tem **uma** área da vida. Pode ser **publicado como trilha** (na loja ou num grupo). Quando todas as tarefas estão prontas, pode ser **encerrado** (vira conquista).
-- **Tarefa**: ação específica e executável, dentro de um épico (ex.: "Visitar imóveis"). Tem prioridade (Alta, Média, Baixa), prazo opcional, descrição, checklist, anexos de imagem e histórico de atividade. A tarefa é sempre do próprio usuário (não existe "responsável").
+- **Tarefa**: ação específica e executável, dentro de um épico (ex.: "Visitar imóveis"). Tem **até 3 áreas da vida** (próprias; por padrão, a do épico), prioridade (Alta, Média, Baixa), prazo opcional, descrição, checklist, anexos de imagem e histórico de atividade. A tarefa é sempre do próprio usuário (não existe "responsável").
 
-Regras: toda tarefa pertence a um épico; todo épico pertence a uma iniciativa. A área de uma tarefa é a área do seu épico. Iniciativas, épicos e tarefas podem ser **duplicados**.
+Regras: toda tarefa pertence a um épico; todo épico pertence a uma iniciativa. A tarefa tem **até 3 áreas próprias** (decisão do dono de 29/10/2026): ao criar, já vem com a área do épico marcada, e a pessoa pode trocar; se nenhuma área for escolhida, a tarefa usa a área do épico. Iniciativas, épicos e tarefas podem ser **duplicados**.
 
 **Trilha** = **um épico pronto, com as tarefas**, que pode ser importado para o backlog. Ao importar, a pessoa escolhe em qual iniciativa dela o épico entra (ou cria uma nova). Há dois tipos (decisão do dono de 28/10/2026):
 - **Trilha da loja**: qualquer pessoa vê e baixa; passa pela aprovação de um administrador do app; grátis ou paga em XP.

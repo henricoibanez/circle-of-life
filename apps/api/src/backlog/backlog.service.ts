@@ -316,6 +316,8 @@ export class BacklogService {
           epicId: epic.id,
           title: dto.title.trim(),
           description: dto.description?.trim() ?? '',
+          // Sem áreas escolhidas, a tarefa já nasce com a área do épico.
+          areas: dto.areas ?? [epic.area],
           priority: dto.priority ?? 'media',
           dueDate: parseDay(dto.dueDate) ?? null,
           status,
@@ -340,6 +342,7 @@ export class BacklogService {
         epicId: dto.epicId,
         title: dto.title?.trim(),
         description: dto.description?.trim(),
+        areas: dto.areas,
         priority: dto.priority,
         dueDate: parseDay(dto.dueDate),
         // Prazo mudou: o aviso de atraso pode valer de novo.
@@ -383,6 +386,7 @@ export class BacklogService {
         epicId,
         title,
         description: src.description,
+        areas: src.areas,
         priority: src.priority,
         dueDate: src.dueDate,
         status: 'backlog',

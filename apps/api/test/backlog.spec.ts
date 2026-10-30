@@ -41,6 +41,31 @@ describe('Backlog: iniciativas, épicos e tarefas', () => {
     assert.equal(all.tasks.filter((t: { epicId: string }) => t.epicId === epic.id).length, 2);
   });
 
+  test('áreas da tarefa: nascem com a do épico e aceitam até 3', async () => {
+    const ini = (await me.c.request('POST', '/initiatives', { title: 'Áreas', areas: ['saude'] })).body;
+    const epic = (await me.c.request('POST', '/epics', { initiativeId: ini.id, title: 'E', area: 'saude' })).body;
+
+    // Sem escolher, a tarefa já vem com a área do épico.
+    const t1 = (await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Padrão' })).body;
+    assert.deepEqual(t1.areas, ['saude']);
+
+    // Escolhendo as próprias (até 3).
+    const t2 = (await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Multi', areas: ['amor', 'lazer', 'financas'] })).body;
+    assert.deepEqual(t2.areas, ['amor', 'lazer', 'financas']);
+
+    // Editar troca as áreas.
+    const up = (await me.c.request('PATCH', `/tasks/${t1.id}`, { areas: ['emocional', 'familia'] })).body;
+    assert.deepEqual(up.areas, ['emocional', 'familia']);
+
+    // Mais de 3 e área inválida são recusadas.
+    assert.equal((await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Demais', areas: ['amor', 'lazer', 'saude', 'familia'] })).status, 400);
+    assert.equal((await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Inválida', areas: ['outros'] })).status, 400);
+
+    // Duplicar leva as áreas junto.
+    const dup = (await me.c.request('POST', `/tasks/${t2.id}/duplicate`)).body;
+    assert.deepEqual(dup.areas, ['amor', 'lazer', 'financas']);
+  });
+
   test('primeira tarefa na sprint cria a Sprint 1 de 14 dias', async () => {
     const sprints = await api.prisma.sprint.findMany({ where: { userId: me.user.id } });
     assert.equal(sprints.length, 1);

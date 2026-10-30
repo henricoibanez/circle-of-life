@@ -221,7 +221,8 @@ model Epic {
   @@map("epics")
 }
 
-/// Ação específica e executável, dentro de um épico. A área é a do épico.
+/// Ação específica e executável, dentro de um épico.
+/// Áreas próprias (até 3): a pessoa escolhe; vazio = usa a área do épico.
 model Task {
   id                String           @id @default(cuid())
   userId            String
@@ -230,6 +231,8 @@ model Task {
   epic              Epic             @relation(fields: [epicId], references: [id], onDelete: Cascade)
   title             String
   description       String           @default("")
+  /// Até 3 áreas da vida. Vazio = herda a área do épico.
+  areas             Area[]           @default([])
   status            TaskStatus       @default(backlog)
   priority          Priority         @default(media)
   /// "Previsão de entrega" (só a data).

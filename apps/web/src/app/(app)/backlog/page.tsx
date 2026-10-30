@@ -14,7 +14,7 @@ import { Bar, Card, Empty, IconBtn, inputCls, Seg, Tag } from '@/components/prim
 import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
-import { epicTasks, initEpics, progress, sortByOrder, taskArea, useBacklog, useBacklogActions } from '@/lib/backlog';
+import { epicTasks, initEpics, progress, sortByOrder, taskAreas, useBacklog, useBacklogActions } from '@/lib/backlog';
 import { downloadBacklogSpreadsheet } from '@/lib/backlog-io';
 
 type Tab = 'ini' | 'epi' | 'tar';
@@ -75,7 +75,7 @@ export default function BacklogPage() {
     ]).then(() => toast('Ordem alfabética restaurada'));
   const tks = data.tasks.filter(
     t =>
-      (area === 'all' || taskArea(data, t) === area) &&
+      (area === 'all' || taskAreas(data, t).includes(area)) &&
       m(t.title) &&
       (st === 'backlog' ? t.status === 'backlog' : st === 'sprint' ? t.status === 'todo' || t.status === 'doing' : t.status === 'done'),
   );

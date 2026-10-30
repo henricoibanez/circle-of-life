@@ -11,14 +11,16 @@ import { useBacklog, useBacklogActions } from '@/lib/backlog';
 import { useMe } from '@/lib/me';
 import Link from 'next/link';
 
-/** Escolha de área(s) da vida em "pílulas" com o ícone de cada área. */
+/** Escolha de área(s) da vida em "pílulas" com o ícone de cada área. Com `max`, limita quantas podem ser marcadas. */
 export function AreaPicker(
-  p: { multi: true; value: AreaId[]; onChange: (v: AreaId[]) => void } | { multi?: false; value: AreaId; onChange: (v: AreaId) => void },
+  p: { multi: true; value: AreaId[]; onChange: (v: AreaId[]) => void; max?: number } | { multi?: false; value: AreaId; onChange: (v: AreaId) => void },
 ) {
   const selected: AreaId[] = p.multi ? p.value : [p.value];
   const toggle = (id: AreaId) => {
-    if (p.multi) p.onChange(p.value.includes(id) ? p.value.filter(x => x !== id) : [...p.value, id]);
-    else p.onChange(id);
+    if (p.multi) {
+      if (p.value.includes(id)) p.onChange(p.value.filter(x => x !== id));
+      else if (p.max === undefined || p.value.length < p.max) p.onChange([...p.value, id]);
+    } else p.onChange(id);
   };
   return (
     <div className="flex flex-wrap gap-2">
@@ -214,14 +216,22 @@ export function TaskForm({
   const { data: me } = useMe();
   const edit = id ? data?.tasks.find(t => t.id === id) : undefined;
   const open = (data?.epics ?? []).filter(e => !e.closedAt || e.id === edit?.epicId);
+  const epicAreaOf = (eid: string): AreaId | undefined => data?.epics.find(e => e.id === eid)?.area;
+  const iid0 = edit?.epicId ?? epicId ?? open[0]?.id ?? '';
   const [f, setF] = useState({
-    epicId: edit?.epicId ?? epicId ?? open[0]?.id ?? '',
+    epicId: iid0,
     title: edit?.title ?? initialTitle ?? '',
     description: edit?.description ?? '',
+    // Áreas próprias (até 3): as da tarefa ou, se nenhuma, já vem a do épico.
+    areas: (edit?.areas?.length ? edit.areas : [epicAreaOf(iid0)].filter(Boolean)) as AreaId[],
     priority: (edit?.priority ?? 'media') as Priority,
     dueDate: edit?.dueDate ?? '',
     status: initialStatus ?? 'backlog',
   });
+  // Enquanto a pessoa não mexer nas áreas, elas acompanham a área do épico escolhido.
+  const [touchedAreas, setTouchedAreas] = useState(Boolean(edit?.areas?.length));
+  const changeEpic = (eid: string) =>
+    setF(prev => ({ ...prev, epicId: eid, areas: touchedAreas ? prev.areas : ([epicAreaOf(eid)].filter(Boolean) as AreaId[]) }));
   // Vincular à Google Agenda (só quando a pessoa conectou nas Configurações).
   const [cal, setCal] = useState(edit?.inCalendar ?? false);
   const calendar = me?.googleCalendar;
@@ -236,7 +246,7 @@ export function TaskForm({
     );
   }
   const save = async () => {
-    const body = { epicId: f.epicId, title: f.title, description: f.description, priority: f.priority, dueDate: f.dueDate || null };
+    const body = { epicId: f.epicId, title: f.title, description: f.description, areas: f.areas, priority: f.priority, dueDate: f.dueDate || null };
     const saved = edit ? await actions.updateTask(edit.id, body) : await actions.createTask({ ...body, status: f.status });
     // Vincula/desvincula da agenda conforme a opção (só se conectada e com data).
     if (calendar?.connected) {
@@ -256,7 +266,7 @@ export function TaskForm({
     >
       <div className="space-y-4">
         <Field label="Vincular a épico">
-          <select className={inputCls} value={f.epicId} onChange={e => setF({ ...f, epicId: e.target.value })}>
+          <select className={inputCls} value={f.epicId} onChange={e => changeEpic(e.target.value)}>
             {open.map(e => (
               <option key={e.id} value={e.id}>
                 {e.title} · {ini(e.id, data)}
@@ -270,6 +280,10 @@ export function TaskForm({
         <Field label="Descrição">
           <textarea rows={3} className={inputCls} value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="Descreva os detalhes e próximos passos" />
         </Field>
+        <div>
+          <span className="mb-2 block text-sm font-semibold">Áreas da vida <span className="font-normal text-muted">(até 3)</span></span>
+          <AreaPicker multi max={3} value={f.areas} onChange={areas => { setTouchedAreas(true); setF(prev => ({ ...prev, areas })); }} />
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Prioridade">
             <select className={inputCls} value={f.priority} onChange={e => setF({ ...f, priority: e.target.value as Priority })}>

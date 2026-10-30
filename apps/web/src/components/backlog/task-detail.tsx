@@ -49,7 +49,9 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
   if (!data) return null;
 
   const t = data.task;
-  const area = AREA[data.epic.area];
+  // Áreas próprias da tarefa ou, se nenhuma, a do épico.
+  const areaIds = t.areas.length ? t.areas : [data.epic.area];
+  const area = AREA[areaIds[0]!];
   const ck = data.checklist;
   const ckDone = ck.filter(c => c.done).length;
   const refresh = () => {
@@ -157,9 +159,16 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
             <div>
               <p className="flex items-center gap-1.5 text-muted">
                 <Icon n="folder" className="h-4 w-4" />
-                Área
+                {areaIds.length > 1 ? 'Áreas' : 'Área'}
               </p>
-              <p className="mt-1.5 truncate font-medium">{area.name}</p>
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-medium">
+                {areaIds.map(a => (
+                  <span key={a} className="inline-flex items-center gap-1">
+                    <Icon n={AREA[a].icon} className="h-3.5 w-3.5" style={{ color: AREA[a].color }} />
+                    {AREA[a].name}
+                  </span>
+                ))}
+              </p>
             </div>
           </div>
           <div className="text-sm">

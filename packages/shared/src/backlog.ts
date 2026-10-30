@@ -53,6 +53,8 @@ export type TaskDto = {
   epicId: string;
   title: string;
   description: string;
+  /** Áreas próprias da tarefa (até 3). Vazio = usa a área do épico. */
+  areas: AreaId[];
   status: TaskStatus;
   priority: Priority;
   /** "AAAA-MM-DD" ou null. */

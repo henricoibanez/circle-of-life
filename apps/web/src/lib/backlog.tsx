@@ -25,7 +25,14 @@ export function sortByOrder<T extends { position: number; title: string }>(items
 
 export const epicTasks = (b: BacklogDto, epicId: string) => sortByOrder(b.tasks.filter(t => t.epicId === epicId));
 export const initEpics = (b: BacklogDto, initiativeId: string) => sortByOrder(b.epics.filter(e => e.initiativeId === initiativeId));
-export const taskArea = (b: BacklogDto, t: TaskDto): AreaId | undefined => b.epics.find(e => e.id === t.epicId)?.area;
+/** Áreas da tarefa: as próprias (até 3) ou, se nenhuma foi escolhida, a área do épico. */
+export const taskAreas = (b: BacklogDto, t: TaskDto): AreaId[] => {
+  if (t.areas.length) return t.areas;
+  const a = b.epics.find(e => e.id === t.epicId)?.area;
+  return a ? [a] : [];
+};
+/** Área principal da tarefa (a primeira), para quando só cabe uma cor/ícone. */
+export const taskArea = (b: BacklogDto, t: TaskDto): AreaId | undefined => taskAreas(b, t)[0];
 export const progress = (list: TaskDto[]) => {
   const done = list.filter(t => t.status === 'done').length;
   return { done, total: list.length, pct: list.length ? done / list.length : 0 };
@@ -105,7 +112,8 @@ export function useBacklogActions() {
       return (run(`/tasks/${id}/move`, 'POST', { status }) as Promise<{ task: TaskDto; from: TaskStatus; xp: XpChange }>).then(r => {
         if (status === 'done' && r.from !== 'done') {
           // Sempre pergunta se quer compartilhar a conclusão (decisão do dono do projeto).
-          const area = qc.getQueryData<BacklogDto>(BACKLOG_KEY)?.epics.find(e => e.id === r.task.epicId)?.area ?? null;
+          const b = qc.getQueryData<BacklogDto>(BACKLOG_KEY);
+          const area = (r.task.areas[0] ?? (b && b.epics.find(e => e.id === r.task.epicId)?.area)) ?? null;
           openSheet(close => <SharePrompt draft={{ title: r.task.title, text: '', area, refType: 'task', refId: r.task.id }} xp={r.xp.gained} onClose={close} />);
         } else if (r.xp.gained > 0) toast(`Tarefa concluída, +${r.xp.gained} XP`);
         return r;
