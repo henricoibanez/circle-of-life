@@ -1,6 +1,6 @@
 'use client';
 
-import { AREA, AREAS, type AreaId, STORY_CAPTION_MAX, STORY_MAX_AREAS, type StoryGroupDto, VISIBILITY, type Visibility } from '@circle/shared';
+import { AREA, AREAS, type AreaId, STORY_CAPTION_MAX, type StoryGroupDto, VISIBILITY, type Visibility } from '@circle/shared';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
@@ -324,8 +324,7 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const toggle = (a: AreaId) =>
-    setAreas(x => (x.includes(a) ? x.filter(y => y !== a) : x.length < STORY_MAX_AREAS ? [...x, a] : (toast(`Escolha até ${STORY_MAX_AREAS} áreas`), x)));
+  const toggle = (a: AreaId) => setAreas(x => (x.includes(a) ? x.filter(y => y !== a) : [...x, a]));
 
   const publish = async () => {
     if (!photo) return;
@@ -405,7 +404,18 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
         )}
         {!cropping && <ImageHint purpose="story" className="justify-center" />}
         <p className="text-center text-xs text-muted">O story some sozinho em 24 horas.</p>
-        <Field label={`Áreas da vida (1 a ${STORY_MAX_AREAS})`}>
+        <Field label="Áreas da vida (1 ou mais)">
+          <div className="mb-2 flex justify-end">
+            {areas.length >= AREAS.length ? (
+              <button type="button" onClick={() => setAreas([])} className="text-xs font-semibold text-muted">
+                Limpar
+              </button>
+            ) : (
+              <button type="button" onClick={() => setAreas(AREAS.map(a => a.id))} className="text-xs font-semibold text-primary">
+                Marcar todas
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             {AREAS.map(a => (
               <button

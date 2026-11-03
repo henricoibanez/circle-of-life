@@ -34,15 +34,14 @@ describe('Stories', () => {
   };
   const list = async (who: typeof ana) => (await who.c.request('GET', '/stories')).body as Group[];
 
-  test('precisa de 1 a 3 áreas', async () => {
-    const fileId = await photo(ana);
-    assert.equal((await ana.c.request('POST', '/stories', { fileId, areas: [] })).status, 400);
-    assert.equal((await ana.c.request('POST', '/stories', { fileId, areas: ['saude', 'lazer', 'amor', 'familia'] })).status, 400);
-    assert.equal((await ana.c.request('POST', '/stories', { fileId, areas: ['nada'] })).status, 400);
+  test('precisa de pelo menos 1 área (sem criar nada aqui)', async () => {
+    assert.equal((await ana.c.request('POST', '/stories', { fileId: await photo(ana), areas: [] })).status, 400);
+    assert.equal((await ana.c.request('POST', '/stories', { fileId: await photo(ana), areas: ['nada'] })).status, 400);
   });
 
-  test('primeiro story do dia rende +10 XP; aparece para quem pode ver', async () => {
-    const r1 = await ana.c.request('POST', '/stories', { fileId: await photo(ana), areas: ['saude', 'lazer'], caption: 'Corrida de hoje' });
+  test('primeiro story do dia rende +10 XP; aceita várias áreas; aparece para quem pode ver', async () => {
+    // Sem limite de áreas (antes eram no máximo 3): quatro áreas são aceitas.
+    const r1 = await ana.c.request('POST', '/stories', { fileId: await photo(ana), areas: ['saude', 'lazer', 'amor', 'familia'], caption: 'Corrida de hoje' });
     assert.equal(r1.status, 201);
     assert.equal(r1.body.xp.gained, 10);
     const r2 = await ana.c.request('POST', '/stories', { fileId: await photo(ana), areas: ['familia'], visibility: 'amigos' });

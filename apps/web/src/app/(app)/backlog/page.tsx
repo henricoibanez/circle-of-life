@@ -61,9 +61,9 @@ export default function BacklogPage() {
   const toggle = (id: string) => setOpen(o => ({ ...(o ?? { [data.initiatives[0]?.id ?? '']: true }), [id]: !isOpen(id) }));
 
   const m = (t: string) => !q || t.toLowerCase().includes(q.toLowerCase());
-  const epOk = (e: (typeof data.epics)[number]) => (area === 'all' || e.area === area) && (m(e.title) || epicTasks(data, e.id).some(t => m(t.title)));
+  const epOk = (e: (typeof data.epics)[number]) => (area === 'all' || e.areas.includes(area)) && (m(e.title) || epicTasks(data, e.id).some(t => m(t.title)));
   const inis = sortByOrder(data.initiatives).filter(
-    i => (area === 'all' || i.areas.includes(area) || initEpics(data, i.id).some(e => e.area === area)) && (m(i.title) || initEpics(data, i.id).some(epOk)),
+    i => (area === 'all' || i.areas.includes(area) || initEpics(data, i.id).some(e => e.areas.includes(area))) && (m(i.title) || initEpics(data, i.id).some(epOk)),
   );
   // Arrastar para reordenar vale na aba Iniciativas, sem filtro nem busca (dentro de cada "pai").
   const canReorder = tab === 'ini' && !q && area === 'all';

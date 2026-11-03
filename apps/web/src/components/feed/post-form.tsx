@@ -1,6 +1,6 @@
 'use client';
 
-import { AREAS, type AreaId, MAX_POST_AREAS, MAX_POST_IMAGES, type PostDraft, type PostDto, VISIBILITY, type Visibility } from '@circle/shared';
+import { AREAS, type AreaId, MAX_POST_IMAGES, type PostDraft, type PostDto, VISIBILITY, type Visibility } from '@circle/shared';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icon';
 import { Avatar, Field, ImageHint, inputCls, Seg } from '@/components/primitives';
@@ -156,10 +156,10 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
         <ImageHint purpose="post" />
         <div className="grid grid-cols-2 gap-3">
           <MultiSelect
-            label={`Áreas (até ${MAX_POST_AREAS})`}
+            label="Áreas"
             empty="Nenhuma"
             plural="áreas"
-            max={MAX_POST_AREAS}
+            allowAll
             options={AREAS.map(a => ({ id: a.id, label: a.name, icon: a.icon, color: a.color }))}
             value={f.areas}
             onChange={areas => setF({ ...f, areas: areas as AreaId[] })}
@@ -198,6 +198,7 @@ function MultiSelect({
   empty,
   plural,
   max,
+  allowAll,
   align = 'left',
   options,
   value,
@@ -207,6 +208,8 @@ function MultiSelect({
   empty: string;
   plural: string;
   max?: number;
+  /** Mostra "Marcar todas / Limpar" no topo da lista. */
+  allowAll?: boolean;
   align?: 'left' | 'right';
   options: Option[];
   value: string[];
@@ -249,6 +252,19 @@ function MultiSelect({
             align === 'right' ? 'right-0' : 'left-0'
           }`}
         >
+          {allowAll && (
+            <div className="flex justify-end px-1.5 pb-1 pt-0.5">
+              {value.length >= options.length ? (
+                <button type="button" onClick={() => onChange([])} className="text-xs font-semibold text-muted">
+                  Limpar
+                </button>
+              ) : (
+                <button type="button" onClick={() => onChange(options.map(o => o.id))} className="text-xs font-semibold text-primary">
+                  Marcar todas
+                </button>
+              )}
+            </div>
+          )}
           {options.map(o => {
             const on = value.includes(o.id);
             return (

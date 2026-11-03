@@ -96,6 +96,13 @@ export function EpicCard({ e, data, nested, showIni, reorder }: { e: EpicDto; da
           <p className="flex flex-wrap items-center gap-2">
             <span className="text-[1.125rem] font-semibold">{e.title}</span>
             <Tag c={a.color}>Épico</Tag>
+            {e.areas.length > 1 && (
+              <span className="flex gap-0.5">
+                {e.areas.map(id => (
+                  <Icon key={id} n={AREA[id].icon} className="h-4 w-4" style={{ color: AREA[id].color }} />
+                ))}
+              </span>
+            )}
             {e.closedAt && <Tag>Encerrado</Tag>}
           </p>
           {e.description && <p className="mt-0.5 text-sm text-muted">{e.description}</p>}

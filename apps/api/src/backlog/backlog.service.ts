@@ -1,4 +1,4 @@
-import { INITIATIVE_MIN_TASKS, STATUS_LABEL, type TaskStatus } from '@circle/shared';
+import { AREA_IDS, type AreaId, INITIATIVE_MIN_TASKS, STATUS_LABEL, type TaskStatus } from '@circle/shared';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client';
 import { CalendarService } from '../calendar/calendar.service';
@@ -226,11 +226,21 @@ export class BacklogService {
 
   // ---------- Épicos ----------
 
+  /**
+   * Áreas do épico: as escolhidas ou, se nenhuma, as da iniciativa (padrão).
+   * Nunca vazio (a área principal não pode faltar); a primeira é a principal.
+   */
+  private epicAreas(chosen: AreaId[] | undefined, iniAreas: AreaId[]): AreaId[] {
+    const picked = chosen?.length ? chosen : iniAreas.length ? iniAreas : [AREA_IDS[0]];
+    return [...new Set(picked)];
+  }
+
   async createEpic(userId: string, dto: CreateEpicDto) {
-    await this.initiative(userId, dto.initiativeId);
+    const ini = await this.initiative(userId, dto.initiativeId);
     return this.prisma.$transaction(async tx => {
+      const areas = this.epicAreas(dto.areas ?? (dto.area ? [dto.area] : undefined), ini.areas);
       const e = await tx.epic.create({
-        data: { userId, initiativeId: dto.initiativeId, title: dto.title.trim(), description: dto.description?.trim() ?? '', area: dto.area },
+        data: { userId, initiativeId: dto.initiativeId, title: dto.title.trim(), description: dto.description?.trim() ?? '', area: areas[0]!, areas },
       });
       await this.reopenInitiative(dto.initiativeId, tx);
       return toEpicDto(e);
@@ -241,9 +251,15 @@ export class BacklogService {
     const epic = await this.epic(userId, id);
     if (dto.initiativeId && dto.initiativeId !== epic.initiativeId) await this.initiative(userId, dto.initiativeId);
     return this.prisma.$transaction(async tx => {
+      let areaData: { area: AreaId; areas: AreaId[] } | undefined;
+      if (dto.areas !== undefined || dto.area !== undefined) {
+        const ini = await tx.initiative.findUniqueOrThrow({ where: { id: dto.initiativeId ?? epic.initiativeId } });
+        const areas = this.epicAreas(dto.areas ?? (dto.area ? [dto.area] : undefined), ini.areas);
+        areaData = { area: areas[0]!, areas };
+      }
       const e = await tx.epic.update({
         where: { id },
-        data: { initiativeId: dto.initiativeId, title: dto.title?.trim(), description: dto.description?.trim(), area: dto.area },
+        data: { initiativeId: dto.initiativeId, title: dto.title?.trim(), description: dto.description?.trim(), ...areaData },
       });
       if (dto.initiativeId && !e.closedAt) await this.reopenInitiative(dto.initiativeId, tx);
       return toEpicDto(e);
@@ -296,7 +312,8 @@ export class BacklogService {
 
   private async copyEpic(tx: Tx, userId: string, epicId: string, initiativeId: string, title: string) {
     const src = await tx.epic.findUniqueOrThrow({ where: { id: epicId } });
-    const copy = await tx.epic.create({ data: { userId, initiativeId, title, description: src.description, area: src.area } });
+    const areas = src.areas.length ? src.areas : [src.area];
+    const copy = await tx.epic.create({ data: { userId, initiativeId, title, description: src.description, area: src.area, areas } });
     const tasks = await tx.task.findMany({ where: { epicId }, orderBy: { createdAt: 'asc' }, include: { checklist: true } });
     for (const t of tasks) await this.copyTask(tx, userId, t.id, copy.id, t.title);
     return copy;
@@ -316,8 +333,8 @@ export class BacklogService {
           epicId: epic.id,
           title: dto.title.trim(),
           description: dto.description?.trim() ?? '',
-          // Sem áreas escolhidas, a tarefa já nasce com a área do épico.
-          areas: dto.areas ?? [epic.area],
+          // Sem áreas escolhidas, a tarefa já nasce com as áreas do épico.
+          areas: dto.areas ?? (epic.areas.length ? epic.areas : [epic.area]),
           priority: dto.priority ?? 'media',
           dueDate: parseDay(dto.dueDate) ?? null,
           status,

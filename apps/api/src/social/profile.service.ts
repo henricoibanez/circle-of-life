@@ -79,11 +79,12 @@ export class ProfileService {
   /** As 3 áreas com mais conquistas (épicos encerrados e iniciativas concluídas). */
   private async topAreas(userId: string): Promise<AreaId[]> {
     const [epics, inits] = await Promise.all([
-      this.prisma.epic.findMany({ where: { userId, closedAt: { not: null } }, select: { area: true } }),
+      this.prisma.epic.findMany({ where: { userId, closedAt: { not: null } }, select: { area: true, areas: true } }),
       this.prisma.initiative.findMany({ where: { userId, completedAt: { not: null } }, select: { areas: true } }),
     ]);
     const count = new Map<string, number>();
-    for (const e of epics) count.set(e.area, (count.get(e.area) ?? 0) + 1);
+    // Épico encerrado conta em todas as suas áreas.
+    for (const e of epics) for (const a of e.areas.length ? e.areas : [e.area]) count.set(a, (count.get(a) ?? 0) + 1);
     for (const i of inits) for (const a of i.areas) count.set(a, (count.get(a) ?? 0) + 1);
     return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([a]) => a as AreaId);
   }

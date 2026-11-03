@@ -14,7 +14,7 @@ type WithCounts = Trilha & {
 };
 
 export type PublishInput = { title?: string; description: string; category: TrilhaCategory; priceXp: number; coverFileId?: string | null; groupId?: string | null };
-export type TrilhaEditInput = { title?: string; description?: string; area?: AreaId; tasks?: string[] };
+export type TrilhaEditInput = { title?: string; description?: string; areas?: AreaId[]; tasks?: string[] };
 
 /**
  * Trilhas: cada trilha é um épico pronto (com as tarefas) para importar no backlog.
@@ -49,6 +49,7 @@ export class TrilhasService {
       description: t.description,
       category: t.category as TrilhaCategory,
       area: t.area,
+      areas: t.areas.length ? t.areas : [t.area],
       art: t.art as ArtVariant,
       color: t.color,
       coverText: t.coverText,
@@ -162,6 +163,7 @@ export class TrilhasService {
     if (!epic.tasks.length) throw new BadRequestException('Para publicar, o épico precisa ter pelo menos uma tarefa.');
     if (input.priceXp < 0 || !Number.isInteger(input.priceXp)) throw new BadRequestException('O preço em XP precisa ser um número inteiro (0 = grátis).');
     if (input.coverFileId) await this.uploads.readyFile(user.id, input.coverFileId, 'trilha');
+    const areas = epic.areas.length ? epic.areas : [epic.area];
     const data = {
       authorId: user.id,
       sourceEpicId: epic.id,
@@ -169,6 +171,7 @@ export class TrilhasService {
       description: input.description.trim(),
       category: input.category,
       area: epic.area,
+      areas,
       art: AREA[epic.area].art,
       color: AREA[epic.area].color,
       coverFileId: input.coverFileId ?? null,
@@ -307,6 +310,7 @@ export class TrilhasService {
         description: src.description,
         category: src.category,
         area: src.area,
+        areas: src.areas.length ? src.areas : [src.area],
         coverFileId: src.coverFileId,
         art: src.art,
         color: src.color,
@@ -336,7 +340,9 @@ export class TrilhasService {
         data: {
           title: input.title?.trim() || undefined,
           description: input.description?.trim(),
-          ...(input.area && input.area !== t.area ? { area: input.area, ...(t.coverFileId ? {} : { art: AREA[input.area].art, color: AREA[input.area].color }) } : {}),
+          ...(input.areas?.length
+            ? { area: input.areas[0]!, areas: [...new Set(input.areas)], ...(t.coverFileId ? {} : { art: AREA[input.areas[0]!].art, color: AREA[input.areas[0]!].color }) }
+            : {}),
         },
       });
       if (tasks) {
@@ -386,14 +392,17 @@ export class TrilhasService {
         }
       }
 
+      const trilhaAreas = t.areas.length ? t.areas : [t.area];
       if (!initiative) {
         const position = await tx.initiative.count({ where: { userId: user.id } });
         initiative = await tx.initiative.create({
-          data: { userId: user.id, title: ('newInitiative' in target ? target.newInitiative : t.title).trim().slice(0, 200), areas: [t.area], source: 'trilha', trilhaId: t.id, position },
+          data: { userId: user.id, title: ('newInitiative' in target ? target.newInitiative : t.title).trim().slice(0, 200), areas: trilhaAreas, source: 'trilha', trilhaId: t.id, position },
           select: { id: true, areas: true },
         });
-      } else if (!initiative.areas.includes(t.area)) {
-        await tx.initiative.update({ where: { id: initiative.id }, data: { areas: [...initiative.areas, t.area] } });
+      } else {
+        // A iniciativa recebe as áreas da trilha que ainda não tiver.
+        const merged = [...new Set([...initiative.areas, ...trilhaAreas])];
+        if (merged.length !== initiative.areas.length) await tx.initiative.update({ where: { id: initiative.id }, data: { areas: merged } });
       }
       const position = await tx.epic.count({ where: { initiativeId: initiative.id } });
       const epic = await tx.epic.create({
@@ -403,6 +412,7 @@ export class TrilhasService {
           title: t.title,
           description: t.description,
           area: t.area,
+          areas: trilhaAreas,
           position,
           tasks: { create: tasks.map(x => ({ userId: user.id, title: x.title, position: x.position, logs: { create: { text: `Importada da trilha ${t.title}` } } })) },
         },

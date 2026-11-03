@@ -18,7 +18,7 @@ import { useBacklogSheets } from './use-backlog-sheets';
 
 type Detail = {
   task: TaskDto;
-  epic: { id: string; title: string; area: AreaId };
+  epic: { id: string; title: string; area: AreaId; areas: AreaId[] };
   initiative: { id: string; title: string };
   checklist: { id: string; text: string; done: boolean }[];
   logs: { id: string; text: string; createdAt: string }[];
@@ -49,8 +49,8 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
   if (!data) return null;
 
   const t = data.task;
-  // Áreas próprias da tarefa ou, se nenhuma, a do épico.
-  const areaIds = t.areas.length ? t.areas : [data.epic.area];
+  // Áreas próprias da tarefa ou, se nenhuma, as do épico.
+  const areaIds = t.areas.length ? t.areas : data.epic.areas;
   const area = AREA[areaIds[0]!];
   const ck = data.checklist;
   const ckDone = ck.filter(c => c.done).length;

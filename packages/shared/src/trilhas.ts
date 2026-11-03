@@ -21,8 +21,10 @@ export type TrilhaDto = {
   title: string;
   description: string;
   category: TrilhaCategory;
-  /** Área da vida do épico. */
+  /** Área principal do épico (capa e categoria): a primeira de `areas`. */
   area: AreaId;
+  /** Todas as áreas do épico publicado. */
+  areas: AreaId[];
   art: ArtVariant;
   color: string;
   coverText: string | null;

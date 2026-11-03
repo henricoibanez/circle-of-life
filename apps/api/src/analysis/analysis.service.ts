@@ -140,6 +140,7 @@ export class AnalysisService {
             initiativeId: ini.id,
             title: e.titulo,
             area: e.area,
+            areas: [e.area],
             position: i,
             tasks: { create: e.tarefas.map((t, j) => ({ userId: user.id, title: t, position: j, logs: { create: { text: 'Criada a partir da análise inteligente' } } })) },
           },

@@ -25,11 +25,11 @@ export function sortByOrder<T extends { position: number; title: string }>(items
 
 export const epicTasks = (b: BacklogDto, epicId: string) => sortByOrder(b.tasks.filter(t => t.epicId === epicId));
 export const initEpics = (b: BacklogDto, initiativeId: string) => sortByOrder(b.epics.filter(e => e.initiativeId === initiativeId));
-/** Áreas da tarefa: as próprias (até 3) ou, se nenhuma foi escolhida, a área do épico. */
+/** Áreas da tarefa: as próprias ou, se nenhuma foi escolhida, as áreas do épico. */
 export const taskAreas = (b: BacklogDto, t: TaskDto): AreaId[] => {
   if (t.areas.length) return t.areas;
-  const a = b.epics.find(e => e.id === t.epicId)?.area;
-  return a ? [a] : [];
+  const ep = b.epics.find(e => e.id === t.epicId);
+  return ep ? (ep.areas.length ? ep.areas : [ep.area]) : [];
 };
 /** Área principal da tarefa (a primeira), para quando só cabe uma cor/ícone. */
 export const taskArea = (b: BacklogDto, t: TaskDto): AreaId | undefined => taskAreas(b, t)[0];

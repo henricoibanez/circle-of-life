@@ -41,29 +41,36 @@ describe('Backlog: iniciativas, épicos e tarefas', () => {
     assert.equal(all.tasks.filter((t: { epicId: string }) => t.epicId === epic.id).length, 2);
   });
 
-  test('áreas da tarefa: nascem com a do épico e aceitam até 3', async () => {
-    const ini = (await me.c.request('POST', '/initiatives', { title: 'Áreas', areas: ['saude'] })).body;
-    const epic = (await me.c.request('POST', '/epics', { initiativeId: ini.id, title: 'E', area: 'saude' })).body;
+  test('áreas: épico herda da iniciativa, tarefa herda do épico, sem limite', async () => {
+    const ini = (await me.c.request('POST', '/initiatives', { title: 'Áreas', areas: ['saude', 'emocional'] })).body;
 
-    // Sem escolher, a tarefa já vem com a área do épico.
+    // Épico novo, sem escolher, herda as áreas da iniciativa; a principal é a primeira.
+    const epic = (await me.c.request('POST', '/epics', { initiativeId: ini.id, title: 'E' })).body;
+    assert.deepEqual(epic.areas, ['saude', 'emocional']);
+    assert.equal(epic.area, 'saude');
+
+    // Tarefa nova, sem escolher, herda as áreas do épico.
     const t1 = (await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Padrão' })).body;
-    assert.deepEqual(t1.areas, ['saude']);
+    assert.deepEqual(t1.areas, ['saude', 'emocional']);
 
-    // Escolhendo as próprias (até 3).
-    const t2 = (await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Multi', areas: ['amor', 'lazer', 'financas'] })).body;
-    assert.deepEqual(t2.areas, ['amor', 'lazer', 'financas']);
+    // Dá para escolher quantas quiser (até as 10 áreas).
+    const todas = ['lazer', 'amor', 'financas', 'familia', 'intelectual', 'espiritualidade', 'sociedade', 'saude', 'emocional', 'profissional'];
+    const t2 = (await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Multi', areas: todas })).body;
+    assert.deepEqual(t2.areas, todas);
 
-    // Editar troca as áreas.
+    // Editar troca as áreas; área inválida é recusada.
     const up = (await me.c.request('PATCH', `/tasks/${t1.id}`, { areas: ['emocional', 'familia'] })).body;
     assert.deepEqual(up.areas, ['emocional', 'familia']);
-
-    // Mais de 3 e área inválida são recusadas.
-    assert.equal((await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Demais', areas: ['amor', 'lazer', 'saude', 'familia'] })).status, 400);
     assert.equal((await me.c.request('POST', '/tasks', { epicId: epic.id, title: 'Inválida', areas: ['outros'] })).status, 400);
+
+    // O épico também aceita várias áreas próprias.
+    const epic2 = (await me.c.request('POST', '/epics', { initiativeId: ini.id, title: 'E2', areas: ['amor', 'lazer', 'financas'] })).body;
+    assert.deepEqual(epic2.areas, ['amor', 'lazer', 'financas']);
+    assert.equal(epic2.area, 'amor');
 
     // Duplicar leva as áreas junto.
     const dup = (await me.c.request('POST', `/tasks/${t2.id}/duplicate`)).body;
-    assert.deepEqual(dup.areas, ['amor', 'lazer', 'financas']);
+    assert.deepEqual(dup.areas, todas);
   });
 
   test('primeira tarefa na sprint cria a Sprint 1 de 14 dias', async () => {

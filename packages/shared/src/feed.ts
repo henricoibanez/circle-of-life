@@ -1,4 +1,4 @@
-import type { AreaId } from './areas';
+import { AREA_IDS, type AreaId } from './areas';
 import type { PersonDto } from './social';
 
 export type Visibility = 'publico' | 'amigos' | 'privado';
@@ -14,8 +14,8 @@ export const FEED_FILTERS = ['para', 'amigos', 'grupos', 'seguindo', 'salvos'] a
 export type FeedFilter = (typeof FEED_FILTERS)[number];
 
 export const MAX_POST_IMAGES = 8;
-/** Áreas por post (os grupos não têm limite). */
-export const MAX_POST_AREAS = 3;
+/** Áreas por post: sem limite (pode marcar todas). */
+export const MAX_POST_AREAS = AREA_IDS.length;
 
 /** O que originou um post de conclusão (para mostrar o "+N XP"). */
 export const POST_REF_TYPES = ['task', 'epic', 'initiative', 'sprint', 'sonho'] as const;
@@ -52,7 +52,8 @@ export type PostDraft = { title: string; text: string; area?: AreaId | null; ref
 // ---------- Stories ----------
 
 export const STORY_HOURS = 24;
-export const STORY_MAX_AREAS = 3;
+/** Áreas por story: de 1 a todas (sem teto; pelo menos 1 para a marca d'água). */
+export const STORY_MAX_AREAS = AREA_IDS.length;
 export const STORY_CAPTION_MAX = 150;
 
 export type StoryDto = {

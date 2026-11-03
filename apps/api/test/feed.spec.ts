@@ -92,8 +92,9 @@ describe('Feed', () => {
     assert.deepEqual(await feed(duda.c, `?group=${g1.id}`), ['Dois grupos']);
   });
 
-  test('até 3 áreas; filtro por área acha qualquer uma delas', async () => {
-    assert.equal((await bia.c.request('POST', '/posts', { text: 'x', areas: ['saude', 'lazer', 'amor', 'familia'] })).status, 400);
+  test('áreas sem limite; filtro por área acha qualquer uma delas', async () => {
+    // Sem limite: aceita várias áreas (antes eram no máximo 3).
+    assert.equal((await bia.c.request('POST', '/posts', { text: 'x', areas: ['saude', 'lazer', 'amor', 'familia'] })).status, 201);
     assert.equal((await bia.c.request('POST', '/posts', { text: 'x', areas: ['inventada'] })).status, 400);
     const r = await bia.c.request('POST', '/posts', { text: 'Treino feito', areas: ['saude', 'emocional', 'saude'] });
     assert.deepEqual(r.body.post.areas, ['saude', 'emocional']);

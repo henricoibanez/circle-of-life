@@ -110,15 +110,17 @@ export class DreamsService {
   /** Minhas conquistas por área: épicos encerrados e iniciativas concluídas. */
   async conquistas(userId: string): Promise<ConquistasDto> {
     const [epics, initiatives, done, total] = await Promise.all([
-      this.prisma.epic.groupBy({ by: ['area'], where: { userId, closedAt: { not: null } }, _count: true }),
+      // Épico encerrado conta em todas as suas áreas.
+      this.prisma.epic.findMany({ where: { userId, closedAt: { not: null } }, select: { area: true, areas: true } }),
       this.prisma.initiative.findMany({ where: { userId, completedAt: { not: null } }, select: { areas: true } }),
       this.prisma.task.count({ where: { userId, status: 'done' } }),
       this.prisma.task.count({ where: { userId } }),
     ]);
+    const epicAreasOf = (e: { area: AreaId; areas: AreaId[] }) => (e.areas.length ? e.areas : [e.area]);
     return {
       areas: AREA_IDS.map(area => ({
         area,
-        epics: epics.find(e => e.area === area)?._count ?? 0,
+        epics: epics.filter(e => epicAreasOf(e).includes(area)).length,
         initiatives: initiatives.filter(i => i.areas.includes(area)).length,
       })),
       tasks: { done, total },
@@ -128,7 +130,7 @@ export class DreamsService {
   async areaConquistas(userId: string, area: AreaId): Promise<AreaConquistasDto> {
     if (!(AREA_IDS as readonly string[]).includes(area)) throw new BadRequestException('área da vida inválida');
     const [epics, initiatives] = await Promise.all([
-      this.prisma.epic.findMany({ where: { userId, area, closedAt: { not: null } }, orderBy: { closedAt: 'desc' } }),
+      this.prisma.epic.findMany({ where: { userId, areas: { has: area }, closedAt: { not: null } }, orderBy: { closedAt: 'desc' } }),
       this.prisma.initiative.findMany({ where: { userId, areas: { has: area }, completedAt: { not: null } }, orderBy: { completedAt: 'desc' } }),
     ]);
     return {

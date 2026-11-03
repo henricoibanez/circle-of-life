@@ -42,7 +42,10 @@ export type EpicDto = {
   initiativeId: string;
   title: string;
   description: string;
+  /** Área principal (cor, ícone, categoria): a primeira de `areas`. */
   area: AreaId;
+  /** Todas as áreas do épico (sem limite). Por padrão, as da iniciativa. */
+  areas: AreaId[];
   position: number;
   closedAt: string | null;
   createdAt: string;
@@ -53,7 +56,7 @@ export type TaskDto = {
   epicId: string;
   title: string;
   description: string;
-  /** Áreas próprias da tarefa (até 3). Vazio = usa a área do épico. */
+  /** Áreas próprias da tarefa (sem limite). Vazio = usa as áreas do épico. */
   areas: AreaId[];
   status: TaskStatus;
   priority: Priority;

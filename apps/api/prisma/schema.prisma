@@ -199,7 +199,8 @@ model Initiative {
   @@map("initiatives")
 }
 
-/// Conjunto de entregas relacionadas, dentro de uma iniciativa. Tem uma área da vida.
+/// Conjunto de entregas relacionadas, dentro de uma iniciativa.
+/// Tem várias áreas da vida (sem limite); "area" é a principal (a primeira).
 model Epic {
   id           String     @id @default(cuid())
   userId       String
@@ -208,7 +209,10 @@ model Epic {
   initiative   Initiative @relation(fields: [initiativeId], references: [id], onDelete: Cascade)
   title        String
   description  String     @default("")
+  /// Área principal (cor, ícone, categoria). É sempre a primeira de "areas".
   area         Area
+  /// Todas as áreas do épico. Por padrão, as da iniciativa; a pessoa pode trocar.
+  areas        Area[]     @default([])
   /// Encerrado (todas as tarefas prontas) = conquista.
   closedAt     DateTime?
   position     Int        @default(0)
@@ -573,7 +577,10 @@ model Trilha {
   title           String
   description     String
   category        String
+  /// Área principal (capa e categoria). É sempre a primeira de "areas".
   area            Area
+  /// Todas as áreas do épico publicado (para aparecer em todas na loja).
+  areas           Area[]              @default([])
   /// Capa: imagem enviada, ou ilustração (art + cor) com texto opcional.
   /// Não é única: a cópia do grupo usa a mesma capa da trilha da loja.
   coverFileId     String?

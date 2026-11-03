@@ -24,6 +24,8 @@ export const toEpicDto = (e: Epic): EpicDto => ({
   title: e.title,
   description: e.description,
   area: e.area,
+  // Se por acaso estiver vazio (épico antigo), a lista é só a principal.
+  areas: e.areas.length ? e.areas : [e.area],
   position: e.position,
   closedAt: iso(e.closedAt),
   createdAt: e.createdAt.toISOString(),

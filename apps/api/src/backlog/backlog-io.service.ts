@@ -178,7 +178,7 @@ export class BacklogIoService {
           let epicPos = (await tx.epic.count({ where: { initiativeId: p.id } })) + 1;
           for (const e of p.epics.values()) {
             if (!e.id) {
-              const created = await tx.epic.create({ data: { userId, initiativeId: p.id, title: e.title.slice(0, 200), description: e.description, area: e.area!, position: epicPos++ } });
+              const created = await tx.epic.create({ data: { userId, initiativeId: p.id, title: e.title.slice(0, 200), description: e.description, area: e.area!, areas: [e.area!], position: epicPos++ } });
               e.id = created.id;
             }
             if (!e.tasks.length) continue;

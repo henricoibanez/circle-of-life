@@ -129,6 +129,7 @@ export async function seedBacklog(prisma: PrismaClient, userId: string) {
         initiativeId: ini[e.ini]!,
         title: e.title,
         area: e.area as never,
+        areas: [e.area] as never,
         description: e.description,
         position: position + 1,
         createdAt: ago(35),

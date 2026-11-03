@@ -18,7 +18,7 @@ class PublishDto {
 class EditDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(120, { message: 'o nome pode ter até 120 caracteres' }) title?: string;
   @IsOptional() @IsString() @MaxLength(600, { message: 'a descrição pode ter até 600 caracteres' }) description?: string;
-  @IsOptional() @IsIn(AREA_IDS, { message: 'área inválida' }) area?: AreaId;
+  @IsOptional() @IsArray() @ArrayMaxSize(AREA_IDS.length) @IsIn(AREA_IDS, { each: true, message: 'área inválida' }) areas?: AreaId[];
   @IsOptional() @IsArray() @ArrayMaxSize(100, { message: 'a trilha pode ter até 100 tarefas' }) @IsString({ each: true }) @MaxLength(200, { each: true, message: 'cada tarefa pode ter até 200 caracteres' })
   tasks?: string[];
 }

@@ -42,6 +42,7 @@ async function create(prisma: PrismaClient, s: Seed, status: 'aprovada' | 'pende
       description: s.desc,
       category: s.cat,
       area: s.area as never,
+      areas: [s.area] as never,
       art: s.art,
       color: s.c,
       coverText: s.cover ?? null,

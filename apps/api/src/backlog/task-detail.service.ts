@@ -32,7 +32,7 @@ export class TaskDetailService {
     if (!t) throw new NotFoundException('Tarefa não encontrada.');
     return {
       task: toTaskDto(t),
-      epic: { id: t.epic.id, title: t.epic.title, area: t.epic.area },
+      epic: { id: t.epic.id, title: t.epic.title, area: t.epic.area, areas: t.epic.areas.length ? t.epic.areas : [t.epic.area] },
       initiative: t.epic.initiative,
       checklist: t.checklist.map(c => ({ id: c.id, text: c.text, done: c.done })),
       logs: t.logs.map(l => ({ id: l.id, text: l.text, createdAt: l.createdAt.toISOString() })),

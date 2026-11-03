@@ -112,7 +112,7 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
         <Tag c="#7c4dde">Épico</Tag>
       </div>
       <p className="mt-0.5 text-xs text-muted">
-        {AREA[t.area].name} • {t.tasks.length === 1 ? '1 tarefa' : `${t.tasks.length} tarefas`}
+        {t.areas.map(a => AREA[a].name).join(', ')} • {t.tasks.length === 1 ? '1 tarefa' : `${t.tasks.length} tarefas`}
       </p>
       <ul className="mt-1 divide-y divide-line">
         {t.tasks.map((task, i) => (
@@ -252,7 +252,7 @@ function TrilhaEditSheet({ t, onClose }: { t: TrilhaDetailDto; onClose: () => vo
   const actions = useTrilhaActions();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [f, setF] = useState({ title: t.title, description: t.description, area: t.area as AreaId });
+  const [f, setF] = useState({ title: t.title, description: t.description, areas: t.areas as AreaId[] });
   const [tasks, setTasks] = useState(t.tasks);
   const clean = tasks.map(x => x.trim()).filter(Boolean);
   const save = () =>
@@ -281,8 +281,8 @@ function TrilhaEditSheet({ t, onClose }: { t: TrilhaDetailDto; onClose: () => vo
         <Field label="Descrição">
           <textarea rows={3} maxLength={600} className={inputCls} value={f.description} onChange={e => setF({ ...f, description: e.target.value })} />
         </Field>
-        <Field label="Área da vida">
-          <AreaPicker value={f.area} onChange={area => setF({ ...f, area })} />
+        <Field label="Áreas da vida">
+          <AreaPicker multi value={f.areas} onChange={areas => setF({ ...f, areas })} />
         </Field>
         <Field label="Tarefas">
           <div className="space-y-2">
