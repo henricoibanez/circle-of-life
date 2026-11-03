@@ -154,6 +154,19 @@
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
+  /*
+   * Freio contra salvar as fotos (perfil, feed, stories, anexos, sonhos, capas):
+   * tira o menu "Salvar imagem" ao pressionar no celular e impede arrastar a foto
+   * para fora. O bloqueio do botão direito (no computador) e do arrastar no Firefox
+   * fica no ImageGuard (components/providers.tsx). Não é cadeado: print de tela ou
+   * abrir o endereço direto da imagem ainda é possível.
+   */
+  img {
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
   /* No celular, campos com letra menor que 16px fazem o iPhone dar zoom na tela ao tocar. */
   @media (pointer: coarse) {
     input:not([type='range']):not([type='checkbox']):not([type='radio']),

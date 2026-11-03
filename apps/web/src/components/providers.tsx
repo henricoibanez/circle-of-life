@@ -17,11 +17,32 @@ export function Providers({ children }: { children: ReactNode }) {
   );
   return (
     <QueryClientProvider client={client}>
+      <ImageGuard />
       <ToastProvider>
         <SheetProvider>{children}</SheetProvider>
       </ToastProvider>
     </QueryClientProvider>
   );
+}
+
+/**
+ * Freio contra salvar as fotos: bloqueia o botão direito (computador) e o arrastar
+ * (inclusive no Firefox, que ignora o -webkit-user-drag do CSS) em qualquer imagem.
+ * Não impede print de tela nem abrir o endereço direto da imagem — é um freio, não cadeado.
+ */
+function ImageGuard() {
+  useEffect(() => {
+    const block = (e: Event) => {
+      if (e.target instanceof HTMLImageElement) e.preventDefault();
+    };
+    document.addEventListener('contextmenu', block);
+    document.addEventListener('dragstart', block);
+    return () => {
+      document.removeEventListener('contextmenu', block);
+      document.removeEventListener('dragstart', block);
+    };
+  }, []);
+  return null;
 }
 
 /** Aplica no <html> a paleta e a aparência escolhidas no perfil. */
