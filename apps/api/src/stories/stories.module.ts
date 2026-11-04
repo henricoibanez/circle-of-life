@@ -1,7 +1,7 @@
 import { AREA_IDS, type AreaId, STORY_CAPTION_MAX, STORY_MAX_AREAS, type Visibility } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Post, Put } from '@nestjs/common';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
-import { CurrentUser } from '../common/decorators';
+import { CurrentUser, Social } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { SocialModule } from '../social/social.module';
 import { StoriesService } from './stories.service';
@@ -17,6 +17,7 @@ class CreateStoryDto {
   @IsOptional() @IsIn(['publico', 'amigos', 'privado'], { message: 'visibilidade inválida' }) visibility?: Visibility;
 }
 
+@Social()
 @Controller('stories')
 class StoriesController {
   constructor(private readonly stories: StoriesService) {}

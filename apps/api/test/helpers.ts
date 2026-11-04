@@ -100,11 +100,23 @@ export async function mailpitBody(id: string) {
   return ((await res.json()) as { Text: string }).Text;
 }
 
-/** Cria um usuário de teste e devolve um cliente HTTP já logado como ele. */
-export async function loginAs(api: Awaited<ReturnType<typeof startApi>>, handle: string, extra: { role?: 'admin' | 'member' } = {}) {
+/**
+ * Cria um usuário de teste e devolve um cliente HTTP já logado como ele.
+ * Por padrão ele já tem a Sprint 1 iniciada (como quem já usava o app), para
+ * concluir tarefas render XP; `sprint: 'planejamento'` deixa a sprint por iniciar.
+ */
+export async function loginAs(
+  api: Awaited<ReturnType<typeof startApi>>,
+  handle: string,
+  extra: { role?: 'admin' | 'member'; sprint?: 'iniciada' | 'planejamento' } = {},
+) {
   const user = await api.prisma.user.create({
     data: { email: `${handle}@teste.local`, name: handle, handle, isTestUser: true, role: extra.role ?? 'member' },
   });
+  if (extra.sprint !== 'planejamento') {
+    const startAt = new Date();
+    await api.prisma.sprint.create({ data: { userId: user.id, number: 1, startAt, plannedEnd: new Date(startAt.getTime() + 13 * 86_400_000) } });
+  }
   const c = client(api.url);
   const res = await c.request('POST', '/auth/dev/login', { userId: user.id });
   if (res.status !== 204) throw new Error(`login de teste falhou: ${res.status}`);

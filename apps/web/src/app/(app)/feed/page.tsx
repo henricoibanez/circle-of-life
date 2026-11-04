@@ -2,7 +2,7 @@
 
 import { AREA, AREAS, type AreaId, type FeedFilter } from '@circle/shared';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Logo, Wordmark } from '@/components/art';
 import { Bell } from '@/components/bell';
 import { PostCard } from '@/components/feed/post-card';
@@ -13,6 +13,8 @@ import { Chips, IconBtn, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { Button } from '@/components/ui/button';
 import { type FeedParams, useFeed, usePost } from '@/lib/feed';
+import { freeNow, journeyActive } from '@/lib/journey';
+import { useMe } from '@/lib/me';
 
 const CHIPS: { id: FeedFilter; label: string }[] = [
   { id: 'para', label: 'Para você' },
@@ -23,6 +25,14 @@ const CHIPS: { id: FeedFilter; label: string }[] = [
 ];
 
 export default function FeedPage() {
+  const router = useRouter();
+  const { data: me } = useMe();
+  // Quem está na Jornada de primeiro acesso vê a Jornada no lugar do Feed.
+  // Durante a espera dos 7 dias, a tela principal é o Board; passado o prazo, a Jornada (para concluir).
+  useEffect(() => {
+    if (journeyActive(me)) router.replace(me!.journeyFinished && !freeNow(me!.social) ? '/board' : '/jornada');
+  }, [me, router]);
+  if (!me || journeyActive(me)) return null;
   return (
     <Suspense>
       <Feed />

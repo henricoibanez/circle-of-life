@@ -2,10 +2,11 @@
 
 import { AREA, AREAS, type AreaId } from '@circle/shared';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EpicCard, TaskLine } from '@/components/backlog/backlog-items';
 import { ImportSheet } from '@/components/backlog/import-sheet';
 import { Reorderable } from '@/components/backlog/reorderable';
+import { BulkBar, SelectionProvider, useSelection } from '@/components/backlog/selection';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { useCelebrate } from '@/components/celebrate';
 import { useGoBack } from '@/components/header';
@@ -20,8 +21,17 @@ import { downloadBacklogSpreadsheet } from '@/lib/backlog-io';
 type Tab = 'ini' | 'epi' | 'tar';
 type TaskFilter = 'backlog' | 'sprint' | 'done';
 
-/** Backlog: a visão completa em cascata (Iniciativa > Épico > Tarefa), como no protótipo. */
+/** Backlog: a visão completa em cascata (Iniciativa > Épico > Tarefa), como no protótipo, com seleção e ações em massa. */
 export default function BacklogPage() {
+  return (
+    <SelectionProvider>
+      <Backlog />
+      <BulkBar />
+    </SelectionProvider>
+  );
+}
+
+function Backlog() {
   const { data } = useBacklog();
   const actions = useBacklogActions();
   const sheets = useBacklogSheets();
@@ -47,6 +57,14 @@ export default function BacklogPage() {
   const [area, setArea] = useState<AreaId | 'all'>('all');
   const [open, setOpen] = useState<Record<string, boolean> | null>(null);
   const [st, setSt] = useState<TaskFilter>('backlog');
+  // "/backlog?aba=tarefas" abre direto na aba Tarefas (ex.: "Selecionar itens" do quadro vazio).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('aba') === 'tarefas') setTab('tar');
+  }, []);
+  // Trocar de aba ou de filtro limpa a seleção (para não agir em tarefas que não estão na tela).
+  const sel = useSelection();
+  const { clear } = sel;
+  useEffect(() => clear(), [tab, st, clear]);
 
   const areaFilter = () =>
     openActions('Filtrar por área da vida', [
@@ -136,7 +154,7 @@ export default function BacklogPage() {
         area={area}
         clearArea={() => setArea('all')}
       />
-      <div className="space-y-4 px-4 pb-8">
+      <div className={`space-y-4 px-4 ${sel.ids.size ? 'pb-36' : 'pb-8'}`}>
         {tab === 'ini' && (
           <>
             {canReorder && inis.length > 1 && <p className="-mt-1 text-xs text-muted">Segure e arraste uma iniciativa, épico ou tarefa para reordenar.</p>}
@@ -240,6 +258,9 @@ export default function BacklogPage() {
               value={st}
               onChange={setSt}
             />
+            {!sel.ids.size && tks.length > 0 && (
+              <p className="-mb-1 text-xs text-muted">Toque na bolinha das tarefas para selecionar e agir em várias de uma vez.</p>
+            )}
             <Card className="divide-y divide-line px-4">
               {tks.map(t => (
                 <TaskLine key={t.id} t={t} last />

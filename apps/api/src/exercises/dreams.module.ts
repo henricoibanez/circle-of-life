@@ -1,4 +1,4 @@
-import { AREA_IDS, MAX_OPEN_DREAMS, type AreaConquistasDto, type AreaId, type ConquistasDto, type DreamDto } from '@circle/shared';
+import { AREA_IDS, MAX_OPEN_DREAMS, socialStatus, type AreaConquistasDto, type AreaId, type ConquistasDto, type DreamDto } from '@circle/shared';
 import {
   BadRequestException,
   Body,
@@ -107,14 +107,21 @@ export class DreamsService {
     });
   }
 
-  /** Minhas conquistas por área: épicos encerrados e iniciativas concluídas. */
+  /** Conquista "Jornada concluída": quando a rede social abriu para quem estava na Jornada. Vale para todas as áreas. */
+  private async journeyDoneAt(userId: string) {
+    const u = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { journey: true, journeyFinishedAt: true, socialUnlockedAt: true } });
+    return socialStatus(u).journeyDoneAt;
+  }
+
+  /** Minhas conquistas por área: épicos encerrados, iniciativas concluídas e a Jornada concluída. */
   async conquistas(userId: string): Promise<ConquistasDto> {
-    const [epics, initiatives, done, total] = await Promise.all([
+    const [epics, initiatives, done, total, journeyDoneAt] = await Promise.all([
       // Épico encerrado conta em todas as suas áreas.
       this.prisma.epic.findMany({ where: { userId, closedAt: { not: null } }, select: { area: true, areas: true } }),
       this.prisma.initiative.findMany({ where: { userId, completedAt: { not: null } }, select: { areas: true } }),
       this.prisma.task.count({ where: { userId, status: 'done' } }),
       this.prisma.task.count({ where: { userId } }),
+      this.journeyDoneAt(userId),
     ]);
     const epicAreasOf = (e: { area: AreaId; areas: AreaId[] }) => (e.areas.length ? e.areas : [e.area]);
     return {
@@ -122,7 +129,9 @@ export class DreamsService {
         area,
         epics: epics.filter(e => epicAreasOf(e).includes(area)).length,
         initiatives: initiatives.filter(i => i.areas.includes(area)).length,
+        journey: journeyDoneAt ? 1 : 0,
       })),
+      journeyDoneAt,
       tasks: { done, total },
     };
   }
@@ -136,6 +145,7 @@ export class DreamsService {
     return {
       epics: epics.map(e => ({ id: e.id, title: e.title, closedAt: e.closedAt!.toISOString() })),
       initiatives: initiatives.map(i => ({ id: i.id, title: i.title, completedAt: i.completedAt!.toISOString() })),
+      journeyDoneAt: await this.journeyDoneAt(userId),
     };
   }
 }

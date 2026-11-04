@@ -18,6 +18,8 @@ const ICONS: Record<string, [IconName, string]> = {
   curtida_story: ['heart', '#ef4444'],
   comentario: ['msg', '#3b82f6'],
   tarefa_atrasada: ['alert', '#dc2626'],
+  sprint_iniciada: ['flag', '#16a34a'],
+  sprint_prazo: ['calendar', '#d97706'],
   trilha_baixada: ['download', '#7c4dde'],
   trilha_aprovada: ['checkCircle', '#16a34a'],
   trilha_recusada: ['xCircle', '#dc2626'],

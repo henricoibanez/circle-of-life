@@ -22,11 +22,16 @@ export type DreamDto = { id: string; text: string; area: AreaId; imageUrl: strin
 
 /** Minhas conquistas: épicos encerrados e iniciativas concluídas, por área da vida. */
 export type ConquistasDto = {
-  areas: { area: AreaId; epics: number; initiatives: number }[];
+  /** `journey` = 1 quando a Jornada foi concluída (a conquista vale para todas as áreas). */
+  areas: { area: AreaId; epics: number; initiatives: number; journey: number }[];
+  /** Conquista "Jornada concluída": quando foi (null = ainda não). */
+  journeyDoneAt: string | null;
   /** Tarefas concluídas / total (anel do topo da tela). */
   tasks: { done: number; total: number };
 };
 export type AreaConquistasDto = {
   epics: { id: string; title: string; closedAt: string }[];
   initiatives: { id: string; title: string; completedAt: string }[];
+  /** Conquista "Jornada concluída" (aparece em todas as áreas). */
+  journeyDoneAt: string | null;
 };

@@ -12,32 +12,41 @@ import { Button } from '@/components/ui/button';
 import { epicTasks, progress, useBacklogActions } from '@/lib/backlog';
 import { tint } from '@/lib/color';
 import { Reorderable } from './reorderable';
+import { useSelection } from './selection';
 import { useBacklogSheets } from './use-backlog-sheets';
 
-/** Linha de tarefa do backlog: bolinha de concluir, título, prioridade e menu. */
+/**
+ * Linha de tarefa do backlog: bolinha de selecionar (as ações em massa ficam na barra
+ * de baixo; concluir uma tarefa só é feito pelo quadro ou pelo detalhe), título,
+ * prioridade e menu.
+ */
 export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
   const actions = useBacklogActions();
   const sheets = useBacklogSheets();
+  const sel = useSelection();
   const { openActions } = useSheets();
   const toast = useToast();
   const done = t.status === 'done';
+  const on = sel.has(t.id);
   return (
-    <div className="relative flex items-center gap-3 py-3.5">
+    <div className={`relative flex items-center gap-3 py-3.5 ${on ? '-mx-2 rounded-xl bg-primary/5 px-2' : ''}`}>
       {!last && <span className="absolute bottom-[-14px] left-[0.6875rem] top-[2.375rem] w-px bg-line" />}
       <button
-        onClick={() => actions.moveTask(t.id, done ? 'todo' : 'done')}
-        aria-label={done ? 'Reabrir tarefa' : 'Concluir tarefa'}
+        onClick={() => sel.toggle(t.id)}
+        aria-label={on ? 'Desmarcar tarefa' : 'Selecionar tarefa'}
+        aria-pressed={on}
         className={`relative z-[1] grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 ${
-          done ? 'border-primary bg-primary text-onprimary' : 'border-muted/50 bg-surface hover:border-primary'
+          on ? 'border-primary bg-primary text-onprimary' : 'border-muted/50 bg-surface hover:border-primary'
         }`}
       >
-        {done && <Icon n="check" className="h-3.5 w-3.5" sw={3} />}
+        {on && <Icon n="check" className="h-3.5 w-3.5" sw={3} />}
       </button>
       <button onClick={() => sheets.openTaskDetail(t.id)} className="min-w-0 flex-1 text-left">
-        <span className={`block text-[0.9375rem] leading-snug ${done ? 'text-ink/60' : ''}`}>{t.title}</span>
+        <span className={`block text-[0.9375rem] leading-snug ${done ? 'text-ink/60 line-through' : ''}`}>{t.title}</span>
         {(t.status === 'todo' || t.status === 'doing') && (
           <span className="text-[0.6875rem] font-semibold text-blue-600">{t.status === 'doing' ? 'Fazendo agora' : 'Na sprint'}</span>
         )}
+        {done && <span className="text-[0.6875rem] font-semibold text-primary">Pronta</span>}
       </button>
       <Prio p={t.priority} />
       <button
@@ -45,7 +54,7 @@ export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
         onClick={() =>
           openActions(t.title, [
             t.status === 'backlog'
-              ? { icon: 'board', label: 'Puxar para a sprint', run: () => actions.moveTask(t.id, 'todo').then(() => toast('Tarefa na sprint atual')) }
+              ? { icon: 'board', label: 'Puxar para a sprint', run: () => actions.moveTask(t.id, 'todo').then(r => r && toast('Tarefa na sprint atual')) }
               : !done && { icon: 'backlog', label: 'Voltar para o backlog', run: () => actions.moveTask(t.id, 'backlog') },
             { icon: 'checkSq', label: 'Abrir detalhes', run: () => sheets.openTaskDetail(t.id) },
             { icon: 'edit', label: 'Editar', run: () => sheets.openTask({ id: t.id }) },

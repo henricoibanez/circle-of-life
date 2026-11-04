@@ -13,6 +13,8 @@ import { Card, IconBtn, Ring, Tag } from '@/components/primitives';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api, ApiError } from '@/lib/api';
+import { journeyActive } from '@/lib/journey';
+import { useMe } from '@/lib/me';
 import { mix, tint } from '@/lib/color';
 import { since } from '@/lib/time';
 
@@ -55,6 +57,7 @@ export default function MaslowPage() {
   const qc = useQueryClient();
   const toast = useToast();
   const sheets = useBacklogSheets();
+  const { data: me } = useMe();
   const { data } = useQuery({ queryKey: KEY, queryFn: () => api<MaslowDto>('/maslow') });
   const [open, setOpen] = useState<MaslowLevelId | null>('fis');
   const [note, setNote] = useState('');
@@ -233,12 +236,15 @@ export default function MaslowPage() {
           );
         })}
 
-        <Card className="flex items-center gap-3 p-4">
-          <p className="flex-1 text-sm">Encontrou algo na base para cuidar?</p>
-          <Button variant="soft" className="px-3 py-2" onClick={() => sheets.openInitiative()}>
-            Criar iniciativa
-          </Button>
-        </Card>
+        {/* Na Jornada, planejar vem depois (etapa do backlog): sem atalho para criar iniciativa. */}
+        {!journeyActive(me) && (
+          <Card className="flex items-center gap-3 p-4">
+            <p className="flex-1 text-sm">Encontrou algo na base para cuidar?</p>
+            <Button variant="soft" className="px-3 py-2" onClick={() => sheets.openInitiative()}>
+              Criar iniciativa
+            </Button>
+          </Card>
+        )}
       </div>
     </>
   );

@@ -15,7 +15,7 @@ export const STATUS_LABEL: Record<TaskStatus, string> = {
 /** Duração padrão de uma sprint, em dias (quando a pessoa não escolheu outra). */
 export const SPRINT_DAYS = 14;
 
-/** Opções de duração da sprint, escolhidas nas Configurações. 0 = indeterminada (sem prazo). */
+/** Opções de duração da sprint, escolhidas na tela da sprint. 0 = indeterminada (sem prazo). */
 export const SPRINT_LENGTHS = [
   { days: 7, label: 'Semanal', hint: '7 dias' },
   { days: 14, label: 'Quinzenal', hint: '14 dias' },
@@ -83,7 +83,13 @@ export function isLate(t: Pick<TaskDto, 'dueDate' | 'status'>, now = new Date())
 export type SprintDto = {
   id: string;
   number: number;
-  startAt: string;
+  /** Nome escolhido; vazio = "Sprint N" (use `sprintName`). */
+  name: string;
+  description: string;
+  /** Duração em dias; 0 = sem prazo. */
+  length: number;
+  /** Null = em planejamento: a pessoa ainda não apertou "Iniciar sprint". */
+  startAt: string | null;
   plannedEnd: string | null;
   closedAt: string | null;
   doneCount: number | null;
@@ -91,3 +97,6 @@ export type SprintDto = {
 };
 
 export type SprintOverviewDto = { current: SprintDto; history: SprintDto[] };
+
+/** Nome para mostrar: o escolhido ou "Sprint N". */
+export const sprintName = (s: Pick<SprintDto, 'name' | 'number'>) => s.name.trim() || `Sprint ${s.number}`;

@@ -1,5 +1,5 @@
 import { AREA_IDS, type AreaId } from '@circle/shared';
-import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
 
 const TITLE = { message: 'o nome precisa ter entre 1 e 120 caracteres' };
 const AREA_MSG = { message: 'área da vida inválida' };
@@ -59,6 +59,13 @@ export class UpdateTaskDto {
 }
 export class MoveTaskDto {
   @IsIn(STATUSES, { message: 'status inválido' }) status!: (typeof STATUSES)[number];
+}
+
+/** Ações em massa no backlog (tarefas selecionadas). */
+export const BULK_ACTIONS = ['sprint', 'done', 'delete'] as const;
+export class BulkTasksDto {
+  @IsArray() @ArrayMinSize(1, { message: 'selecione pelo menos uma tarefa' }) @ArrayMaxSize(500) @IsString({ each: true }) ids!: string[];
+  @IsIn(BULK_ACTIONS, { message: 'ação inválida' }) action!: (typeof BULK_ACTIONS)[number];
 }
 
 export class ChecklistItemDto {

@@ -1,4 +1,4 @@
-import type { AreaId, MiniProfileDto } from '@circle/shared';
+import { socialStatus, type AreaId, type MiniProfileDto } from '@circle/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { User } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -69,11 +69,13 @@ export class ProfileService {
   }
 
   private async achievementCount(userId: string) {
-    const [epics, inits] = await Promise.all([
+    const [epics, inits, u] = await Promise.all([
       this.prisma.epic.count({ where: { userId, closedAt: { not: null } } }),
       this.prisma.initiative.count({ where: { userId, completedAt: { not: null } } }),
+      this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { journey: true, journeyFinishedAt: true, socialUnlockedAt: true } }),
     ]);
-    return epics + inits;
+    // A Jornada concluída também é uma conquista.
+    return epics + inits + (socialStatus(u).journeyDoneAt ? 1 : 0);
   }
 
   /** As 3 áreas com mais conquistas (épicos encerrados e iniciativas concluídas). */

@@ -1,7 +1,7 @@
 import { AREA_IDS, type AreaId, FEED_FILTERS, type FeedFilter, MAX_POST_AREAS, MAX_POST_IMAGES, POST_REF_TYPES, type PostRefType, type Visibility } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ArrayMaxSize, IsArray, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
-import { CurrentUser } from '../common/decorators';
+import { CurrentUser, Social } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { SocialModule } from '../social/social.module';
 import { FeedService } from './feed.service';
@@ -39,6 +39,7 @@ class FeedQueryDto {
   @IsOptional() @IsString() cursor?: string;
 }
 
+@Social()
 @Controller()
 class FeedController {
   constructor(private readonly feed: FeedService) {}

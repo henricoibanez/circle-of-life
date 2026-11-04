@@ -5,6 +5,7 @@ import { Public } from '../common/decorators';
 import type { Env } from '../config/env';
 import { RateLimitService } from '../auth/rate-limit.service';
 import { SessionModule } from '../auth/auth.module';
+import { RodaModule, RodaService } from '../exercises/roda.module';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StoriesModule } from '../stories/stories.module';
 import { StoriesService } from '../stories/stories.service';
@@ -21,6 +22,7 @@ class CronController {
     private readonly notifications: NotificationsService,
     private readonly stories: StoriesService,
     private readonly rate: RateLimitService,
+    private readonly roda: RodaService,
   ) {}
 
   @Public()
@@ -32,6 +34,8 @@ class CronController {
     const got = Buffer.from(auth ?? '');
     if (got.length !== expected.length || !timingSafeEqual(got, expected)) throw new UnauthorizedException();
     await this.notifications.hourly();
+    // Roda da Vida: guarda a avaliação de quem mexeu nas notas e não registrou.
+    await this.roda.autoSnapshots();
     const stories = await this.stories.cleanup();
     // Limpa contadores de limite com mais de um dia (a tabela não cresce à toa).
     await this.rate.pruneOlderThan(24 * 3600_000);
@@ -39,5 +43,5 @@ class CronController {
   }
 }
 
-@Module({ imports: [StoriesModule, SessionModule], controllers: [CronController] })
+@Module({ imports: [StoriesModule, SessionModule, RodaModule], controllers: [CronController] })
 export class CronModule {}

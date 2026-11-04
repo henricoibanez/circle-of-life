@@ -1,3 +1,4 @@
+import { sprintName } from '@circle/shared';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -131,6 +132,8 @@ export class NotificationsService {
     try {
       const n = await this.checkOverdue();
       if (n) this.logger.log(`${n} avisos de tarefa atrasada enviados`);
+      const s = await this.checkSprintDeadlines();
+      if (s) this.logger.log(`${s} avisos de prazo de sprint enviados`);
       await this.prisma.notification.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - KEEP_DAYS * 86400000) } } });
     } catch (e) {
       this.logger.error(`Falha na verificação de atrasadas: ${(e as Error).message}`);
@@ -154,6 +157,36 @@ export class NotificationsService {
       await this.prisma.$transaction(async tx => {
         await tx.task.update({ where: { id: t.id }, data: { overdueNotifiedAt: now } });
         await this.notify({ userId: t.userId, type: 'tarefa_atrasada', title: 'Tarefa atrasada', body: `“${t.title}” passou do prazo.`, link: '/board', refId: t.id }, tx);
+      });
+      sent++;
+    }
+    return sent;
+  }
+
+  /**
+   * Prazo da sprint vencido: avisa uma vez por sprint, no dia seguinte ao fim
+   * previsto, a partir da mesma hora das atrasadas. A sprint não é encerrada
+   * sozinha (decisão do dono): a pessoa encerra quando quiser.
+   */
+  async checkSprintDeadlines(now = new Date()) {
+    const hour = this.config.get('OVERDUE_HOUR');
+    const sprints = await this.prisma.sprint.findMany({
+      where: { startAt: { not: null }, closedAt: null, plannedEnd: { not: null, lt: now }, deadlineNotifiedAt: null },
+      include: { user: { select: { timezone: true } } },
+    });
+    let sent = 0;
+    for (const s of sprints) {
+      const tz = s.user.timezone;
+      const day = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
+      const localHour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }).format(now));
+      if (day(s.plannedEnd!) >= day(now) || localHour < hour) continue;
+      const name = sprintName(s);
+      await this.prisma.$transaction(async tx => {
+        await tx.sprint.update({ where: { id: s.id }, data: { deadlineNotifiedAt: now } });
+        await this.notify(
+          { userId: s.userId, type: 'sprint_prazo', title: 'O prazo da sprint terminou', body: `A ${name} chegou ao fim do prazo. Encerre quando estiver pronto.`, link: '/board', refId: s.id },
+          tx,
+        );
       });
       sent++;
     }

@@ -28,12 +28,19 @@ export const XP = {
   comentario: 5,
   /** Alguém baixou (importou) uma trilha sua — uma vez por pessoa. */
   trilha_download: 10,
+  /** Prêmio da Jornada: apertar "Concluir minha jornada" (uma vez só). */
+  primeiros_passos: 1000,
 } as const;
 
 /** A iniciativa só rende XP se tiver MAIS de 5 tarefas concluídas (6 ou mais). */
 export const INITIATIVE_MIN_TASKS = 5;
 
-export type XpReason = keyof typeof XP | 'trilha_compra';
+/** Jornada: depois de "Concluir minha jornada", o resto do app abre de graça depois destes dias… */
+export const SOCIAL_WAIT_DAYS = 7;
+/** …ou na hora, gastando este XP disponível. */
+export const SOCIAL_UNLOCK_PRICE = 500;
+
+export type XpReason = keyof typeof XP | 'trilha_compra' | 'rede_social';
 
 /** Resultado de uma ação que mexeu no XP, devolvido pela API para a tela comemorar. */
 export type XpChange = { gained: number; total: number; disponivel: number };

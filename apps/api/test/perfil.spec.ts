@@ -45,7 +45,7 @@ describe('Perfil e configurações', () => {
   test('preferências de tema e visibilidade padrão dos posts', async () => {
     const { c } = await loginAs(api, 'perf4');
     const r = await c.request('PATCH', '/me/preferences', { palette: 'serenity', randomTheme: true, themeMode: 'dark', defaultPostVisibility: 'amigos' });
-    assert.deepEqual(r.body.preferences, { palette: 'serenity', randomTheme: true, themeMode: 'dark', defaultPostVisibility: 'amigos', sprintLength: 14 });
+    assert.deepEqual(r.body.preferences, { palette: 'serenity', randomTheme: true, themeMode: 'dark', defaultPostVisibility: 'amigos' });
     assert.equal((await c.request('PATCH', '/me/preferences', { palette: 'rosa' })).status, 400);
   });
 
@@ -62,7 +62,11 @@ describe('Perfil e configurações', () => {
   test('excluir a conta apaga tudo e encerra a sessão', async () => {
     const { c, user } = await loginAs(api, 'perf6');
     await c.request('POST', '/initiatives', { title: 'Algo' });
-    const r = await c.request('DELETE', '/me');
+    // Sem digitar DELETAR, não exclui.
+    assert.equal((await c.request('DELETE', '/me')).status, 400);
+    assert.equal((await c.request('DELETE', '/me', { confirm: 'apagar' })).status, 400);
+    assert.equal(await api.prisma.user.count({ where: { id: user.id } }), 1);
+    const r = await c.request('DELETE', '/me', { confirm: 'DELETAR' });
     assert.equal(r.status, 204);
     assert.equal(await api.prisma.user.count({ where: { id: user.id } }), 0);
     assert.equal(await api.prisma.initiative.count({ where: { userId: user.id } }), 0);

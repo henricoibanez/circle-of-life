@@ -15,6 +15,7 @@ import { RodaModule } from './exercises/roda.module';
 import { FeedModule } from './feed/feed.module';
 import { HealthController } from './health/health.controller';
 import { InvitesModule } from './invites/invites.module';
+import { JourneyModule } from './journey/journey.module';
 import { MailModule } from './mail/mail.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -33,6 +34,7 @@ import { XpModule } from './xp/xp.module';
     StorageModule,
     MailModule,
     XpModule,
+    JourneyModule,
     // Tarefas agendadas (ex.: aviso de atrasadas). Desligadas nos testes automáticos.
     ...(process.env.DISABLE_SCHEDULE === 'true' ? [] : [ScheduleModule.forRoot()]),
     NotificationsModule,

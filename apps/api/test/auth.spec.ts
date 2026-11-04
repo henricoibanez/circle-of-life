@@ -164,6 +164,7 @@ describe('Login e convites (ambiente de desenvolvimento)', () => {
       assert.ok('user' in result);
       assert.equal(result.user.handle, 'mariajosedasilva');
       assert.equal(result.user.role, 'member');
+      assert.equal(result.user.journey, true, 'conta nova começa pela Jornada');
       const invite = await api.prisma.invite.findUnique({ where: { tokenHash: hashInviteToken('t-maria') } });
       assert.equal(invite!.acceptedUserId, result.user.id);
 
@@ -202,11 +203,13 @@ describe('Login e convites (ambiente de desenvolvimento)', () => {
       assert.ok('user' in result && result.user.id === memberId);
       const user = await api.prisma.user.findUnique({ where: { id: memberId } });
       assert.equal(user!.googleId, 'g-membro');
+      assert.equal(user!.journey, false, 'quem já tinha conta não entra na Jornada');
     });
     test('ADMIN_EMAILS: entra sem convite e vira administrador', async () => {
       const result = await api.app.get(AuthService).loginWithGoogle(google('dona@gmail.com'));
       assert.ok('user' in result);
       assert.equal(result.user.role, 'admin');
+      assert.equal(result.user.journey, true, 'admin novo também passa pela Jornada');
     });
 
     test('ADMIN_EMAILS: conta que já existia passa a ser administradora', async () => {

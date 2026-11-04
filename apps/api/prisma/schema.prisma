@@ -66,8 +66,20 @@ model User {
   randomTheme           Boolean    @default(false)
   themeMode             ThemeMode  @default(auto)
   defaultPostVisibility Visibility @default(publico)
-  /// Duração da sprint em dias: 7, 14 (padrão) ou 30; 0 = indeterminada (sem prazo, encerra quando quiser).
-  sprintLength          Int        @default(14)
+  /// Passa pela Jornada de primeiro acesso (Minha vida trava o quadro). Quem já usava o app fica com false (tudo liberado).
+  journey               Boolean    @default(false)
+  /// Quando viu as boas-vindas da Jornada.
+  journeyWelcomedAt     DateTime?
+  /// Quando completou Minha vida (os 4 exercícios). Depois disso o quadro não tranca mais.
+  minhaVidaAt           DateTime?
+  /// Quantas fases da Jornada já tiveram o pop-up de parabéns mostrado.
+  journeyPhaseSeen      Int        @default(0)
+  /// Quando apertou "Concluir minha jornada" (ganha os 1.000 XP; conta os 7 dias para liberar de graça).
+  journeyFinishedAt     DateTime?
+  /// Quando a Jornada foi concluída de vez e a rede social abriu (pagando 500 XP, ou de graça depois dos 7 dias).
+  socialUnlockedAt      DateTime?
+  /// Quando viu o troféu "Jornada concluída" (com a apresentação da rede social).
+  journeyCelebratedAt   DateTime?
   timezone              String     @default("America/Sao_Paulo")
   /// Tudo que a pessoa já ganhou de XP (cópia rápida da soma do extrato, etapa 6).
   xpTotal               Int        @default(0)
@@ -294,9 +306,20 @@ model Sprint {
   userId     String
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   number     Int
-  startAt    DateTime
-  /// Fim previsto (startAt + duração − 1 dia). Null quando a sprint é indeterminada (sem prazo).
+  /// Nome dado pela pessoa. Vazio = "Sprint N".
+  name        String    @default("")
+  /// Objetivo da sprint (opcional).
+  description String    @default("")
+  /// Duração em dias: 7, 14 (padrão) ou 30; 0 = indeterminada (sem prazo).
+  length      Int       @default(14)
+  /// Quando a pessoa apertou "Iniciar sprint". Null = em planejamento (ainda não começou).
+  startAt    DateTime?
+  /// Fim previsto (startAt + duração − 1 dia). Null quando não começou ou é indeterminada (sem prazo).
   plannedEnd DateTime?
+  /// Já mostrou o aviso "concluir sem sprint não rende XP" neste intervalo entre sprints.
+  offSprintWarned Boolean @default(false)
+  /// Quando avisou que o prazo venceu (uma vez por sprint).
+  deadlineNotifiedAt DateTime?
   closedAt   DateTime?
   /// Preenchidos ao encerrar: "prontas/total".
   doneCount  Int?
@@ -323,6 +346,8 @@ enum XpReason {
   comentario
   trilha_download
   trilha_compra
+  primeiros_passos
+  rede_social
 }
 
 /// Extrato de XP: cada ganho (+), estorno (-) e gasto. O total fica copiado em User.xpTotal / xpSpent.
@@ -497,6 +522,8 @@ enum NotificationType {
   curtida_story
   comentario
   tarefa_atrasada
+  sprint_iniciada
+  sprint_prazo
   trilha_baixada
   trilha_aprovada
   trilha_recusada
@@ -612,6 +639,10 @@ model TrilhaTask {
   trilhaId String
   trilha   Trilha @relation(fields: [trilhaId], references: [id], onDelete: Cascade)
   title    String
+  /// Vai para a descrição da tarefa ao importar.
+  description String @default("")
+  /// Áreas próprias da tarefa (vazio = as do épico).
+  areas    Area[] @default([])
   position Int
 
   @@map("trilha_tasks")

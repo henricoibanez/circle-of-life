@@ -1,6 +1,6 @@
 'use client';
 
-import { PALETTES, type PaletteId, SPRINT_LENGTHS } from '@circle/shared';
+import { PALETTES, type PaletteId } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -15,6 +15,7 @@ import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api, ApiError, logout, type Me } from '@/lib/api';
 import { tint } from '@/lib/color';
+import { xpVisible } from '@/lib/journey';
 import { useMe } from '@/lib/me';
 import { since } from '@/lib/time';
 import { disablePush, enablePush, pushActive, pushSupported } from '@/lib/notifications';
@@ -133,6 +134,7 @@ export default function PerfilPage() {
           </div>
         </div>
 
+        {xpVisible(me) && (
         <Card className="grid grid-cols-2 divide-x divide-line py-3 text-center">
           {[
             ['XP total', me.xp.total, 'star', 'text-amber-500'],
@@ -147,6 +149,7 @@ export default function PerfilPage() {
             </div>
           ))}
         </Card>
+        )}
 
         <Card className="p-4">
           <div className="flex items-center">
@@ -295,27 +298,6 @@ export default function PerfilPage() {
           <Seg items={VISIBILITY} value={prefs.defaultPostVisibility} onChange={defaultPostVisibility => setPrefs({ defaultPostVisibility })} />
         </Card>
 
-        <Card className="p-4">
-          <h2 className="font-semibold">Duração da sprint</h2>
-          <p className="mb-3 text-xs text-muted">Vale para a próxima sprint; a atual segue até você encerrar.</p>
-          <div className="grid grid-cols-2 gap-2">
-            {SPRINT_LENGTHS.map(s => {
-              const on = prefs.sprintLength === s.days;
-              return (
-                <button
-                  key={s.days}
-                  onClick={() => setPrefs({ sprintLength: s.days })}
-                  aria-pressed={on}
-                  className={`rounded-xl border p-3 text-left transition ${on ? 'border-primary bg-primary/5' : 'border-line hover:bg-sunk'}`}
-                >
-                  <span className={`block text-sm font-semibold ${on ? 'text-primary' : ''}`}>{s.label}</span>
-                  <span className="block text-xs text-muted">{s.hint}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Card>
-
         {me.googleCalendar.available && (
           <Card className="p-4">
             <h2 className="font-semibold">Google Agenda</h2>
@@ -364,29 +346,58 @@ export default function PerfilPage() {
           <Button
             variant="danger"
             className="mt-2 w-full"
-            onClick={() =>
-              openSheet(close => (
-                <ConfirmSheet
-                  title="Excluir minha conta"
-                  confirm="Excluir para sempre"
-                  danger
-                  onClose={close}
-                  onConfirm={async () => {
-                    await api('/me', { method: 'DELETE' });
-                    window.location.href = '/login';
-                  }}
-                >
-                  <p>Todos os seus dados serão apagados: backlog, sprints, exercícios, sonhos, fotos e XP.</p>
-                  <p className="mt-2 font-semibold">Não dá para desfazer.</p>
-                </ConfirmSheet>
-              ))
-            }
+            onClick={() => openSheet(close => <DeleteAccountSheet onClose={close} />)}
           >
             Excluir minha conta
           </Button>
         </Card>
       </div>
     </>
+  );
+}
+
+/** Excluir minha conta: só depois de digitar DELETAR (decisão do dono de 04/11/2026). */
+function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
+  const toast = useToast();
+  const [word, setWord] = useState('');
+  const [busy, setBusy] = useState(false);
+  const ok = word.trim().toUpperCase() === 'DELETAR';
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await api('/me', { method: 'DELETE', body: { confirm: word } });
+      window.location.href = '/login';
+    } catch (e) {
+      setBusy(false);
+      toast(e instanceof ApiError ? e.message : 'Não foi possível excluir a conta.');
+    }
+  };
+  return (
+    <Sheet
+      title="Excluir minha conta"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="line" className="flex-1" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button className="flex-1 !bg-red-600 !text-white" disabled={!ok || busy} onClick={remove}>
+            Excluir para sempre
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3 text-[0.9375rem] leading-relaxed text-ink/85">
+        <p>Todos os seus dados serão apagados: backlog, sprints, exercícios, sonhos, fotos e XP.</p>
+        <p className="font-semibold">Não dá para desfazer.</p>
+        <label className="block">
+          <span className="mb-1.5 block text-sm">
+            Para confirmar, digite <strong>DELETAR</strong>:
+          </span>
+          <input value={word} onChange={e => setWord(e.target.value)} autoCapitalize="characters" autoComplete="off" placeholder="DELETAR" className={inputCls} />
+        </label>
+      </div>
+    </Sheet>
   );
 }
 

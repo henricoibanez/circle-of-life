@@ -48,8 +48,8 @@ describe('Quadro de visualização e Minhas conquistas', () => {
     const all = (await c.request('GET', '/conquistas')).body;
     const saude = all.areas.find((a: { area: string }) => a.area === 'saude');
     const emocional = all.areas.find((a: { area: string }) => a.area === 'emocional');
-    assert.deepEqual(saude, { area: 'saude', epics: 1, initiatives: 1 });
-    assert.deepEqual(emocional, { area: 'emocional', epics: 0, initiatives: 1 });
+    assert.deepEqual(saude, { area: 'saude', epics: 1, initiatives: 1, journey: 0 });
+    assert.deepEqual(emocional, { area: 'emocional', epics: 0, initiatives: 1, journey: 0 });
     const detail = (await c.request('GET', '/conquistas/saude')).body;
     assert.equal(detail.epics[0].title, 'Correr');
     assert.equal(detail.initiatives[0].title, 'Saúde');

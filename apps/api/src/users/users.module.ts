@@ -1,5 +1,5 @@
-import { MASLOW_ITEM_KEYS, MAX_OPEN_DREAMS, SPRINT_LENGTH_DAYS } from '@circle/shared';
-import { Body, ConflictException, Controller, Delete, Get, HttpCode, Injectable, Module, Patch, Res } from '@nestjs/common';
+import { MASLOW_ITEM_KEYS, MAX_OPEN_DREAMS, socialStatus } from '@circle/shared';
+import { BadRequestException, Body, ConflictException, Controller, Delete, Get, HttpCode, Injectable, Module, Patch, Res } from '@nestjs/common';
 import { IsBoolean, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import type { Response } from 'express';
 import { CalendarService } from '../calendar/calendar.service';
@@ -19,13 +19,16 @@ class UpdateMeDto {
   @IsOptional() @ValidateIf((_, v) => v !== null) @IsString() photoFileId?: string | null;
 }
 
-const PALETTES = ['natureza', 'serenity', 'soft', 'dourado', 'mindful', 'premium'] as const;
+class DeleteAccountDto {
+  @IsOptional() @IsString() confirm?: string;
+}
+
+const PALETTES =['natureza', 'serenity', 'soft', 'dourado', 'mindful', 'premium'] as const;
 class PreferencesDto {
   @IsOptional() @IsIn(PALETTES, { message: 'paleta inválida' }) palette?: (typeof PALETTES)[number];
   @IsOptional() @IsBoolean() randomTheme?: boolean;
   @IsOptional() @IsIn(['auto', 'light', 'dark'], { message: 'aparência inválida' }) themeMode?: 'auto' | 'light' | 'dark';
   @IsOptional() @IsIn(['publico', 'amigos', 'privado'], { message: 'visibilidade inválida' }) defaultPostVisibility?: 'publico' | 'amigos' | 'privado';
-  @IsOptional() @IsIn(SPRINT_LENGTH_DAYS, { message: 'duração de sprint inválida' }) sprintLength?: number;
 }
 
 @Injectable()
@@ -54,9 +57,16 @@ export class UsersService {
         randomTheme: user.randomTheme,
         themeMode: user.themeMode,
         defaultPostVisibility: user.defaultPostVisibility,
-        sprintLength: user.sprintLength,
       },
       xp: { total: user.xpTotal, disponivel: Math.max(0, user.xpTotal - user.xpSpent) },
+      /** Passa pela Jornada de primeiro acesso (a aba Jornada fica no lugar do Feed). */
+      journey: user.journey,
+      /** Rede social aberta ou, na Jornada, quando abre (trava das abas Feed e Grupos). */
+      social: socialStatus(user),
+      /** Já viu o troféu "Jornada concluída". */
+      journeyCelebrated: Boolean(user.journeyCelebratedAt),
+      /** Já apertou "Concluir minha jornada" (o XP passa a aparecer e a valer). */
+      journeyFinished: Boolean(user.journeyFinishedAt),
     };
   }
 
@@ -143,9 +153,11 @@ class MeController {
   }
 
   /** Excluir minha conta (não dá para desfazer). */
+  /** Excluir a conta: a pessoa precisa digitar DELETAR para confirmar (decisão do dono de 04/11/2026). */
   @Delete()
   @HttpCode(204)
-  async remove(@CurrentUser() user: User, @Res({ passthrough: true }) res: Response) {
+  async remove(@CurrentUser() user: User, @Body() dto: DeleteAccountDto, @Res({ passthrough: true }) res: Response) {
+    if (dto.confirm?.trim().toUpperCase() !== 'DELETAR') throw new BadRequestException('Digite DELETAR para confirmar a exclusão da conta.');
     await this.users.deleteAccount(user.id);
     this.session.end(res);
   }

@@ -7,6 +7,8 @@ import { Icon, type IconName } from './icon';
 import { Sheet, useSheets } from './sheet';
 import { useBacklogSheets } from './backlog/use-backlog-sheets';
 import { usePostForm } from './feed/post-form';
+import { journeyActive, socialLocked } from '@/lib/journey';
+import { useMe } from '@/lib/me';
 
 const TABS: { href: string; icon: IconName; label: string }[] = [
   { href: '/feed', icon: 'home', label: 'Feed' },
@@ -14,13 +16,17 @@ const TABS: { href: string; icon: IconName; label: string }[] = [
   { href: '/grupos', icon: 'users', label: 'Grupos' },
   { href: '/mais', icon: 'grid', label: 'Mais' },
 ];
+const JOURNEY_TAB = { href: '/jornada', icon: 'flag' as IconName, label: 'Jornada' };
 
 /** Barra inferior: Feed, Board, botão "+", Grupos (amigos e grupos) e Mais. O Backlog fica no Mais. */
 export function BottomNav() {
   const path = usePathname();
   const { openSheet } = useSheets();
-  // "Mais" fica marcado também nas telas que se abrem a partir dele.
-  const active = TABS.find(t => path.startsWith(t.href))?.href ?? '/mais';
+  const { data: me } = useMe();
+  // Na Jornada de primeiro acesso, a primeira aba é a Jornada (no lugar do Feed).
+  const tabs = journeyActive(me) ? [JOURNEY_TAB, ...TABS.slice(1)] : TABS;
+  // "Mais" fica marcado também nas telas que se abrem a partir dele; a tela da sprint é parte do Board.
+  const active = path.startsWith('/sprint') ? '/board' : (tabs.find(t => path.startsWith(t.href))?.href ?? '/mais');
 
   const tab = (t: (typeof TABS)[number]) => {
     const on = active === t.href;
@@ -43,8 +49,8 @@ export function BottomNav() {
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}
     >
       <div className="pointer-events-auto mx-auto flex max-w-2xl items-center rounded-[1.75rem] border border-line/80 bg-surface/95 px-1 py-1.5 shadow-soft backdrop-blur-md">
-        {tab(TABS[0]!)}
-        {tab(TABS[1]!)}
+        {tab(tabs[0]!)}
+        {tab(tabs[1]!)}
         <div className="flex flex-1 justify-center">
           <button
             onClick={() => openSheet(close => <AddSheet onClose={close} />)}
@@ -54,8 +60,8 @@ export function BottomNav() {
             <Icon n="plus" className="h-8 w-8" sw={2.2} />
           </button>
         </div>
-        {tab(TABS[2]!)}
-        {tab(TABS[3]!)}
+        {tab(tabs[2]!)}
+        {tab(tabs[3]!)}
       </div>
     </nav>
   );
@@ -65,12 +71,15 @@ export function BottomNav() {
 export function AddSheet({ onClose }: { onClose: () => void }) {
   const sheets = useBacklogSheets();
   const newPost = usePostForm();
-  const opts: { n: IconName; title: string; d: string; bg: string; ic: string; open: () => void }[] = [
+  const { data: me } = useMe();
+  const all: { n: IconName; title: string; d: string; bg: string; ic: string; open: () => void }[] = [
     { n: 'target', title: 'Nova Iniciativa', d: 'Objetivo estratégico de alto nível', bg: 'bg-primary/5', ic: 'bg-primary text-onprimary', open: () => sheets.openInitiative() },
     { n: 'layersArea', title: 'Novo Épico', d: 'Conjunto de entregáveis relacionados', bg: 'bg-accent/5', ic: 'bg-accent text-white', open: () => sheets.openEpic() },
     { n: 'checkSq', title: 'Nova Tarefa', d: 'Ação específica e executável', bg: 'bg-sunk/60', ic: 'bg-emerald-600 text-white', open: () => sheets.openTask() },
     { n: 'edit', title: 'Novo post', d: 'Compartilhar algo no feed', bg: 'bg-sunk/60', ic: 'bg-ink text-bg', open: () => newPost() },
   ];
+  // Rede social trancada (Jornada): sem "Novo post".
+  const opts = socialLocked(me) ? all.filter(o => o.title !== 'Novo post') : all;
   return (
     <Sheet title="Adicionar" onClose={onClose} footer={<Button variant="line" className="flex-1" onClick={onClose}>Cancelar</Button>}>
       <div className="space-y-3">

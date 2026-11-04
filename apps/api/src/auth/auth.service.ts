@@ -43,13 +43,16 @@ export class AuthService {
     return { valid, allowed };
   }
 
-  /** Cria a conta e marca como aceitos os convites pendentes para o e-mail. */
+  /**
+   * Cria a conta e marca como aceitos os convites pendentes para o e-mail.
+   * Toda conta nova, admins inclusive, começa pela Jornada (decisão do dono de 05/11/2026).
+   */
   private async register(data: { email: string; name: string; googleId?: string; passwordHash?: string; termsAcceptedAt?: Date }, inviteIds: string[]) {
     const handle = await uniqueHandle(data.name, data.email, async h =>
       Boolean(await this.prisma.user.findUnique({ where: { handle: h }, select: { id: true } })),
     );
     return this.prisma.$transaction(async tx => {
-      const created = await tx.user.create({ data: { ...data, handle, role: this.isAdminEmail(data.email) ? 'admin' : 'member' } });
+      const created = await tx.user.create({ data: { ...data, handle, journey: true, role: this.isAdminEmail(data.email) ? 'admin' : 'member' } });
       await tx.invite.updateMany({ where: { id: { in: inviteIds } }, data: { acceptedAt: new Date(), acceptedUserId: created.id } });
       return created;
     });

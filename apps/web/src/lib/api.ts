@@ -43,9 +43,16 @@ export type Me = {
     randomTheme: boolean;
     themeMode: 'auto' | 'light' | 'dark';
     defaultPostVisibility: 'publico' | 'amigos' | 'privado';
-    sprintLength: number;
   };
   xp: { total: number; disponivel: number };
+  /** Passa pela Jornada de primeiro acesso (a aba Jornada fica no lugar do Feed). */
+  journey: boolean;
+  /** Rede social (Feed, stories, amigos, grupos): aberta ou, na Jornada, quando abre. */
+  social: { open: boolean; freeAt: string | null; journeyDoneAt: string | null };
+  /** Já viu o troféu "Jornada concluída". */
+  journeyCelebrated: boolean;
+  /** Já apertou "Concluir minha jornada" (o XP passa a aparecer e a valer). */
+  journeyFinished: boolean;
 };
 
 /** Sai da conta e volta para a tela de login. */

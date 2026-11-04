@@ -98,6 +98,10 @@ export default function RodaPage() {
         <Button variant="pline" className="w-full py-3" disabled={snapshot.isPending || !data.rated} onClick={() => snapshot.mutate()}>
           Registrar avaliação de hoje
         </Button>
+        <p className="flex items-start justify-center gap-1.5 text-center text-xs text-muted">
+          <Icon n="info" className="mt-px h-3.5 w-3.5 shrink-0" />
+          Suas notas são salvas na hora. Se você não registrar, a avaliação do dia é guardada sozinha no fim do dia.
+        </p>
         {last && (
           <p className="text-center text-xs text-muted">
             Último registro em {new Date(last.createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}. A evolução aparece em Relatórios.

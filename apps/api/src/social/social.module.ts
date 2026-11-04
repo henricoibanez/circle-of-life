@@ -1,7 +1,7 @@
 import { AREA_IDS, type AreaId } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator';
-import { CurrentUser } from '../common/decorators';
+import { CurrentUser, Social } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { TrilhasModule } from '../trilhas/trilhas.module';
 import { ForumService } from './forum.service';
@@ -39,6 +39,7 @@ class MemberRoleDto {
   @IsIn(['admin', 'member'], { message: 'papel inválido' }) role!: 'admin' | 'member';
 }
 
+@Social()
 @Controller('friends')
 class FriendsController {
   constructor(private readonly friends: FriendsService) {}
@@ -71,6 +72,7 @@ class FriendsController {
   }
 }
 
+@Social()
 @Controller('groups')
 class GroupsController {
   constructor(private readonly groups: GroupsService) {}
@@ -136,6 +138,7 @@ class GroupsController {
 }
 
 /** Fórum do grupo: tópicos e respostas, só para membros. */
+@Social()
 @Controller('groups/:id/topics')
 class ForumController {
   constructor(private readonly forum: ForumService) {}
@@ -167,6 +170,7 @@ class ForumController {
   }
 }
 
+@Social()
 @Controller('people')
 class PeopleController {
   constructor(private readonly profile: ProfileService) {}

@@ -12,6 +12,8 @@ import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
+import { journeyActive } from '@/lib/journey';
+import { useMe } from '@/lib/me';
 import { since } from '@/lib/time';
 
 type Necro = { html: string; updatedAt: string | null };
@@ -25,6 +27,7 @@ export default function NecrologioPage() {
   const qc = useQueryClient();
   const toast = useToast();
   const sheets = useBacklogSheets();
+  const { data: me } = useMe();
   const { openSheet, openActions } = useSheets();
   const { data } = useQuery({ queryKey: KEY, queryFn: () => api<Necro>('/necrologio') });
   const ed = useRef<HTMLDivElement>(null);
@@ -95,7 +98,8 @@ export default function NecrologioPage() {
     </button>
   );
 
-  const words = (ed.current?.innerText ?? '').trim().split(/\s+/).filter(Boolean).length;
+  // Caracteres do texto (sem formatação, espaços repetidos contam como um), igual à conta da Jornada na API.
+  const chars = (ed.current?.innerText ?? '').replace(/\s+/g, ' ').trim().length;
 
   return (
     <>
@@ -183,17 +187,20 @@ export default function NecrologioPage() {
             aria-multiline="true"
           />
           <p className="px-5 pb-4 text-right text-xs text-muted">
-            {words > 0 && `${words} ${words === 1 ? 'palavra' : 'palavras'} · `}
+            {chars > 0 && `${chars.toLocaleString('pt-BR')} ${chars === 1 ? 'caractere' : 'caracteres'} · `}
             Última edição: {updatedAt ? since(updatedAt).replace('agora', 'agora há pouco') : 'ainda não editado'}
           </p>
         </Card>
 
-        <Card className="flex items-center gap-3 p-4">
-          <p className="flex-1 text-sm">Escrever fez você pensar em algo para fazer?</p>
-          <Button variant="soft" className="px-3 py-2" onClick={() => sheets.openInitiative()}>
-            Criar iniciativa
-          </Button>
-        </Card>
+        {/* Na Jornada, planejar vem depois (etapa do backlog): sem atalho para criar iniciativa. */}
+        {!journeyActive(me) && (
+          <Card className="flex items-center gap-3 p-4">
+            <p className="flex-1 text-sm">Escrever fez você pensar em algo para fazer?</p>
+            <Button variant="soft" className="px-3 py-2" onClick={() => sheets.openInitiative()}>
+              Criar iniciativa
+            </Button>
+          </Card>
+        )}
       </div>
     </>
   );

@@ -1,11 +1,15 @@
 'use client';
 
-import type { AreaId, BacklogDto, EpicDto, InitiativeDto, TaskDto, TaskStatus, XpChange } from '@circle/shared';
+import { BOARD_LOCKED_MESSAGE, type AreaId, type BacklogDto, type EpicDto, type InitiativeDto, type TaskDto, type TaskStatus, type XpChange } from '@circle/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { SharePrompt } from '@/components/feed/post-form';
-import { useSheets } from '@/components/sheet';
+import { BoardLockedSheet } from '@/components/journey';
+import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
+import { Button } from '@/components/ui/button';
 import { api, ApiError, type Me } from './api';
+import { socialLocked } from './journey';
 
 export const BACKLOG_KEY = ['backlog'];
 
@@ -61,7 +65,9 @@ export function useBacklogActions() {
     },
     onError: e => {
       qc.invalidateQueries({ queryKey: BACKLOG_KEY });
-      toast(e instanceof ApiError ? e.message : 'Algo deu errado. Tente de novo.');
+      // Quadro trancado pela Jornada: explica numa folha, em vez de um aviso rápido.
+      if (e instanceof ApiError && e.message === BOARD_LOCKED_MESSAGE) openSheet(close => <BoardLockedSheet onClose={close} />);
+      else toast(e instanceof ApiError ? e.message : 'Algo deu errado. Tente de novo.');
     },
   });
   const run = (path: string, method = 'POST', body?: Body) => mutation.mutateAsync({ path, method, body });
@@ -104,20 +110,50 @@ export function useBacklogActions() {
     duplicateTask: (id: string) => run(`/tasks/${id}/duplicate`) as Promise<TaskDto>,
     addToCalendar: (id: string) => run(`/tasks/${id}/calendar`, 'POST') as Promise<TaskDto>,
     removeFromCalendar: (id: string) => run(`/tasks/${id}/calendar`, 'DELETE') as Promise<TaskDto>,
+    /** Ações em massa nas tarefas selecionadas. Em caso de erro (já mostrado na tela), devolve null. */
+    bulkTasks: (ids: string[], action: 'sprint' | 'done' | 'delete') =>
+      (run('/tasks/bulk', 'POST', { ids, action }) as Promise<{ count: number; offSprint: boolean; warn: boolean; xp: XpChange }>).catch(() => null),
     moveTask: (id: string, status: TaskStatus) => {
       // Atualiza a tela na hora (sem esperar a API), para o arrastar ficar fluido.
       qc.setQueryData<BacklogDto>(BACKLOG_KEY, b =>
         b && { ...b, tasks: b.tasks.map(t => (t.id === id ? { ...t, status, archivedAt: null, doneAt: status === 'done' ? new Date().toISOString() : null } : t)) },
       );
-      return (run(`/tasks/${id}/move`, 'POST', { status }) as Promise<{ task: TaskDto; from: TaskStatus; xp: XpChange }>).then(r => {
-        if (status === 'done' && r.from !== 'done') {
+      return (run(`/tasks/${id}/move`, 'POST', { status }) as Promise<{ task: TaskDto; from: TaskStatus; xp: XpChange; offSprint: boolean; warn: boolean }>).then(r => {
+        if (r.offSprint) {
+          // Concluída sem sprint iniciada: sem XP e sem "Quer compartilhar?". O aviso aparece só na 1ª vez em cada intervalo.
+          if (r.warn) openSheet(close => <OffSprintNotice onClose={close} />);
+        } else if (status === 'done' && r.from !== 'done' && socialLocked(qc.getQueryData<Me>(['me']))) {
+          // Rede social trancada (Jornada): sem "Quer compartilhar?", só o XP.
+          toast(r.xp.gained > 0 ? `Tarefa concluída, +${r.xp.gained} XP` : 'Tarefa concluída');
+        } else if (status === 'done' && r.from !== 'done') {
           // Sempre pergunta se quer compartilhar a conclusão (decisão do dono do projeto).
           const b = qc.getQueryData<BacklogDto>(BACKLOG_KEY);
           const area = (r.task.areas[0] ?? (b && b.epics.find(e => e.id === r.task.epicId)?.area)) ?? null;
           openSheet(close => <SharePrompt draft={{ title: r.task.title, text: '', area, refType: 'task', refId: r.task.id }} xp={r.xp.gained} onClose={close} />);
         } else if (r.xp.gained > 0) toast(`Tarefa concluída, +${r.xp.gained} XP`);
         return r;
-      });
+      }, () => null); // O erro já aparece na tela (onError); quem chamou recebe null.
     },
   };
+}
+
+/** Aviso: concluir tarefa sem sprint iniciada não rende XP nem vira post. */
+export function OffSprintNotice({ onClose }: { onClose: () => void }) {
+  return (
+    <Sheet title="Nenhuma sprint em andamento" onClose={onClose}>
+      <p className="text-[0.9375rem] leading-relaxed text-ink/85">
+        A tarefa foi concluída, mas sem uma sprint iniciada ela <strong>não rende XP</strong> e não pergunta se você quer compartilhar. Quando você
+        iniciar a sprint, as tarefas concluídas antes saem do quadro.
+      </p>
+      <p className="mt-2 text-sm text-muted">Este aviso aparece só uma vez até a próxima sprint.</p>
+      <div className="mt-5 flex gap-2">
+        <Button variant="line" className="flex-1" onClick={onClose}>
+          Entendi
+        </Button>
+        <Link href="/sprint" onClick={onClose} className="inline-flex flex-1 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-onprimary">
+          Iniciar sprint
+        </Link>
+      </div>
+    </Sheet>
+  );
 }

@@ -1,5 +1,5 @@
 import type { AreaId, ArtVariant, TrilhaCategory, TrilhaDetailDto, TrilhaDto, TrilhaImportInput } from '@circle/shared';
-import { AREA } from '@circle/shared';
+import { AREA, SOCIAL_LOCKED_MESSAGE, socialStatus, STARTER_TRILHA_ID } from '@circle/shared';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma, Trilha, User } from '../generated/prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -107,6 +107,8 @@ export class TrilhasService {
   private async visible(user: User, id: string) {
     const t = await this.prisma.trilha.findUnique({ where: { id }, include: { ...this.include, group: { select: { id: true, name: true } } } });
     if (!t) throw new NotFoundException('Trilha não encontrada.');
+    // Jornada (decisão do dono de 04/11/2026): até liberar tudo, só a trilha "Primeiros passos" abre.
+    if (!socialStatus(user).open && t.rootId !== STARTER_TRILHA_ID) throw new ForbiddenException(SOCIAL_LOCKED_MESSAGE);
     if (!t.groupId) {
       const ok = t.status === 'aprovada' || (t.authorId === user.id && t.status !== 'despublicada') || (user.role === 'admin' && t.status === 'pendente');
       if (!ok) throw new NotFoundException('Trilha não encontrada.');
@@ -158,7 +160,7 @@ export class TrilhasService {
 
   /** Publicar um épico como trilha: na loja (aprovação do admin do app) ou num grupo. */
   async publish(user: User, epicId: string, input: PublishInput) {
-    const epic = await this.prisma.epic.findFirst({ where: { id: epicId, userId: user.id }, include: { tasks: { orderBy: { position: 'asc' }, select: { title: true } } } });
+    const epic = await this.prisma.epic.findFirst({ where: { id: epicId, userId: user.id }, include: { tasks: { orderBy: { position: 'asc' }, select: { title: true, description: true, areas: true } } } });
     if (!epic) throw new NotFoundException('Épico não encontrado.');
     if (!epic.tasks.length) throw new BadRequestException('Para publicar, o épico precisa ter pelo menos uma tarefa.');
     if (input.priceXp < 0 || !Number.isInteger(input.priceXp)) throw new BadRequestException('O preço em XP precisa ser um número inteiro (0 = grátis).');
@@ -175,7 +177,7 @@ export class TrilhasService {
       art: AREA[epic.area].art,
       color: AREA[epic.area].color,
       coverFileId: input.coverFileId ?? null,
-      tasks: { create: epic.tasks.map((t, j) => ({ title: t.title, position: j })) },
+      tasks: { create: epic.tasks.map((t, j) => ({ title: t.title, description: t.description, areas: t.areas, position: j })) },
     };
 
     if (input.groupId) return this.publishInGroup(user, input.groupId, data);
@@ -319,7 +321,7 @@ export class TrilhasService {
         status: 'aprovada',
         reviewedById: user.id,
         reviewedAt: new Date(),
-        tasks: { create: src.tasks.map(t => ({ title: t.title, position: t.position })) },
+        tasks: { create: src.tasks.map(t => ({ title: t.title, description: t.description, areas: t.areas, position: t.position })) },
       },
     });
     const copy = await this.prisma.trilha.update({ where: { id: created.id }, data: { rootId: created.id } });
@@ -414,7 +416,16 @@ export class TrilhasService {
           area: t.area,
           areas: trilhaAreas,
           position,
-          tasks: { create: tasks.map(x => ({ userId: user.id, title: x.title, position: x.position, logs: { create: { text: `Importada da trilha ${t.title}` } } })) },
+          tasks: {
+            create: tasks.map(x => ({
+              userId: user.id,
+              title: x.title,
+              description: x.description,
+              areas: x.areas,
+              position: x.position,
+              logs: { create: { text: `Importada da trilha ${t.title}` } },
+            })),
+          },
         },
       });
       await this.activity.add(tx, user.id, 'bag', `Você importou a trilha “${t.title}”`, '/backlog');

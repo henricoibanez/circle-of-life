@@ -3,6 +3,7 @@
  * (constante TRILHAS, com os Clássicos Gregos em duas trilhas), uma paga em XP publicada
  * pela Julia e uma aguardando aprovação do Lucas. As trilhas dos grupos vêm do seed-social.
  */
+import { STARTER_TRILHA_ID } from '@circle/shared';
 import type { PrismaClient } from '../src/generated/prisma/client';
 
 type Seed = {
@@ -56,8 +57,9 @@ async function create(prisma: PrismaClient, s: Seed, status: 'aprovada' | 'pende
 }
 
 export async function seedTrilhas(prisma: PrismaClient, users: Record<string, string>) {
-  // Trilhas oficiais e de usuários de teste são recriadas a cada seed.
-  await prisma.trilha.deleteMany({ where: { OR: [{ authorId: null }, { author: { isTestUser: true } }] } });
+  // Trilhas oficiais e de usuários de teste são recriadas a cada seed. A "Primeiros passos"
+  // vem de uma migration (existe também em produção) e fica intacta.
+  await prisma.trilha.deleteMany({ where: { OR: [{ authorId: null }, { author: { isTestUser: true } }], NOT: { id: STARTER_TRILHA_ID } } });
   for (const s of OFFICIAL) await create(prisma, s, 'aprovada', null);
   await create(prisma, JULIA, 'aprovada', users['julia@teste.local']!);
   await create(prisma, LUCAS, 'pendente', users['lucas@teste.local']!);

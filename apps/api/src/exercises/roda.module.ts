@@ -1,5 +1,6 @@
 import { AREA_IDS, emptyScores, type AreaId, type RodaDto, type RodaScores } from '@circle/shared';
 import { BadRequestException, Body, Controller, Get, Injectable, Module, Post, Put } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { IsObject } from 'class-validator';
 import { CurrentUser } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
@@ -69,6 +70,33 @@ export class RodaService {
       await this.activity.add(tx, userId, 'wheel', 'Você registrou uma avaliação da Roda da Vida', '/roda');
       return { xp: await this.xp.change(tx, userId, gained) };
     });
+  }
+
+  /**
+   * Guarda sozinha a avaliação de quem mexeu nas notas e não registrou (decisão do dono
+   * de 04/11/2026): depois que o dia da pessoa acaba, as notas daquele dia viram um
+   * registro, com a data da última nota. Não rende XP (o XP é de quem registra).
+   * Roda a cada hora (e na tarefa diária da Vercel); devolve quantos registros criou.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async autoSnapshots(now = new Date()) {
+    const latest = await this.prisma.rodaScore.groupBy({ by: ['userId'], _max: { updatedAt: true } });
+    let created = 0;
+    for (const row of latest) {
+      const changed = row._max.updatedAt;
+      if (!changed) continue;
+      const [user, snap] = await Promise.all([
+        this.prisma.user.findUnique({ where: { id: row.userId }, select: { timezone: true } }),
+        this.prisma.rodaSnapshot.findFirst({ where: { userId: row.userId }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+      ]);
+      if (!user || (snap && snap.createdAt >= changed)) continue;
+      // Só depois que o dia da última nota terminou (no fuso da pessoa).
+      if (dayKey(user.timezone, changed) >= dayKey(user.timezone, now)) continue;
+      const { scores } = await this.current(row.userId);
+      await this.prisma.rodaSnapshot.create({ data: { userId: row.userId, scores, createdAt: changed } });
+      created++;
+    }
+    return created;
   }
 }
 

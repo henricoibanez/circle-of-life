@@ -73,12 +73,11 @@ describe('Backlog: iniciativas, épicos e tarefas', () => {
     assert.deepEqual(dup.areas, todas);
   });
 
-  test('primeira tarefa na sprint cria a Sprint 1 de 14 dias', async () => {
-    const sprints = await api.prisma.sprint.findMany({ where: { userId: me.user.id } });
+  test('tarefas puxadas para a sprint entram na Sprint 1 (não cria outra)', async () => {
+    const sprints = await api.prisma.sprint.findMany({ where: { userId: me.user.id }, include: { tasks: true } });
     assert.equal(sprints.length, 1);
     assert.equal(sprints[0]!.number, 1);
-    const days = (sprints[0]!.plannedEnd!.getTime() - sprints[0]!.startAt.getTime()) / 86400000;
-    assert.equal(days, 13);
+    assert.ok(sprints[0]!.tasks.length > 0);
   });
 
   test('ninguém vê nem altera o backlog de outra pessoa', async () => {

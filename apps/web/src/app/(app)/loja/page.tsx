@@ -1,6 +1,6 @@
 'use client';
 
-import { AREA, TRILHA_CATEGORIES } from '@circle/shared';
+import { AREA, SOCIAL_UNLOCK_PRICE, STARTER_TRILHA_ID, TRILHA_CATEGORIES } from '@circle/shared';
 import { useState } from 'react';
 import { StepsArt } from '@/components/art';
 import { Header, InfoSheet } from '@/components/header';
@@ -9,6 +9,8 @@ import { AreaIcon, IconBtn, inputCls, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { Cover, priceLabel, TrilhaSheet } from '@/components/trilhas/trilha-sheets';
 import { Button } from '@/components/ui/button';
+import { useUnlockWithConfirm } from '@/components/journey';
+import { daysLeft, freeNow, socialLocked } from '@/lib/journey';
 import { useMe } from '@/lib/me';
 import { kfmt, useTrilhaActions, useTrilhas } from '@/lib/trilhas';
 
@@ -25,7 +27,17 @@ export default function LojaPage() {
   const open = (id: string) => openSheet(close => <TrilhaSheet id={id} onClose={close} />);
 
   const isAdmin = me?.role === 'admin';
-  const list = (data ?? []).filter(t => (cat === 'all' || t.category === cat) && (!q || (t.title + t.description).toLowerCase().includes(q.toLowerCase())));
+  // Jornada (decisão do dono de 04/11/2026): até liberar tudo, só a trilha "Primeiros passos" abre; as outras ficam borradas.
+  const storeLocked = socialLocked(me);
+  const lockedTrilha = (id: string) => storeLocked && id !== STARTER_TRILHA_ID;
+  const unlock = useUnlockWithConfirm();
+  const free = me?.social.freeAt ? freeNow(me.social) : false;
+  const freeAll = () => unlock.start();
+  const unlockLabel = free ? 'Liberar de graça' : `Liberar por ${SOCIAL_UNLOCK_PRICE} XP`;
+  const countdown = me?.social.freeAt && !free ? `Libera de graça em ${daysLeft(me.social.freeAt) === 1 ? '1 dia' : `${daysLeft(me.social.freeAt)} dias`}` : null;
+  const list = (data ?? [])
+    .filter(t => (cat === 'all' || t.category === cat) && (!q || (t.title + t.description).toLowerCase().includes(q.toLowerCase())))
+    .sort((a, b) => Number(lockedTrilha(a.id)) - Number(lockedTrilha(b.id)));
   const pending = list.filter(t => t.status === 'pendente');
   // O admin revisa todas as pendentes, inclusive as que ele mesmo publicou.
   const reviewQueue = isAdmin ? pending : [];
@@ -83,6 +95,25 @@ export default function LojaPage() {
           </section>
         )}
 
+        {storeLocked && (
+          <section className="flex items-start gap-3 rounded-3xl border border-primary/20 bg-primary/5 p-4">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+              <Icon n="lock" className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">Por enquanto, só a sua primeira trilha</p>
+              <p className="mt-0.5 text-sm text-muted">
+                As outras trilhas abrem quando você concluir a sua Jornada{countdown ? `: ${countdown.toLowerCase()}, ou agora, por ${SOCIAL_UNLOCK_PRICE} XP.` : '.'}
+              </p>
+              {me?.journeyFinished && (
+                <Button className="mt-3" disabled={unlock.busy} onClick={freeAll}>
+                  {unlockLabel}
+                </Button>
+              )}
+            </div>
+          </section>
+        )}
+
         <div className="relative overflow-hidden rounded-3xl bg-accent/[.06] p-5">
           <StepsArt className="absolute bottom-0 right-0 w-44 opacity-95" />
           <div className="relative max-w-[60%]">
@@ -101,7 +132,8 @@ export default function LojaPage() {
         <h2 className="text-[1.0625rem] font-semibold">Trilhas em destaque</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[...reviewQueue, ...visible].map(t => {
-            const blurred = t.status === 'pendente' && !t.mine;
+            const locked = lockedTrilha(t.id);
+            const blurred = locked || (t.status === 'pendente' && !t.mine);
             return (
               <div key={t.id} className="relative flex flex-col rounded-2xl border border-line/80 bg-surface p-2 shadow-soft">
                 <div className={blurred ? 'pointer-events-none select-none blur-[0.1875rem]' : ''}>
@@ -141,14 +173,27 @@ export default function LojaPage() {
                     {t.mine && t.status === 'recusada' && <Tag c="#dc2626" className="ml-1">Recusada</Tag>}
                   </div>
                 </div>
-                {blurred && (
-                  <span className="absolute inset-x-2 top-1/3 rounded-xl bg-surface/90 px-2 py-1.5 text-center text-[0.75rem] font-semibold text-amber-700 shadow-soft">
-                    Aguardando aprovação
+                {locked ? (
+                  <span className="absolute inset-x-2 top-1/4 flex flex-col items-center gap-1 rounded-xl bg-surface/95 px-2 py-2 text-center shadow-soft">
+                    <Icon n="lock" className="h-4 w-4 text-primary" />
+                    <span className="text-[0.75rem] font-semibold">{countdown ?? 'Abre ao concluir a Jornada'}</span>
                   </span>
+                ) : (
+                  blurred && (
+                    <span className="absolute inset-x-2 top-1/3 rounded-xl bg-surface/90 px-2 py-1.5 text-center text-[0.75rem] font-semibold text-amber-700 shadow-soft">
+                      Aguardando aprovação
+                    </span>
+                  )
                 )}
-                <Button variant="aline" className="mt-2.5 py-2 text-[0.8125rem]" onClick={() => open(t.id)}>
-                  {t.status === 'pendente' && isAdmin ? 'Revisar' : t.acquired ? 'Importada' : 'Ver detalhes'}
-                </Button>
+                {locked ? (
+                  <Button className="mt-2.5 py-2 text-[0.8125rem]" disabled={!me?.journeyFinished || unlock.busy} onClick={freeAll}>
+                    {unlockLabel}
+                  </Button>
+                ) : (
+                  <Button variant="aline" className="mt-2.5 py-2 text-[0.8125rem]" onClick={() => open(t.id)}>
+                    {t.status === 'pendente' && isAdmin ? 'Revisar' : t.acquired ? 'Importada' : 'Ver detalhes'}
+                  </Button>
+                )}
               </div>
             );
           })}

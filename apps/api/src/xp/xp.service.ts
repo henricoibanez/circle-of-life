@@ -4,7 +4,8 @@ import type { Prisma, XpReason } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 type Tx = Prisma.TransactionClient;
-type EarnReason = Exclude<XpReason, 'trilha_compra'>;
+type SpendReason = 'trilha_compra' | 'rede_social';
+type EarnReason = Exclude<XpReason, SpendReason>;
 
 /** "AAAA-MM-DD" no fuso da pessoa (para as regras "primeiro do dia"). */
 export const dayKey = (timezone: string, date = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(date);
@@ -29,9 +30,19 @@ export class XpService {
     return r._sum.amount ?? 0;
   }
 
+  /**
+   * Na Jornada de primeiro acesso, nada rende XP até a pessoa apertar "Concluir minha
+   * jornada" (decisão do dono de 04/11/2026): o prêmio da Jornada é o primeiro XP dela.
+   */
+  private async onJourney(tx: Tx, userId: string) {
+    const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { journey: true, journeyFinishedAt: true } });
+    return u.journey && !u.journeyFinishedAt;
+  }
+
   /** Dá o XP do motivo (valor da tabela, ou `amount`), se essa coisa ainda não estiver rendendo. Devolve quanto ganhou. */
   async grant(tx: Tx, userId: string, reason: EarnReason, refId: string, amount: number = XP[reason]) {
     if ((await this.net(tx, userId, reason, refId)) > 0 || amount <= 0) return 0;
+    if (await this.onJourney(tx, userId)) return 0;
     await tx.xpEvent.create({ data: { userId, reason, refId, amount } });
     await tx.user.update({ where: { id: userId }, data: { xpTotal: { increment: amount } } });
     return amount;
@@ -55,11 +66,11 @@ export class XpService {
     return this.grant(tx, userId, reason, key);
   }
 
-  /** Gasta XP disponível (compra de trilha). Recusa se não houver saldo. */
-  async spend(tx: Tx, userId: string, amount: number, refId: string) {
+  /** Gasta XP disponível (compra de trilha, liberar a rede social). Recusa se não houver saldo. */
+  async spend(tx: Tx, userId: string, amount: number, refId: string, reason: SpendReason = 'trilha_compra') {
     const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { xpTotal: true, xpSpent: true } });
     if (u.xpTotal - u.xpSpent < amount) throw new BadRequestException('XP disponível insuficiente para essa compra.');
-    await tx.xpEvent.create({ data: { userId, reason: 'trilha_compra', refId, amount: -amount } });
+    await tx.xpEvent.create({ data: { userId, reason, refId, amount: -amount } });
     await tx.user.update({ where: { id: userId }, data: { xpSpent: { increment: amount } } });
   }
 

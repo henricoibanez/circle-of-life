@@ -8,7 +8,7 @@ import { Type } from 'class-transformer';
 import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { BacklogIoService } from './backlog-io.service';
 import { BacklogService } from './backlog.service';
-import { AttachDto, ChecklistItemDto, CreateEpicDto, CreateInitiativeDto, CreateTaskDto, MoveTaskDto, UpdateChecklistItemDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
+import { AttachDto, BulkTasksDto, ChecklistItemDto, CreateEpicDto, CreateInitiativeDto, CreateTaskDto, MoveTaskDto, UpdateChecklistItemDto, UpdateEpicDto, UpdateInitiativeDto, UpdateTaskDto } from './dto';
 import { TaskDetailService } from './task-detail.service';
 
 /** Uma linha da planilha (todas as colunas como texto). */
@@ -182,6 +182,11 @@ class BacklogController {
   @Post('tasks/:id/move')
   moveTask(@CurrentUser() u: User, @Param('id') id: string, @Body() dto: MoveTaskDto) {
     return this.backlog.moveTask(u.id, id, dto.status);
+  }
+  /** Ações em massa nas tarefas selecionadas: enviar para a sprint, concluir ou excluir. */
+  @Post('tasks/bulk')
+  bulkTasks(@CurrentUser() u: User, @Body() dto: BulkTasksDto) {
+    return this.backlog.bulkTasks(u.id, dto.ids, dto.action);
   }
 }
 

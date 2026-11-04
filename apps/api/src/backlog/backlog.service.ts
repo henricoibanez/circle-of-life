@@ -2,8 +2,9 @@ import { AREA_IDS, type AreaId, INITIATIVE_MIN_TASKS, STATUS_LABEL, type TaskSta
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client';
 import { CalendarService } from '../calendar/calendar.service';
+import { JourneyService } from '../journey/journey.module';
 import { PrismaService } from '../prisma/prisma.service';
-import { SprintsService } from '../sprints/sprints.service';
+import { isStarted, SprintsService } from '../sprints/sprints.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { ActivityService } from '../xp/activity.service';
 import { XpService } from '../xp/xp.service';
@@ -31,6 +32,7 @@ export class BacklogService {
     private readonly activity: ActivityService,
     private readonly uploads: UploadsService,
     private readonly calendar: CalendarService,
+    private readonly journey: JourneyService,
   ) {}
 
   /** Coloca a tarefa na Google Agenda da pessoa (a pessoa pede isso ao salvar com data). */
@@ -324,6 +326,7 @@ export class BacklogService {
   async createTask(userId: string, dto: CreateTaskDto) {
     const epic = await this.epic(userId, dto.epicId);
     if (epic.closedAt) throw new BadRequestException('Esse épico está encerrado. Reabra o épico para adicionar tarefas.');
+    if (dto.status === 'todo') await this.journey.assertBoardOpen(userId);
     return this.prisma.$transaction(async tx => {
       const status = dto.status ?? 'backlog';
       const sprint = status === 'todo' ? await this.sprints.current(userId, tx) : null;
@@ -415,20 +418,57 @@ export class BacklogService {
   }
 
   /**
+   * Ações em massa (tarefas selecionadas no backlog), uma tarefa de cada vez pelas
+   * mesmas regras de sempre (XP, Jornada, sprint): "sprint" manda para A Fazer as que
+   * estão no backlog; "done" conclui as que ainda não estão prontas; "delete" exclui.
+   */
+  async bulkTasks(userId: string, ids: string[], action: 'sprint' | 'done' | 'delete') {
+    const tasks = await this.prisma.task.findMany({ where: { userId, id: { in: ids } }, select: { id: true, status: true } });
+    if (!tasks.length) throw new NotFoundException(NOT_FOUND.task);
+    let count = 0;
+    let gained = 0;
+    let offSprint = false;
+    let warn = false;
+    if (action === 'delete') {
+      const before = await this.xp.change(this.prisma, userId, 0);
+      for (const t of tasks) await this.deleteTask(userId, t.id);
+      const after = await this.xp.change(this.prisma, userId, 0);
+      return { count: tasks.length, offSprint, warn, xp: { ...after, gained: after.total - before.total } };
+    }
+    await this.journey.assertBoardOpen(userId);
+    for (const t of tasks) {
+      if (action === 'sprint' ? t.status !== 'backlog' : t.status === 'done') continue;
+      const r = await this.moveTask(userId, t.id, action === 'sprint' ? 'todo' : 'done');
+      gained += r.xp.gained;
+      offSprint ||= r.offSprint;
+      warn ||= r.warn;
+      count++;
+    }
+    return { count, offSprint, warn, xp: await this.xp.change(this.prisma, userId, gained) };
+  }
+
+  /**
    * Muda o status de uma tarefa (Backlog, A Fazer, Fazendo, Pronto):
    * - entrar no quadro liga a tarefa à sprint atual; voltar ao backlog desliga;
-   * - "Pronto" marca a data de conclusão e rende XP; sair de "Pronto" tira o XP e
-   *   reabre o épico e a iniciativa, se estavam encerrados (tirando o XP deles também);
+   * - "Pronto" marca a data de conclusão e rende XP, mas só com a sprint iniciada:
+   *   sem sprint, conclui sem XP (`offSprint`) e `warn` pede o aviso só na 1ª vez
+   *   em cada intervalo entre sprints;
+   * - sair de "Pronto" tira o XP e reabre o épico e a iniciativa, se estavam
+   *   encerrados (tirando o XP deles também);
    * - cada mudança fica no histórico da tarefa.
    */
   async moveTask(userId: string, id: string, status: TaskStatus) {
     const t = await this.task(userId, id);
     if (t.status === status) {
       const same = await this.prisma.task.findUniqueOrThrow({ where: { id }, include: { checklist: { select: { done: true } } } });
-      return { task: toTaskDto(same), from: status, xp: await this.xp.change(this.prisma, userId, 0) };
+      return { task: toTaskDto(same), from: status, xp: await this.xp.change(this.prisma, userId, 0), offSprint: false, warn: false };
     }
+    // Jornada: com Minha vida incompleta, o quadro fica trancado (só dá para mandar de volta ao backlog).
+    if (status !== 'backlog') await this.journey.assertBoardOpen(userId);
     return this.prisma.$transaction(async tx => {
       let gained = 0;
+      let offSprint = false;
+      let warn = false;
       const onBoard = status !== 'backlog';
       const sprint = onBoard ? await this.sprints.current(userId, tx) : null;
       const updated = await tx.task.update({
@@ -442,9 +482,14 @@ export class BacklogService {
         },
         include: { checklist: { select: { done: true } } },
       });
-      if (status === 'done') {
+      if (status === 'done' && isStarted(sprint!)) {
+        // Na Jornada, o XpService não dá XP nenhum até "Concluir minha jornada".
         gained += await this.xp.grant(tx, userId, 'task', id);
         await this.activity.add(tx, userId, 'checkSq', `Você concluiu “${t.title}”`, '/board');
+      } else if (status === 'done') {
+        offSprint = true;
+        warn = !sprint!.offSprintWarned;
+        if (warn) await tx.sprint.update({ where: { id: sprint!.id }, data: { offSprintWarned: true } });
       }
       if (t.status === 'done') {
         gained += await this.xp.revoke(tx, userId, 'task', id);
@@ -455,7 +500,7 @@ export class BacklogService {
         }
         gained += await this.reopenInitiative(epic.initiativeId, tx);
       }
-      return { task: toTaskDto(updated), from: t.status, xp: await this.xp.change(tx, userId, gained) };
+      return { task: toTaskDto(updated), from: t.status, xp: await this.xp.change(tx, userId, gained), offSprint, warn };
     });
   }
 }

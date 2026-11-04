@@ -1,6 +1,8 @@
 'use client';
 
 import type { AreaId, PostRefType } from '@circle/shared';
+import { socialLocked } from '@/lib/journey';
+import { useMe } from '@/lib/me';
 import { PostForm } from './feed/post-form';
 import { Icon, type IconName } from './icon';
 import { Sheet, useSheets } from './sheet';
@@ -14,6 +16,9 @@ export type Celebration = { icon?: IconName; title: string; text: string; xp?: n
  */
 export function CelebrateSheet({ data, onClose }: { data: Celebration; onClose: () => void }) {
   const { openSheet } = useSheets();
+  const { data: me } = useMe();
+  // Rede social trancada (Jornada): comemora sem o botão "Compartilhar".
+  const canShare = !socialLocked(me);
   return (
     <Sheet title="" onClose={onClose}>
       <div className="pb-2 text-center">
@@ -27,6 +32,11 @@ export function CelebrateSheet({ data, onClose }: { data: Celebration; onClose: 
             <Icon n="star" className="h-4 w-4" fill="currentColor" />+{data.xp} XP
           </p>
         )}
+        {!canShare ? (
+          <Button className="mt-6 w-full" onClick={onClose}>
+            Continuar
+          </Button>
+        ) : (
         <div className="mt-6 flex gap-2">
           <Button variant="line" className="flex-1" onClick={onClose}>
             Agora não
@@ -44,7 +54,8 @@ export function CelebrateSheet({ data, onClose }: { data: Celebration; onClose: 
             Compartilhar
           </Button>
         </div>
-        <p className="mt-3 text-xs text-muted">Compartilhar é opcional. Só aparece no feed se você quiser.</p>
+        )}
+        {canShare && <p className="mt-3 text-xs text-muted">Compartilhar é opcional. Só aparece no feed se você quiser.</p>}
       </div>
     </Sheet>
   );

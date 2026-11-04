@@ -1,16 +1,18 @@
 'use client';
 
-import { AREA, AREAS, isLate, type AreaId, type TaskDto, type TaskStatus } from '@circle/shared';
+import { AREA, AREAS, isLate, sprintName, type AreaId, type TaskDto, type TaskStatus } from '@circle/shared';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
-import { boardTasks, SprintSheet } from '@/components/board/sprint-sheet';
-import { useGoBack } from '@/components/header';
+import { Header, useGoBack } from '@/components/header';
+import { BoardLocked } from '@/components/journey';
+import { useBoardLocked, useJourney } from '@/lib/journey';
 import { Icon } from '@/components/icon';
 import { AreaIcon, Bar, Card, IconBtn, inputCls, Prio } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { taskAreas, useBacklog, useBacklogActions } from '@/lib/backlog';
-import { fmtDay, fmtShort, useSprints } from '@/lib/sprints';
+import { boardTasks, fmtDay, sprintPeriod, useSprints } from '@/lib/sprints';
 
 const COLS: { id: 'todo' | 'doing' | 'done'; label: string; c: string }[] = [
   { id: 'todo', label: 'A Fazer', c: '#9ca3af' },
@@ -26,7 +28,8 @@ export default function BoardPage() {
   const { data: sprints } = useSprints();
   const actions = useBacklogActions();
   const sheets = useBacklogSheets();
-  const { openSheet, openActions } = useSheets();
+  const { openActions } = useSheets();
+  const router = useRouter();
   const goBack = useGoBack('/feed');
   const [view, setView] = useState<'quadro' | 'lista'>('quadro');
   const [area, setArea] = useState<AreaId | 'all'>('all');
@@ -35,6 +38,8 @@ export default function BoardPage() {
   const [showLate, setShowLate] = useState(false);
   const [drag, setDrag] = useState<Drag | null>(null);
   const dragging = useRef(false);
+  const locked = useBoardLocked();
+  const { data: journey } = useJourney();
 
   // Enquanto arrasta no celular, a página não rola.
   useEffect(() => {
@@ -182,6 +187,19 @@ export default function BoardPage() {
 
   const dragTask = drag && data?.tasks.find(t => t.id === drag.id);
   const s = sprints?.current;
+  // Sprint em planejamento: sem cartões no quadro, mostra "Nenhuma sprint em andamento"; com cartões, mostra o quadro e o convite para iniciar.
+  const planning = Boolean(s && !s.startAt);
+  const onBoard = data ? boardTasks(data).length > 0 : false;
+
+  // Jornada: com Minha vida incompleta, o quadro fica trancado (o backlog continua aberto).
+  if (locked) {
+    return (
+      <>
+        <Header title="Quadro Kanban" fallback="/jornada" />
+        <BoardLocked j={journey} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -191,15 +209,14 @@ export default function BoardPage() {
           <span className="text-primary">
             <Icon n="board" className="h-7 w-7" />
           </span>
-          <button className="min-w-0 flex-1 text-left" onClick={() => openSheet(close => <SprintSheet onClose={close} />)}>
+          <button className="min-w-0 flex-1 text-left" onClick={() => router.push('/sprint')}>
             <p className="text-[1.375rem] font-bold leading-tight">Quadro Kanban</p>
             <p className="flex items-center gap-1 text-sm text-muted">
-              {s ? `Sprint ${s.number} • ${s.plannedEnd ? `${fmtShort(s.startAt)} a ${fmtShort(s.plannedEnd)}` : `desde ${fmtShort(s.startAt)} · sem prazo`}` : ' '}
-              <Icon n="chevD" className="h-4 w-4" />
+              <span className="truncate">{s ? `${sprintName(s)} • ${sprintPeriod(s)}` : ' '}</span>
+              <Icon n="chevR" className="h-4 w-4 shrink-0" />
             </p>
           </button>
           <IconBtn n="search" label="Buscar" box onClick={() => setSearch(!search)} />
-          <IconBtn n="more" label="Opções da sprint" box onClick={() => openSheet(close => <SprintSheet onClose={close} />)} />
         </div>
         {search && <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Pesquisar título da tarefa" className={inputCls + ' mt-3'} />}
       </header>
@@ -244,12 +261,16 @@ export default function BoardPage() {
             }`}
           >
             <Icon n={ic} className="h-4 w-4" />
-            {label}
+            <span className="max-sm:sr-only">{label}</span>
           </button>
         ))}
         <Link href="/backlog" className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2.5 sm:px-4 text-sm font-semibold text-ink/80">
           <Icon n="backlog" className="h-4 w-4" />
           Backlog
+        </Link>
+        <Link href="/sprint" className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2.5 sm:px-4 text-sm font-semibold text-ink/80">
+          <Icon n="flag" className="h-4 w-4" />
+          Sprint
         </Link>
         <button
           onClick={areaFilter}
@@ -262,7 +283,38 @@ export default function BoardPage() {
         </button>
       </div>
 
-      {view === 'quadro' && (
+      {planning && !onBoard && (
+        <div className="mx-4 rounded-2xl border border-line bg-surface p-6 text-center">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
+            <Icon n="flag" className="h-7 w-7" />
+          </span>
+          <p className="mt-3 text-lg font-bold">Nenhuma sprint em andamento</p>
+          <p className="mt-1 text-sm text-muted">Selecione tarefas no backlog, envie para a sprint e inicie a {sprintName(s!)} quando estiver pronto.</p>
+          <div className="mt-4 flex gap-2">
+            <Link href="/backlog?aba=tarefas" className="flex-1 rounded-xl border border-line py-2.5 text-sm font-semibold">
+              Selecionar itens
+            </Link>
+            <Link href="/sprint" className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-onprimary">
+              Montar a sprint
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {planning && onBoard && (
+        <Link href="/sprint" className="mx-4 mb-3 flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <span className="text-amber-700">
+            <Icon n="flag" className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1 text-sm">
+            <span className="block font-semibold text-amber-800">A {sprintName(s!)} ainda não começou</span>
+            <span className="block text-amber-800/80">Concluir tarefas agora não rende XP. Toque para iniciar.</span>
+          </span>
+          <Icon n="chevR" className="h-4 w-4 text-amber-700" />
+        </Link>
+      )}
+
+      {view === 'quadro' && (!planning || onBoard) && (
         <div className="grid grid-cols-3 items-start gap-2 px-3 pb-8">
           {COLS.map(c => {
             const list = tasks.filter(t => t.status === c.id);
@@ -299,7 +351,7 @@ export default function BoardPage() {
         </div>
       )}
 
-      {view === 'lista' && (
+      {view === 'lista' && (!planning || onBoard) && (
         <div className="space-y-4 px-4 pb-8">
           {COLS.map(c => {
             const list = tasks.filter(t => t.status === c.id);

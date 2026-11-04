@@ -15,6 +15,7 @@ import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api, ApiError, type Me } from '@/lib/api';
+import { fmtDay } from '@/lib/sprints';
 import { uploadImage } from '@/lib/upload';
 
 type Tab = 'conquistas' | 'quadro';
@@ -73,12 +74,25 @@ function Quadro() {
                 <span className="text-xl font-semibold text-accent">{Math.round(pct * 100)}%</span>
               </Ring>
             </div>
+            {conq.journeyDoneAt && (
+              <div className="flex items-center gap-3 rounded-3xl border border-amber-500/30 bg-amber-500/[.07] p-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-amber-500/15 text-amber-600">
+                  <Icon n="trophy" className="h-6 w-6" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold">Jornada concluída</span>
+                  <span className="block text-[0.8125rem] text-muted">
+                    Em {fmtDay(conq.journeyDoneAt)} · vale para todas as áreas da vida
+                  </span>
+                </span>
+              </div>
+            )}
             <h2 className="text-[1.0625rem] font-semibold">Minhas conquistas por área da vida</h2>
             {conq.areas
-              .filter(x => x.epics + x.initiatives > 0)
+              .filter(x => x.epics + x.initiatives + x.journey > 0)
               .map(x => {
                 const a = AREA[x.area];
-                const n = x.epics + x.initiatives;
+                const n = x.epics + x.initiatives + x.journey;
                 return (
                   <button
                     key={x.area}
@@ -102,7 +116,7 @@ function Quadro() {
                   </button>
                 );
               })}
-            {conq.areas.every(x => x.epics + x.initiatives === 0) && (
+            {conq.areas.every(x => x.epics + x.initiatives + x.journey === 0) && (
               <p className="py-8 text-center text-muted">Encerre um épico ou conclua uma iniciativa para ver suas conquistas aqui.</p>
             )}
           </>
@@ -313,6 +327,16 @@ function AreaConquistas({ area, onClose }: { area: AreaId; onClose: () => void }
   return (
     <Sheet title={a.name} icon={<AreaIcon id={area} />} onClose={onClose}>
       <p className="-mt-1 mb-4 text-sm text-muted">{a.tag}</p>
+      {data?.journeyDoneAt && (
+        <>
+          <h3 className="mb-2 font-semibold">Jornada</h3>
+          <p className="mb-4 flex items-center gap-2 text-[0.9375rem]">
+            <Icon n="trophy" className="h-4 w-4 text-amber-600" />
+            Jornada concluída
+            <span className="text-sm text-muted">· {fmtDay(data.journeyDoneAt)}</span>
+          </p>
+        </>
+      )}
       {data && data.initiatives.length > 0 && (
         <>
           <h3 className="mb-2 font-semibold">Iniciativas concluídas</h3>

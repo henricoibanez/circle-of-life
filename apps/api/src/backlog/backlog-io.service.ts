@@ -14,6 +14,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import type { Priority, TaskStatus } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { JourneyService } from '../journey/journey.module';
 import { SprintsService } from '../sprints/sprints.service';
 
 const fmtDay = (d: Date | null) => (d ? `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}` : '');
@@ -33,6 +34,7 @@ export class BacklogIoService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sprints: SprintsService,
+    private readonly journey: JourneyService,
   ) {}
 
   /** Linhas no modelo do app antigo: primeiro as iniciativas, depois os épicos, depois as tarefas. */
@@ -160,6 +162,9 @@ export class BacklogIoService {
     };
     result.tarefas.existentes = rows.filter(r => r.tarefa.trim() && r.epico.trim() && r.iniciativa.trim()).length - newTasks.length;
     if (!apply || (!newInis.length && !newEpics.length && !newTasks.length)) return result;
+
+    // Quadro trancado (Jornada, Minha vida incompleta): tarefas "A Fazer"/"Fazendo" entram no backlog.
+    if (!(await this.journey.boardOpen(userId))) for (const t of newTasks) if (t.status === 'todo' || t.status === 'doing') t.status = 'backlog';
 
     // 3. Grava tudo de uma vez (poucas idas ao banco, por isso as tarefas vão em lote).
     await this.prisma.$transaction(
