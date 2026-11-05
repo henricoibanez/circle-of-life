@@ -6,6 +6,8 @@ import type { PrismaService } from '../prisma/prisma.service';
  * Os nomes ficam em português porque a IA escreve o relatório em português.
  */
 export type AnalysisInput = {
+  /** Primeiro nome, para a IA falar com a pessoa. */
+  nome: string;
   necrologio?: string;
   roda?: { notas: Partial<Record<AreaId, number>>; mediaAnterior: number | null };
   maslow?: { nivelAtual: string; niveis: { nivel: string; pct: number; faltando: string[]; reflexoes: string[] }[] };
@@ -14,9 +16,23 @@ export type AnalysisInput = {
     iniciativa: string;
     areas: AreaId[];
     concluida: boolean;
-    epicos: { epico: string; area: AreaId; encerrado: boolean; feitas: number; total: number; naSprint: number }[];
+    epicos: {
+      epico: string;
+      area: AreaId;
+      encerrado: boolean;
+      feitas: number;
+      total: number;
+      naSprint: number;
+      /** Títulos e situação das tarefas (até 20 por épico, as abertas primeiro). */
+      tarefas: { t: string; status: (typeof STATUS)[keyof typeof STATUS] }[];
+    }[];
   }[];
+  /** Últimas sprints encerradas: quantas tarefas ficaram prontas de quantas planejadas. */
+  sprints?: { sprint: string; prontas: number; total: number }[];
 };
+
+const STATUS = { backlog: 'no backlog', todo: 'a fazer', doing: 'fazendo', done: 'pronta' } as const;
+const MAX_TASKS_PER_EPIC = 20;
 
 /** Texto puro do necrológio (sem as marcações do editor). */
 export const htmlToText = (html: string) =>
@@ -51,8 +67,9 @@ export async function availableSources(prisma: PrismaService, userId: string): P
   return out;
 }
 
-export async function buildInput(prisma: PrismaService, userId: string, sources: AnalysisSource[]): Promise<AnalysisInput> {
-  const input: AnalysisInput = {};
+export async function buildInput(prisma: PrismaService, userId: string, name: string, sources: AnalysisSource[]): Promise<AnalysisInput> {
+  const first = name.trim().split(/\s+/)[0] ?? '';
+  const input: AnalysisInput = { nome: first.charAt(0).toLocaleUpperCase('pt-BR') + first.slice(1) };
   const has = (s: AnalysisSource) => sources.includes(s);
 
   if (has('necrologio')) {
@@ -91,8 +108,9 @@ export async function buildInput(prisma: PrismaService, userId: string, sources:
     const inis = await prisma.initiative.findMany({
       where: { userId },
       orderBy: { position: 'asc' },
-      include: { epics: { orderBy: { position: 'asc' }, include: { tasks: { select: { status: true } } } } },
+      include: { epics: { orderBy: { position: 'asc' }, include: { tasks: { select: { title: true, status: true }, orderBy: { position: 'asc' } } } } },
     });
+    const open = (s: string) => (s === 'done' ? 1 : 0);
     input.tarefas = inis.map(i => ({
       iniciativa: i.title,
       areas: i.areas,
@@ -104,8 +122,14 @@ export async function buildInput(prisma: PrismaService, userId: string, sources:
         feitas: e.tasks.filter(t => t.status === 'done').length,
         total: e.tasks.length,
         naSprint: e.tasks.filter(t => t.status === 'todo' || t.status === 'doing').length,
+        tarefas: [...e.tasks]
+          .sort((a, b) => open(a.status) - open(b.status))
+          .slice(0, MAX_TASKS_PER_EPIC)
+          .map(t => ({ t: t.title, status: STATUS[t.status] })),
       })),
     }));
+    const sprints = await prisma.sprint.findMany({ where: { userId, closedAt: { not: null } }, orderBy: { number: 'desc' }, take: 6 });
+    input.sprints = sprints.map(s => ({ sprint: s.name || `Sprint ${s.number}`, prontas: s.doneCount ?? 0, total: s.totalCount ?? 0 }));
   }
   return input;
 }

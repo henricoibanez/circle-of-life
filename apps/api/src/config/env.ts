@@ -67,14 +67,16 @@ export const envSchema = z.object({
   OVERDUE_HOUR: z.coerce.number().int().min(0).max(23).default(8),
 
   // ---------- Análise inteligente (IA) ----------
-  /** mock: relatório de exemplo montado com os dados da pessoa, sem chamar nada externo. anthropic: usa a API do Claude. */
-  AI_MODE: z.enum(['mock', 'anthropic']).default('mock'),
-  /** Chave da API do Claude (só com AI_MODE=anthropic). */
-  ANTHROPIC_API_KEY: z.string().optional().default(''),
-  /** Modelo do Claude usado na análise. */
-  AI_MODEL: z.string().min(1).default('claude-opus-5-5'),
-  /** Intervalo mínimo, em minutos, entre dois relatórios da mesma pessoa. */
-  AI_MIN_MINUTES: z.coerce.number().int().nonnegative().default(5),
+  /** mock: relatório montado com os dados da pessoa, sem chamar nada externo. afl: agente do Agents for Life. */
+  AI_MODE: z.enum(['mock', 'afl']).default('mock'),
+  /** Endereço do hub MCP do Agents for Life (só com AI_MODE=afl). */
+  AFL_API_URL: z.string().optional().default(''),
+  /** Chave de API do Agents for Life (Perfil > API Keys), de preferência só com permissão de conversar com agentes. */
+  AFL_API_KEY: z.string().optional().default(''),
+  /** Id do agente "Circle of Life — Me analise" no Agents for Life. */
+  AFL_AGENT_ID: z.string().optional().default(''),
+  /** Dias entre duas análises da mesma pessoa (0 = sem limite). */
+  AI_INTERVAL_DAYS: z.coerce.number().int().nonnegative().default(30),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -88,9 +90,9 @@ export function validateEnv(raw: Record<string, unknown>): Env {
       path: ['JWT_SECRET'],
       message: 'em produção, troque o valor de exemplo por um segredo aleatório',
     })
-    .refine(env => env.AI_MODE !== 'anthropic' || env.ANTHROPIC_API_KEY.length > 0, {
-      path: ['ANTHROPIC_API_KEY'],
-      message: 'obrigatória quando AI_MODE=anthropic',
+    .refine(env => env.AI_MODE !== 'afl' || (env.AFL_API_URL && env.AFL_API_KEY && env.AFL_AGENT_ID), {
+      path: ['AFL_API_KEY'],
+      message: 'com AI_MODE=afl, preencha AFL_API_URL, AFL_API_KEY e AFL_AGENT_ID',
     })
     .safeParse(raw);
   if (!result.success) {

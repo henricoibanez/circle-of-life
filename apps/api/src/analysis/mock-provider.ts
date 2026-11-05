@@ -1,4 +1,4 @@
-import { AREA, AREA_IDS, type AnalysisArea, type AnalysisContent, type AnalysisInsight, type AnalysisSuggestion, type AreaId } from '@circle/shared';
+import { AREA, AREA_IDS, type AnalysisContent, type AnalysisSuggestion, type AreaId } from '@circle/shared';
 import type { AnalysisInput } from './analysis-input';
 
 /**
@@ -21,7 +21,13 @@ const KEYWORDS: Record<AreaId, string[]> = {
 };
 
 /** Trilhas sugeridas por área (iniciativa → épicos → tarefas). */
-const LIBRARY: Record<AreaId, AnalysisSuggestion> = {
+/** Formato da biblioteca (mais enxuto): épico com uma área e tarefas só com o título. */
+type LibrarySuggestion = {
+  iniciativa: { titulo: string; descricao: string; areas: AreaId[] };
+  epicos: { titulo: string; area: AreaId; tarefas: string[] }[];
+};
+
+const LIBRARY: Record<AreaId, LibrarySuggestion> = {
   lazer: {
     iniciativa: { titulo: 'Tempo livre de verdade', descricao: 'Separar horas da semana para o que você faz por prazer, sem tela.', areas: ['lazer', 'emocional'] },
     epicos: [
@@ -94,8 +100,17 @@ const LIBRARY: Record<AreaId, AnalysisSuggestion> = {
   },
 };
 
+/** Converte uma trilha da biblioteca para o formato do relatório. */
+function toSuggestion(s: LibrarySuggestion, porque: string): AnalysisSuggestion {
+  return {
+    iniciativa: { ...s.iniciativa, porque },
+    epicos: s.epicos.map(e => ({ titulo: e.titulo, areas: [e.area], tarefas: e.tarefas.map(t => ({ titulo: t, descricao: '' })) })),
+  };
+}
+
 const clamp = (n: number) => Math.max(5, Math.min(95, Math.round(n)));
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+const nomeArea = (a: AreaId) => AREA[a].name.toLowerCase();
 
 export function mockAnalysis(input: AnalysisInput): AnalysisContent {
   const necro = (input.necrologio ?? '').toLowerCase();
@@ -104,83 +119,106 @@ export function mockAnalysis(input: AnalysisInput): AnalysisContent {
     const epicos = input.tarefas?.flatMap(i => i.epicos).filter(e => e.area === area) ?? [];
     const ativos = epicos.filter(e => !e.encerrado).length;
     const feitas = epicos.reduce((s, e) => s + e.feitas, 0);
-    const naSprint = epicos.reduce((s, e) => s + e.naSprint, 0);
+    const parado = epicos.reduce((s, e) => s + e.tarefas.filter(t => t.status === 'no backlog').length, 0);
     const sonhos = input.quadro?.filter(d => d.area === area && !d.realizado).length ?? 0;
     const citada = KEYWORDS[area].some(k => necro.includes(k));
-    const execucao = input.tarefas ? Math.min(1, ativos * 0.25 + naSprint * 0.15 + feitas * 0.03) : 0.5;
+    const execucao = input.tarefas ? Math.min(1, ativos * 0.25 + feitas * 0.05) : 0.5;
     const contentamento = nota === null ? 0.5 : nota / 10;
     const pct = clamp(contentamento * 45 + execucao * 45 + (citada || sonhos ? 4 : 10));
-    return { area, nota, ativos, feitas, naSprint, sonhos, citada, pct, relevancia: (citada ? 2 : 0) + (sonhos ? 2 : 0) + (ativos ? 1 : 0) + (nota !== null && nota <= 5 ? 1 : 0) };
+    const desejo = (citada ? 2 : 0) + (sonhos ? 2 : 0) + (nota !== null && nota <= 5 ? 1 : 0);
+    return { area, nota, ativos, feitas, parado, sonhos, citada, pct, desejo };
   });
 
-  const chosen = [...facts].sort((a, b) => b.relevancia - a.relevancia || a.pct - b.pct).slice(0, 6).sort((a, b) => a.pct - b.pct);
+  // Gaps: áreas que a pessoa diz querer (necrológio, sonhos, nota baixa) e quase não executa.
+  const gaps = [...facts].filter(f => f.desejo > 0).sort((a, b) => b.desejo - a.desejo || a.pct - b.pct);
+  const fortes = [...facts].filter(f => f.ativos > 0 || (f.nota ?? 0) >= 7).sort((a, b) => b.pct - a.pct);
+  const geral = Math.round(facts.reduce((s, f) => s + f.pct, 0) / facts.length);
+  const pior = gaps[0] ?? [...facts].sort((a, b) => a.pct - b.pct)[0]!;
+  const melhor = fortes[0];
+  const voce = input.nome ? `${input.nome}, você` : 'Você';
+  const totalFeitas = facts.reduce((s, f) => s + f.feitas, 0);
+  const totalParadas = facts.reduce((s, f) => s + f.parado, 0);
 
-  const areas: AnalysisArea[] = chosen.map(f => {
-    const nome = AREA[f.area].name.toLowerCase();
-    const parts: string[] = [];
-    if (f.nota !== null) parts.push(`Você deu ${f.nota}/10 para a área ${nome} na roda`);
-    else parts.push(`Na área ${nome}`);
-    if (input.tarefas) parts[0] += f.ativos ? ` e tem ${plural(f.ativos, 'épico ativo', 'épicos ativos')}${f.naSprint ? `, com ${plural(f.naSprint, 'tarefa', 'tarefas')} na sprint` : ''}.` : ', mas não tem nenhum épico ativo no backlog.';
-    else parts[0] += '.';
-    if (f.sonhos) parts.push(`${plural(f.sonhos, 'sonho do seu quadro está', 'sonhos do seu quadro estão')} aqui, então vale ter um plano concreto.`);
-    else if (f.citada) parts.push('O seu necrológio fala desse tema: o backlog precisa refletir isso.');
-    else if (f.pct >= 70) parts.push('Intenção e ação estão andando juntas.');
-    else parts.push('Uma tarefa pequena por sprint já muda esse quadro.');
-    return { area: f.area, pct: f.pct, texto: parts.join(' ') };
-  });
-
-  const geral = areas.length ? Math.round(areas.reduce((s, a) => s + a.pct, 0) / areas.length) : 50;
-  const pior = areas[0];
-  const melhor = areas[areas.length - 1];
-  const nomeDe = (a?: AnalysisArea) => (a ? AREA[a.area].name.toLowerCase() : '');
-
-  const visao = [
-    input.necrologio ? 'Você escreveu com clareza quem quer ter sido, e isso dá uma baliza forte para o backlog.' : 'Você já tem dados suficientes para comparar o que quer com o que está fazendo.',
-    melhor ? `A área ${nomeDe(melhor)} é onde intenção e execução mais conversam.` : '',
-    pior && pior !== melhor ? `Já a área ${nomeDe(pior)} pede atenção: o que você diz querer ainda não virou tarefa.` : '',
-    'Escolha uma ou duas sugestões abaixo e coloque na próxima sprint.',
+  const retrato = [
+    `${voce} já colocou no papel o que importa para você${input.necrologio ? ', e o seu necrológio deixa isso claro' : ''}.`,
+    melhor ? `A área ${nomeArea(melhor.area)} é onde você mais transforma intenção em ação.` : 'Você ainda está no começo da execução.',
+    `O problema está em ${nomeArea(pior.area)}: você diz que quer, mas quase nada disso virou tarefa.`,
+    input.tarefas ? `Você concluiu ${plural(totalFeitas, 'tarefa', 'tarefas')} e deixou ${plural(totalParadas, 'parada', 'paradas')} no backlog.` : '',
+    'O momento pede menos intenção e mais compromisso com o que você escreveu.',
   ]
     .filter(Boolean)
     .join(' ');
 
-  const insights: AnalysisInsight[] = [
+  const gapText = (f: (typeof facts)[number]) => {
+    const motivos = [f.citada && 'aparece no seu necrológio', f.sonhos && `tem ${plural(f.sonhos, 'sonho', 'sonhos')} no quadro`, f.nota !== null && `recebeu nota ${f.nota} na roda`].filter(Boolean).join(', ');
+    return `A área ${nomeArea(f.area)} ${motivos || 'pede atenção'}, mas ${f.ativos ? `tem só ${plural(f.ativos, 'épico ativo', 'épicos ativos')}` : 'não tem nenhum épico ativo'}. Desejo sem tarefa não sai do papel.`;
+  };
+
+  const padroes = [
     melhor
-      ? { icon: 'trend', titulo: `${AREA[melhor.area].name} está bem encaminhada.`, texto: 'Mantenha o ritmo e use essa área como exemplo para as outras.' }
-      : { icon: 'trend', titulo: 'Você começou a medir a sua vida.', texto: 'Cada exercício preenchido deixa a análise mais precisa.' },
-    pior
-      ? { icon: 'alert', titulo: `${AREA[pior.area].name} precisa sair do papel.`, texto: 'Crie um épico com uma primeira tarefa de até 30 minutos.' }
-      : { icon: 'alert', titulo: 'Faltam dados para comparar.', texto: 'Preencha a roda da vida para ver as áreas lado a lado.' },
+      ? { titulo: `${AREA[melhor.area].name} anda`, texto: `Você executa em ${nomeArea(melhor.area)}${melhor.feitas ? `: ${plural(melhor.feitas, 'tarefa concluída', 'tarefas concluídas')}` : ''}. É a prova de que você sabe fazer quando decide.` }
+      : { titulo: 'Começo de caminho', texto: 'Você já preencheu os exercícios. Agora falta transformar isso em tarefas.' },
+    { titulo: 'Você mede a sua vida', texto: 'Ter os exercícios preenchidos coloca você à frente de quem só pensa no assunto.' },
     input.maslow
-      ? { icon: 'target', titulo: `Você está no nível ${input.maslow.nivelAtual.toLowerCase()} da pirâmide.`, texto: 'Priorize as tarefas que fecham as lacunas desse nível.' }
-      : { icon: 'target', titulo: 'Releia o seu necrológio antes da planning.', texto: 'Veja se o backlog ainda conversa com ele.' },
+      ? { titulo: `Nível ${input.maslow.nivelAtual.toLowerCase()} da pirâmide`, texto: 'A base que falta nesse nível pesa em todo o resto. Comece por ela.' }
+      : { titulo: 'Clareza antes de pressa', texto: 'Releia o seu necrológio antes da planning e veja se o backlog ainda conversa com ele.' },
   ];
 
-  const suggestions = areas
-    .filter(a => a.pct < 70)
+  const sugestoes = gaps
     .slice(0, 3)
-    .map(a => LIBRARY[a.area]);
-  if (!suggestions.length && pior) suggestions.push(LIBRARY[pior.area]);
+    .map(f => toSuggestion(LIBRARY[f.area], `A área ${nomeArea(f.area)} aparece no que você quer, mas quase não aparece no que você faz.`));
+  if (!sugestoes.length) sugestoes.push(toSuggestion(LIBRARY[pior.area], `A área ${nomeArea(pior.area)} é a menos alinhada hoje.`));
 
-  return { geral, visao, areas, insights, suggestions };
+  return {
+    retrato,
+    geral,
+    padroes,
+    gaps: (gaps.length ? gaps : [pior]).slice(0, 3).map(f => ({ titulo: `${AREA[f.area].name} sem plano`, texto: gapText(f) })),
+    manter: melhor ? [`O ritmo em ${nomeArea(melhor.area)}.`] : ['O hábito de preencher os exercícios.'],
+    ajustar: ['Planejar menos tarefas por sprint e terminar o que começou.', `Colocar pelo menos uma tarefa de ${nomeArea(pior.area)} em toda sprint.`],
+    abandonar: ['Criar tarefas novas antes de concluir as que estão paradas.'],
+    proximos7dias: [
+      `Escolher uma tarefa de ${nomeArea(pior.area)} e colocar na sprint hoje.`,
+      'Reler o necrológio e riscar do backlog o que não conversa com ele.',
+      'Concluir a tarefa mais antiga que está em "Fazendo".',
+    ],
+    limitantes: [
+      { nome: 'Intenção sem agenda', texto: `Você sabe o que quer em ${nomeArea(pior.area)}, mas não reservou tempo para isso.` },
+      { nome: 'Conforto no que já funciona', texto: melhor ? `Você volta para ${nomeArea(melhor.area)} porque ali é mais fácil ter resultado.` : 'Você prefere planejar a executar.' },
+    ],
+    pergunta: `Se nada mudar em ${nomeArea(pior.area)} nos próximos 12 meses, o seu necrológio ainda vai ser verdade?`,
+    cuidado: '',
+    sugestoes,
+  };
 }
 
-/** Relatório de exemplo mostrado antes do primeiro relatório de verdade (como no protótipo). */
+/** Relatório de exemplo mostrado antes do primeiro relatório de verdade. */
 export const EXAMPLE_REPORT: AnalysisContent = {
-  geral: 72,
-  visao:
-    'Você demonstra clareza sobre o que deseja conquistar e tem grandes sonhos registrados. Suas visualizações mostram um futuro bem definido. No entanto, os dados mostram um desalinhamento entre intenção e ação nas áreas financeira e física. Há potencial, mas falta consistência e estrutura na execução.',
-  areas: [
-    { area: 'financas', pct: 35, texto: 'Você avaliou sua vida financeira como 5/10 na roda, mas tem só uma tarefa ativa no tema. Os desejos estão claros nos sonhos, falta um plano de ação.' },
-    { area: 'saude', pct: 40, texto: 'Você reconhece que sua saúde pede atenção, mas a hidratação é o único épico ativo. A pirâmide mostra a base quase completa, falta o hábito do movimento.' },
-    { area: 'espiritualidade', pct: 60, texto: 'Você escreve sobre sentido e fé no necrológio, e os encontros do catecismo seguem. Falta uma prática diária mais curta.' },
-    { area: 'intelectual', pct: 65, texto: 'Você investe tempo em aprendizado e tem boas referências. Vale transformar a leitura em algo que você compartilha.' },
-    { area: 'amor', pct: 75, texto: 'Você tem clareza sobre o relacionamento que deseja e um épico ativo para o casamento. Ações e tarefas estão coerentes com o que escreveu.' },
-    { area: 'familia', pct: 80, texto: 'Suas relações estão bem alinhadas com seus valores. Há registros recentes de momentos importantes.' },
+  retrato:
+    'Você sonha grande e escreveu com clareza quem quer ter sido. Na prática, sua energia vai quase toda para o trabalho e para os estudos, onde você já se sente competente. Saúde e finanças aparecem nos seus sonhos, mas quase não aparecem no backlog. Há potencial de sobra; falta compromisso com as áreas difíceis.',
+  geral: 58,
+  padroes: [
+    { titulo: 'Disciplina para estudar', texto: 'Quando a meta é intelectual, você cria tarefas e conclui. Isso mostra que o problema não é falta de disciplina.' },
+    { titulo: 'Carreira no centro', texto: 'A iniciativa mais estruturada é a profissional. Ela recebe atenção maior do que as áreas com notas mais baixas.' },
+    { titulo: 'Preparo sem prática', texto: 'Você compra o tênis, monta a planilha, faz a lista. O passo seguinte, que é o difícil, fica no backlog.' },
   ],
-  insights: [
-    { icon: 'trend', titulo: 'Você sonha grande e tem clareza do que quer.', texto: 'Seu quadro de visualização e o necrológio mostram ambição e direção.' },
-    { icon: 'alert', titulo: 'Finanças e saúde precisam sair do papel.', texto: 'Os sonhos estão lá, mas quase não há tarefas nessas áreas.' },
-    { icon: 'target', titulo: 'Pequenos passos na próxima sprint.', texto: 'Uma tarefa curta por área já muda o alinhamento.' },
+  gaps: [
+    { titulo: 'Maratona sem corrida', texto: 'A corrida está no seu quadro de sonhos e a nota de saúde é 4, mas nenhuma tarefa de treino saiu do backlog.' },
+    { titulo: 'Reserva só no desejo', texto: 'Você marcou a reserva de emergência como não atendida na pirâmide e não tem nenhum épico de finanças ativo.' },
+    { titulo: 'Família fora da sprint', texto: 'O seu necrológio fala de presença em casa, mas nenhuma tarefa das últimas sprints foi dessa área.' },
   ],
-  suggestions: [LIBRARY.financas, LIBRARY.saude],
+  manter: ['A constância nos estudos.', 'O hábito de planejar a sprint.'],
+  ajustar: ['Puxar menos tarefas por sprint: você conclui cerca de metade do que planeja.', 'Ter uma tarefa de saúde em toda sprint.'],
+  abandonar: ['Começar um curso novo antes de terminar o atual.'],
+  proximos7dias: ['Agendar um check-up médico.', 'Caminhar 20 minutos em três dias desta semana.', 'Listar os gastos fixos do mês.'],
+  limitantes: [
+    { nome: 'Carreira como refúgio', texto: 'Quando precisa escolher onde agir, você volta para o trabalho e para os livros. Isso evita encarar saúde, finanças e família.' },
+    { nome: 'Preparação como progresso', texto: 'Você trata o começo como se fosse avanço. Comprar o tênis não é treinar.' },
+  ],
+  pergunta: 'Se sua agenda continuar igual, em que momento você vai construir a pessoa que descreveu no seu necrológio?',
+  cuidado: '',
+  sugestoes: [
+    toSuggestion(LIBRARY.saude, 'A corrida é um sonho declarado e a saúde tem uma das menores notas.'),
+    toSuggestion(LIBRARY.financas, 'A reserva de emergência falta na pirâmide e a área financeira não tem plano.'),
+  ],
 };

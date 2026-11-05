@@ -905,12 +905,14 @@ model StoryView {
 
 // ---------- Análise inteligente ----------
 
+/// "anthropic" fica só para os relatórios antigos; hoje a IA de verdade é o agente do Agents for Life (afl).
 enum AiMode {
   mock
   anthropic
+  afl
 }
 
-/// Relatório da análise inteligente: cruza os exercícios escolhidos com o backlog.
+/// Relatório do "Me analise": cruza os exercícios escolhidos com o backlog.
 model AnalysisReport {
   id          String   @id @default(cuid())
   userId      String
@@ -919,12 +921,16 @@ model AnalysisReport {
   /// Fontes que a pessoa escolheu (necrologio, roda, maslow, quadro, tarefas).
   sources     String[]
   geral       Int
+  /// Retrato da pessoa (nos relatórios antigos, a "visão geral").
   visao       String
-  /// [{ area, pct, texto }]
+  /// Só nos relatórios antigos: [{ area, pct, texto }]
   areas       Json
-  /// [{ icon, titulo, texto }]
+  /// Só nos relatórios antigos: [{ icon, titulo, texto }]
   insights    Json
-  /// [{ iniciativa: { titulo, descricao, areas }, epicos: [{ titulo, area, tarefas: [titulo] }] }]
+  /// Formato novo: { padroes, gaps, manter, ajustar, abandonar, proximos7dias, limitantes, pergunta, cuidado }. Vazio nos antigos.
+  details     Json?
+  /// [{ iniciativa: { titulo, descricao, porque, areas }, epicos: [{ titulo, areas, tarefas: [{ titulo, descricao }] }] }]
+  /// (nos antigos: épico com "area" e tarefas só com o título)
   suggestions Json
   /// Índices das sugestões já importadas para o backlog.
   imported    Int[]    @default([])

@@ -88,7 +88,7 @@ export default function MaisPage() {
 
         <section className="space-y-3">
           <h2 className="px-1 text-sm font-semibold text-muted">Acompanhamento</h2>
-          <Row href="/analise" n="sparkles" c="#7c4dde" title="Análise inteligente" d="A IA cruza seus exercícios com o que você executa." locked={afterJourney} />
+          <Row href="/analise" n="sparkles" c="#7c4dde" title="Me analise" d="A IA cruza o que você quer com o que você faz." locked={afterJourney} />
           <Row href="/relatorios" n="chart" c="#7c4dde" title="Relatórios" d="Acompanhe seu progresso e evolução." locked={afterJourney} />
           <Row href="/loja" n="bag" c="#ef4444" title="Loja de trilhas" d="Trilhas prontas para importar no backlog." locked={afterJourney} />
           <Row href="/perfil" n="settings" c="#6b7280" title="Configurações" d="Ajustes da sua conta e do app." />

@@ -85,7 +85,11 @@ A pasta `referencia/` e os arquivos `.env` nunca vão para o GitHub.
 | `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` | do passo 7 (pode deixar para depois e publicar de novo) |
 | `CRON_SECRET` | outro texto aleatório (a Vercel usa para chamar as tarefas diárias) |
 | `DISABLE_SCHEDULE` | `true` |
-| `AI_MODE` | `mock` (ou `anthropic` + `ANTHROPIC_API_KEY`) |
+| `AI_MODE` | `afl` para o "Me analise" de verdade (ou `mock` para a IA simulada) |
+| `AFL_API_URL` | `https://app.agentsforlife.org/api/mcp/hub` |
+| `AFL_API_KEY` | chave do Agents for Life criada só para o app (no site deles, em /api-tokens, só com permissão de conversar com agentes). Nunca reaproveite a chave pessoal |
+| `AFL_AGENT_ID` | id do agente "Circle of Life — Me analise" |
+| `AI_INTERVAL_DAYS` | `30` (uma análise por mês por pessoa) |
 
 Deixe vazias as variáveis de e-mail (`SMTP_*`): o envio fica desligado.
 

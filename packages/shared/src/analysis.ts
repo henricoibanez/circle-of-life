@@ -11,30 +11,44 @@ export const ANALYSIS_SOURCES = [
 export type AnalysisSource = (typeof ANALYSIS_SOURCES)[number]['id'];
 export const ANALYSIS_SOURCE_IDS = ANALYSIS_SOURCES.map(s => s.id) as AnalysisSource[];
 
-/** Selo de cada área, como no protótipo: abaixo de 50% Atenção, abaixo de 70% Em evolução. */
-export type AnalysisTag = 'atencao' | 'evolucao' | 'alinhado';
-export const analysisTag = (pct: number): AnalysisTag => (pct < 50 ? 'atencao' : pct < 70 ? 'evolucao' : 'alinhado');
-export const ANALYSIS_TAGS: Record<AnalysisTag, [string, string]> = {
-  atencao: ['Atenção', '#ea8a0c'],
-  evolucao: ['Em evolução', '#3b82f6'],
-  alinhado: ['Alinhado', '#16a34a'],
-};
+/** Intervalo padrão entre duas análises da mesma pessoa (decisão do dono de 05/11/2026: uma por mês). */
+export const ANALYSIS_INTERVAL_DAYS = 30;
+
 export const alignmentLabel = (pct: number) => (pct < 50 ? 'Baixo alinhamento' : pct < 70 ? 'Médio alinhamento' : 'Bom alinhamento');
 
-export type AnalysisArea = { area: AreaId; pct: number; texto: string };
-export type AnalysisInsight = { icon: 'trend' | 'alert' | 'target'; titulo: string; texto: string };
+/** Um achado com título e explicação (padrões de evolução e gaps). */
+export type AnalysisPoint = { titulo: string; texto: string };
+/** Padrão limitante: um nome curto e marcante, e a explicação. */
+export type AnalysisLimit = { nome: string; texto: string };
+export type AnalysisTask = { titulo: string; descricao: string };
 /** Sugestão em forma de trilha: iniciativa → épicos → tarefas. */
 export type AnalysisSuggestion = {
-  iniciativa: { titulo: string; descricao: string; areas: AreaId[] };
-  epicos: { titulo: string; area: AreaId; tarefas: string[] }[];
+  iniciativa: { titulo: string; descricao: string; porque: string; areas: AreaId[] };
+  epicos: { titulo: string; areas: AreaId[]; tarefas: AnalysisTask[] }[];
 };
 
+/**
+ * Relatório do "Me analise" (formato de 05/11/2026, inspirado no app antigo).
+ * É o mesmo formato que o agente da IA devolve; os nomes ficam em português por isso.
+ */
 export type AnalysisContent = {
+  /** Quem a pessoa é hoje e o momento que vive. */
+  retrato: string;
+  /** Índice de alinhamento entre o que a pessoa diz querer e o que faz (0 a 100). */
   geral: number;
-  visao: string;
-  areas: AnalysisArea[];
-  insights: AnalysisInsight[];
-  suggestions: AnalysisSuggestion[];
+  padroes: AnalysisPoint[];
+  gaps: AnalysisPoint[];
+  manter: string[];
+  ajustar: string[];
+  /** O que pausar por enquanto. */
+  abandonar: string[];
+  proximos7dias: string[];
+  limitantes: AnalysisLimit[];
+  /** Uma pergunta forte para a pessoa levar consigo. */
+  pergunta: string;
+  /** Mensagem de cuidado (ex.: indicar o CVV) quando há sinais de sofrimento grave; vazio no resto. */
+  cuidado: string;
+  sugestoes: AnalysisSuggestion[];
 };
 
 export type AnalysisReportDto = AnalysisContent & {
@@ -49,8 +63,8 @@ export type AnalysisLatestDto = {
   report: AnalysisReportDto;
   /** Fontes com dados (as outras aparecem desativadas). */
   available: AnalysisSource[];
-  mode: 'mock' | 'anthropic';
-  /** Quando a pessoa pode gerar o próximo relatório (limite de frequência). */
+  mode: 'mock' | 'afl';
+  /** Quando a pessoa pode gerar a próxima análise (limite de frequência). */
   nextAllowedAt: string | null;
 };
 
