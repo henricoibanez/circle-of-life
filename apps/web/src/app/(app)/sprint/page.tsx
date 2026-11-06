@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useCelebrate } from '@/components/celebrate';
 import { Header } from '@/components/header';
-import { BoardLocked } from '@/components/journey';
-import { useBoardLocked, useJourney } from '@/lib/journey';
+import { BoardLocked, JourneyStepDone } from '@/components/journey';
+import { inJourney, useBoardLocked, useJourney } from '@/lib/journey';
+import { useMe } from '@/lib/me';
 import { Icon } from '@/components/icon';
 import { Card, Field, inputCls } from '@/components/primitives';
 import { useToast } from '@/components/toasts';
@@ -33,7 +34,12 @@ export default function SprintPage() {
       </>
     );
   if (!sprints || !data) return <Header title="Sprint" fallback="/board" />;
-  return <SprintScreen key={sprints.current.id} s={sprints.current} history={sprints.history} board={boardTasks(data)} />;
+  return (
+    <>
+      <SprintScreen key={sprints.current.id} s={sprints.current} history={sprints.history} board={boardTasks(data)} />
+      <JourneyStepDone phase="sprint" />
+    </>
+  );
 }
 
 function SprintScreen({ s, history, board }: { s: SprintDto; history: SprintDto[]; board: ReturnType<typeof boardTasks> }) {
@@ -43,6 +49,8 @@ function SprintScreen({ s, history, board }: { s: SprintDto; history: SprintDto[
   const update = useUpdateSprint();
   const start = useStartSprint();
   const close = useCloseSprint();
+  const { data: me } = useMe();
+  const { data: journey } = useJourney();
   const [f, setF] = useState({ name: s.name, description: s.description, length: s.length });
   const [confirm, setConfirm] = useState(false);
   useEffect(() => setF({ name: s.name, description: s.description, length: s.length }), [s.name, s.description, s.length]);
@@ -60,6 +68,8 @@ function SprintScreen({ s, history, board }: { s: SprintDto; history: SprintDto[
     const r = await start.mutateAsync(f);
     const name = sprintName(r.sprint);
     toast(r.sprint.plannedEnd ? `${name} começou! Termina em ${fmtDay(r.sprint.plannedEnd)}.` : `${name} começou! Sem prazo: encerre quando quiser.`);
+    // Na Jornada, a primeira sprint conclui a etapa: fica aqui e o pop-up de parabéns leva de volta à Jornada.
+    if (inJourney(me) && journey && !journey.phases.find(p => p.id === 'sprint')?.done) return;
     // Pela Jornada, volta para a Jornada (o próximo passo é concluí-la); senão, vai para o quadro.
     router.push(new URLSearchParams(window.location.search).get('de') === 'jornada' ? '/jornada' : '/board');
   };
@@ -72,6 +82,7 @@ function SprintScreen({ s, history, board }: { s: SprintDto; history: SprintDto[
       title: `${sprintName(r.closed)} concluída`,
       text: `${r.done} ${r.done === 1 ? 'tarefa entregue' : 'tarefas entregues'}${r.open ? `, ${r.open} ${r.open === 1 ? 'voltou' : 'voltaram'} ao backlog` : ''}.`,
       xp: r.xp.gained,
+      gems: r.xp.gemsGained,
       refType: 'sprint',
       refId: r.closed.id,
     });

@@ -7,9 +7,9 @@ import { useMe } from './me';
 
 export const JOURNEY_KEY = ['journey'];
 
-/** Progresso da Jornada de primeiro acesso (recarrega ao abrir cada tela que usa). */
-export function useJourney() {
-  return useQuery({ queryKey: JOURNEY_KEY, queryFn: () => api<JourneyDto>('/journey') });
+/** Progresso da Jornada de primeiro acesso (recarrega ao abrir cada tela que usa). Com `enabled = false`, não busca. */
+export function useJourney(enabled = true) {
+  return useQuery({ queryKey: JOURNEY_KEY, queryFn: () => api<JourneyDto>('/journey'), enabled });
 }
 
 /** Minha vida (as 4 primeiras fases) completa: o quadro destranca. */
@@ -26,6 +26,9 @@ export function useBoardLocked() {
 
 /** A pessoa ainda está na Jornada (a aba Jornada fica no lugar do Feed até liberar tudo). */
 export const journeyActive = (me: Me | undefined) => Boolean(me?.journey && !me.social.open);
+
+/** A pessoa está fazendo as etapas da Jornada (ainda não apertou "Concluir minha jornada"). */
+export const inJourney = (me: Me | undefined) => Boolean(me?.journey && !me.journeyFinished);
 
 /** Rede social, amigos, grupos e a loja completa ainda trancados. */
 export const socialLocked = (me: Me | undefined) => Boolean(me && !me.social.open);
@@ -56,7 +59,7 @@ export function useFinishJourney() {
   return useMutation({
     mutationFn: () => api<{ xp: XpChange; social: SocialStatus }>('/journey/finish', { method: 'POST' }),
     onSuccess: r => {
-      qc.setQueryData<Me>(['me'], m => m && { ...m, journeyFinished: true, social: r.social, xp: { total: r.xp.total, disponivel: r.xp.disponivel } });
+      qc.setQueryData<Me>(['me'], m => m && { ...m, journeyFinished: true, social: r.social, xp: { total: r.xp.total, gems: r.xp.gems } });
       qc.invalidateQueries({ queryKey: JOURNEY_KEY });
     },
   });

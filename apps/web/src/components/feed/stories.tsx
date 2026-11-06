@@ -1,6 +1,6 @@
 'use client';
 
-import { AREA, AREAS, type AreaId, STORY_CAPTION_MAX, type StoryGroupDto, VISIBILITY, type Visibility } from '@circle/shared';
+import { AREA, AREAS, type AreaId, REACTIONS, STORY_CAPTION_MAX, type StoryGroupDto, VISIBILITY, type Visibility } from '@circle/shared';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
@@ -15,6 +15,7 @@ import { useStories, useStoryActions, useStoryViewers } from '@/lib/stories';
 import { since } from '@/lib/time';
 import { uploadBlob } from '@/lib/upload';
 import { StoryCropper } from '@/components/feed/story-cropper';
+import { ReactionBar } from '@/components/feed/reactions';
 
 const STORY_MS = 5000;
 const noop = () => () => undefined;
@@ -236,22 +237,22 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
               >
                 <Icon n="eye" className="h-4 w-4" />
                 Visto por {s.views ?? 0}
-                {(s.likes ?? 0) > 0 && (
-                  <span className="inline-flex items-center gap-1 text-red-300">
-                    <Icon n="heart" className="h-4 w-4" fill="currentColor" />
-                    {s.likes}
-                  </span>
-                )}
+                {s.reactions &&
+                  REACTIONS.filter(r => s.reactions![r.id] > 0).map(r => (
+                    <span key={r.id} className="inline-flex items-center gap-0.5">
+                      <span aria-hidden>{r.emoji}</span>
+                      {s.reactions![r.id]}
+                      <span className="sr-only">{r.label}</span>
+                    </span>
+                  ))}
               </button>
             ) : (
-              <button
-                aria-label={s.liked ? 'Descurtir' : 'Curtir'}
-                aria-pressed={s.liked}
-                className={`grid h-11 w-11 place-items-center rounded-full ${s.liked ? 'text-red-500' : 'text-white'}`}
-                onClick={() => actions.like(s.id, !s.liked).catch(e => toast(e instanceof ApiError ? e.message : 'Não foi possível curtir.'))}
-              >
-                <Icon n="heart" className="h-7 w-7" fill={s.liked ? 'currentColor' : 'none'} />
-              </button>
+              <ReactionBar
+                tone="dark"
+                size="lg"
+                mine={s.myReaction}
+                onPick={k => actions.react(s.id, k, s.myReaction).catch(e => toast(e instanceof ApiError ? e.message : 'Não foi possível reagir.'))}
+              />
             )}
           </div>
         </DialogPrimitive.Content>
@@ -273,9 +274,9 @@ function ViewersSheet({ id, onClose }: { id: string; onClose: () => void }) {
               <p className="truncate font-medium">{v.person.name}</p>
               <p className="text-xs text-muted">{since(v.viewedAt)}</p>
             </div>
-            {v.liked && (
-              <span className="text-red-500" aria-label="Curtiu">
-                <Icon n="heart" className="h-5 w-5" fill="currentColor" />
+            {v.reaction && (
+              <span className="text-xl" aria-label={REACTIONS.find(r => r.id === v.reaction)!.label}>
+                {REACTIONS.find(r => r.id === v.reaction)!.emoji}
               </span>
             )}
           </li>
@@ -321,6 +322,12 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
 
   const toggle = (a: AreaId) => setAreas(x => (x.includes(a) ? x.filter(y => y !== a) : [...x, a]));
 
+  // Enquanto a foto não foi confirmada ("Usar esta foto") e enviada, o resto do formulário fica bloqueado.
+  const locked = cropping || uploading;
+  const lockProps = locked
+    ? { inert: true, 'aria-disabled': true, className: 'space-y-4 pointer-events-none select-none opacity-40 transition' }
+    : { className: 'space-y-4 transition' };
+
   const publish = async () => {
     if (!photo) return;
     setBusy(true);
@@ -344,7 +351,7 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
           <Button variant="line" className="flex-1" onClick={onClose}>
             Cancelar
           </Button>
-          <Button className="flex-1" disabled={busy || uploading || !photo || !areas.length} onClick={publish}>
+          <Button className="flex-1" disabled={busy || locked || !photo || !areas.length} onClick={publish}>
             Publicar
           </Button>
         </>
@@ -364,11 +371,25 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
           }}
         />
         {cropping && rawFile ? (
-          <StoryCropper
-            file={rawFile}
-            onCancel={() => fileRef.current?.click()}
-            onDone={useCrop}
-          />
+          <div className="space-y-2">
+            <StoryCropper
+              file={rawFile}
+              onCancel={() => fileRef.current?.click()}
+              onDone={useCrop}
+            />
+            <p className="text-center text-xs font-semibold text-primary">Confirme a foto para continuar.</p>
+            <button
+              type="button"
+              onClick={() => {
+                // Volta para a foto já confirmada (se houver) ou para o "Escolher foto".
+                setCropping(false);
+                if (!photo) setRawFile(null);
+              }}
+              className="mx-auto block text-xs font-semibold text-muted underline"
+            >
+              {photo ? 'Cancelar e manter a foto anterior' : 'Cancelar'}
+            </button>
+          </div>
         ) : photo ? (
           <>
             <div className="relative mx-auto aspect-[9/16] w-48 overflow-hidden rounded-2xl bg-black">
@@ -398,6 +419,7 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
           </button>
         )}
         {!cropping && <ImageHint purpose="story" className="justify-center" />}
+        <div {...lockProps}>
         <p className="text-center text-xs text-muted">O story some sozinho em 24 horas.</p>
         <Field label="Áreas da vida (1 ou mais)">
           <div className="mb-2 flex justify-end">
@@ -432,6 +454,7 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
         <Field label="Quem pode ver">
           <Seg items={VISIBILITY.map(v => ({ id: v.id, label: v.label }))} value={visibility} onChange={setVisibility} />
         </Field>
+        </div>
       </div>
     </Sheet>
   );

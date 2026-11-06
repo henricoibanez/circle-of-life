@@ -8,12 +8,13 @@ import { PyramidHill } from '@/components/art';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
+import { BackToJourney } from '@/components/journey';
 import { ICON_PATHS } from '@/components/icon-paths';
 import { Card, IconBtn, Ring, Tag } from '@/components/primitives';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api, ApiError } from '@/lib/api';
-import { journeyActive } from '@/lib/journey';
+import { inJourney, JOURNEY_KEY, journeyActive } from '@/lib/journey';
 import { useMe } from '@/lib/me';
 import { mix, tint } from '@/lib/color';
 import { since } from '@/lib/time';
@@ -63,7 +64,11 @@ export default function MaslowPage() {
   const [note, setNote] = useState('');
   const save = useMutation({
     mutationFn: (fn: () => Promise<MaslowDto>) => fn(),
-    onSuccess: d => qc.setQueryData(KEY, d),
+    onSuccess: d => {
+      qc.setQueryData(KEY, d);
+      // Marcar um item pode concluir a etapa da Jornada.
+      qc.invalidateQueries({ queryKey: JOURNEY_KEY });
+    },
     onError: e => toast(e instanceof ApiError ? e.message : 'Não foi possível salvar.'),
   });
 
@@ -97,12 +102,15 @@ export default function MaslowPage() {
               <p className="mt-1 text-sm text-muted">
                 Nível atual: <strong style={{ color: current.color }}>{current.short ?? current.name}</strong> · {checks.size} de {MASLOW_ITEM_KEYS.length} itens
               </p>
-              <Button variant="pline" className="mt-3 rounded-full bg-surface/80 px-3 py-1.5" asChild>
-                <Link href="/analise">
-                  <Icon n="chart" className="h-4 w-4" />
-                  Ver insights
-                </Link>
-              </Button>
+              {/* Na Jornada, a análise ainda não abre (decisão do dono): sem "Ver insights". */}
+              {!inJourney(me) && (
+                <Button variant="pline" className="mt-3 rounded-full bg-surface/80 px-3 py-1.5" asChild>
+                  <Link href="/analise">
+                    <Icon n="chart" className="h-4 w-4" />
+                    Ver insights
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -245,6 +253,7 @@ export default function MaslowPage() {
             </Button>
           </Card>
         )}
+        <BackToJourney phase="maslow" />
       </div>
     </>
   );

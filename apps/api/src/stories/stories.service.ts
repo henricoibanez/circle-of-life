@@ -1,4 +1,5 @@
-import { type AreaId, STORY_HOURS, type StoryDto, type StoryGroupDto, type StoryViewerDto, type Visibility } from '@circle/shared';
+import { type AreaId, STORY_HOURS, type StoryDto, type StoryGroupDto, type StoryViewerDto, type Visibility , type ReactionKind } from '@circle/shared';
+import { countReactions } from '../feed/reactions';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { Prisma, User } from '../generated/prisma/client';
@@ -49,7 +50,7 @@ export class StoriesService {
       include: {
         author: { select: PERSON_SELECT },
         file: true,
-        likes: { where: { userId: user.id }, select: { userId: true } },
+        likes: { select: { userId: true, kind: true } },
         views: { where: { userId: user.id }, select: { userId: true } },
         _count: { select: { likes: true, views: true } },
       },
@@ -65,9 +66,11 @@ export class StoriesService {
         areas: r.areas,
         caption: r.caption,
         visibility: r.visibility,
-        liked: r.likes.length > 0,
+        liked: r.likes.some(l => l.userId === user.id),
+        myReaction: r.likes.find(l => l.userId === user.id)?.kind ?? null,
         seen: mine || r.views.length > 0,
         likes: mine ? r._count.likes : null,
+        reactions: mine ? countReactions(r.likes) : null,
         views: mine ? r._count.views : null,
         createdAt: r.createdAt.toISOString(),
         expiresAt: r.expiresAt.toISOString(),
@@ -116,19 +119,24 @@ export class StoriesService {
     await this.prisma.storyView.upsert({ where: { storyId_userId: { storyId: id, userId: user.id } }, create: { storyId: id, userId: user.id }, update: {} });
   }
 
-  async like(user: User, id: string, on: boolean) {
+  /** Reagir (curtir, não curtir ou coração; trocar a reação substitui) ou tirar a reação. */
+  async like(user: User, id: string, on: boolean, kind: ReactionKind = 'like') {
     const s = await this.visibleStory(user.id, id);
     if (!on) {
       await this.prisma.storyLike.deleteMany({ where: { storyId: id, userId: user.id } });
       return;
     }
-    if (await this.prisma.storyLike.findUnique({ where: { storyId_userId: { storyId: id, userId: user.id } } })) return;
-    await this.prisma.storyLike.create({ data: { storyId: id, userId: user.id } });
+    const prev = await this.prisma.storyLike.findUnique({ where: { storyId_userId: { storyId: id, userId: user.id } } });
+    if (prev) {
+      if (prev.kind !== kind) await this.prisma.storyLike.update({ where: { storyId_userId: { storyId: id, userId: user.id } }, data: { kind } });
+      return;
+    }
+    await this.prisma.storyLike.create({ data: { storyId: id, userId: user.id, kind } });
     if (s.authorId === user.id) return;
     // Mesma regra dos posts: curtidas no mesmo story viram um aviso só enquanto ele não for lido.
     const n = await this.prisma.storyLike.count({ where: { storyId: id, userId: { not: s.authorId } } });
     const first = user.name.split(' ')[0];
-    const title = n > 1 ? `${first} e mais ${n - 1} ${n - 1 === 1 ? 'pessoa curtiram' : 'pessoas curtiram'} seu story` : `${first} curtiu seu story`;
+    const title = n > 1 ? `${first} e mais ${n - 1} ${n - 1 === 1 ? 'pessoa reagiram' : 'pessoas reagiram'} ao seu story` : `${first} reagiu ao seu story`;
     const unread = await this.prisma.notification.findFirst({ where: { userId: s.authorId, type: 'curtida_story', refId: id, readAt: null } });
     if (unread) await this.prisma.notification.update({ where: { id: unread.id }, data: { title, actorId: user.id, createdAt: new Date() } });
     else await this.notifications.notify({ userId: s.authorId, type: 'curtida_story', title, body: s.caption, link: '/feed', actorId: user.id, refId: id });
@@ -140,11 +148,11 @@ export class StoriesService {
     if (!s) throw new NotFoundException('Story não encontrado.');
     const [views, likes] = await Promise.all([
       this.prisma.storyView.findMany({ where: { storyId: id }, include: { user: { select: PERSON_SELECT } }, orderBy: { viewedAt: 'desc' } }),
-      this.prisma.storyLike.findMany({ where: { storyId: id }, select: { userId: true } }),
+      this.prisma.storyLike.findMany({ where: { storyId: id }, select: { userId: true, kind: true } }),
     ]);
-    const liked = new Set(likes.map(l => l.userId));
+    const liked = new Map(likes.map(l => [l.userId, l.kind]));
     const people = await this.people.many(views.map(v => v.user));
-    return views.map((v, i) => ({ person: people[i]!, viewedAt: v.viewedAt.toISOString(), liked: liked.has(v.userId) }));
+    return views.map((v, i) => ({ person: people[i]!, viewedAt: v.viewedAt.toISOString(), liked: liked.has(v.userId), reaction: liked.get(v.userId) ?? null }));
   }
 
   /** Limpeza: stories vencidos somem e a foto é apagada do storage. */

@@ -1,4 +1,4 @@
-import { sprintName, type SprintDto } from '@circle/shared';
+import { GEMS, sprintName, type SprintDto } from '@circle/shared';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type { Prisma, Sprint } from '../generated/prisma/client';
 import { JourneyService } from '../journey/journey.module';
@@ -141,7 +141,8 @@ export class SprintsService {
    * - tarefas em A Fazer ou Fazendo voltam para o backlog, com registro no histórico;
    * - a sprint vai para o histórico com "prontas/total" e a próxima fica em planejamento
    *   (começa só quando a pessoa apertar "Iniciar sprint").
-   * `full` diz se a sprint terminou com todas as tarefas prontas (só assim rende XP).
+   * `full` diz se a sprint terminou com todas as tarefas prontas (e pelo menos uma): só assim
+   * rende os +100 XP e as 50 gemas (decisão do dono de 06/11/2026).
    */
   async close(userId: string) {
     return this.prisma.$transaction(async tx => {
@@ -157,12 +158,9 @@ export class SprintsService {
       const name = sprintName(sprint);
 
       await tx.task.updateMany({ where: { id: { in: done.map(t => t.id) } }, data: { archivedAt: now, sprintId: sprint.id } });
-      for (const t of open) {
-        await tx.task.update({
-          where: { id: t.id },
-          data: { status: 'backlog', sprintId: null, logs: { create: { text: `Voltou ao backlog no fim da ${name}` } } },
-        });
-      }
+      // Em lote (2 consultas): uma por tarefa ficava lenta com o servidor longe do banco.
+      await tx.task.updateMany({ where: { id: { in: open.map(t => t.id) } }, data: { status: 'backlog', sprintId: null } });
+      await tx.taskLog.createMany({ data: open.map(t => ({ taskId: t.id, text: `Voltou ao backlog no fim da ${name}` })) });
       const closed = await tx.sprint.update({
         where: { id: sprint.id },
         data: { closedAt: now, doneCount: done.length, totalCount: board.length },
@@ -170,6 +168,7 @@ export class SprintsService {
       const next = await tx.sprint.create({ data: { userId, number: sprint.number + 1, length: sprint.length } });
       const full = board.length > 0 && open.length === 0;
       const gained = full ? await this.xp.grant(tx, userId, 'sprint', sprint.id) : 0;
+      const gems = full ? await this.xp.grantGems(tx, userId, 'sprint', sprint.id, GEMS.sprint) : 0;
       await this.activity.add(tx, userId, 'flag', `Você encerrou a ${name} (${done.length}/${board.length})`, '/board');
       return {
         closed: toSprintDto(closed),
@@ -177,7 +176,7 @@ export class SprintsService {
         done: done.length,
         open: open.length,
         full,
-        xp: await this.xp.change(tx, userId, gained),
+        xp: await this.xp.change(tx, userId, gained, gems),
       };
     });
   }

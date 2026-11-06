@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { useToast } from '@/components/toasts';
 import { api, ApiError, type Me } from './api';
+import { JOURNEY_KEY } from './journey';
 
 export const RODA_KEY = ['roda'];
 
@@ -28,7 +29,10 @@ export function useSetScore() {
     timer.current = setTimeout(() => {
       const scores = pending.current;
       pending.current = {};
-      api<RodaDto>('/roda/scores', { method: 'PUT', body: { scores } }).catch(e => {
+      api<RodaDto>('/roda/scores', { method: 'PUT', body: { scores } })
+        // Notas novas podem concluir a etapa da Jornada.
+        .then(() => qc.invalidateQueries({ queryKey: JOURNEY_KEY }))
+        .catch(e => {
         toast(e instanceof ApiError ? e.message : 'Não foi possível salvar a nota.');
         qc.invalidateQueries({ queryKey: RODA_KEY });
       });
@@ -42,7 +46,7 @@ export function useSnapshot() {
   return useMutation({
     mutationFn: () => api<{ xp: XpChange }>('/roda/snapshots', { method: 'POST' }),
     onSuccess: r => {
-      qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, disponivel: r.xp.disponivel } });
+      qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, gems: r.xp.gems } });
       qc.invalidateQueries({ queryKey: RODA_KEY });
       toast(r.xp.gained > 0 ? `Avaliação registrada, +${r.xp.gained} XP` : 'Avaliação registrada');
     },

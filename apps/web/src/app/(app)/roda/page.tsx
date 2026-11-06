@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Radar } from '@/components/exercises/radar';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
+import { BackToJourney } from '@/components/journey';
 import { AreaIcon, Bar, Card, Ring, styleVars } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { Button } from '@/components/ui/button';
@@ -107,6 +108,7 @@ export default function RodaPage() {
             Último registro em {new Date(last.createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}. A evolução aparece em Relatórios.
           </p>
         )}
+        <BackToJourney phase="roda" />
       </div>
     </>
   );

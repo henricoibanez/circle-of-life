@@ -1,13 +1,13 @@
 'use client';
 
-import { AREA_IDS, JOURNEY_PHASES, NECRO_MIN_CHARS, SOCIAL_UNLOCK_PRICE, STARTER_TRILHA_ID, type ArtVariant, type JourneyDto, type JourneyPhase } from '@circle/shared';
+import { AREA_IDS, JOURNEY_PHASES, NECRO_MIN_CHARS, gemsLabel, SOCIAL_UNLOCK_PRICE, STARTER_TRILHA_ID, type ArtVariant, type JourneyDto, type JourneyPhase } from '@circle/shared';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Art, Logo } from '@/components/art';
 import { Bell } from '@/components/bell';
 import { Icon, type IconName } from '@/components/icon';
-import { FinishSheet, PhaseCongratsSheet, useUnlockWithConfirm } from '@/components/journey';
+import { FinishSheet, PhaseCongratsSheet, PhaseGuideSheet, useUnlockWithConfirm } from '@/components/journey';
 import { Bar } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
@@ -96,6 +96,7 @@ export default function JornadaPage() {
                   detail={detailOf(p.id, j)}
                   actions={actionsOf(p.id, p.href, state, j, {
                     starter: () => openSheet(close => <TrilhaSheet id={STARTER_TRILHA_ID} onClose={close} />),
+                    guide: (id, href) => openSheet(close => <PhaseGuideSheet phase={id} href={href} onClose={close} />),
                     conclude,
                     free,
                     busy: finish.isPending || unlock.busy,
@@ -160,23 +161,25 @@ function actionsOf(
   href: string,
   state: 'done' | 'current' | 'locked',
   j: JourneyDto,
-  fx: { starter: () => void; conclude: () => void; free: () => void; busy: boolean },
+  fx: { starter: () => void; guide: (id: JourneyPhase, href: string) => void; conclude: () => void; free: () => void; busy: boolean },
 ): Action[] {
   if (state === 'locked') return [];
   if (id === 'concluir') {
     if (!j.finished) return [{ label: 'Concluir minha jornada', onClick: fx.conclude, primary: true, disabled: fx.busy }];
     if (freeNow(j.social)) return [{ label: 'Concluir jornada', onClick: fx.free, primary: true, disabled: fx.busy }];
-    return [{ label: `Liberar agora por ${SOCIAL_UNLOCK_PRICE} XP`, onClick: fx.free, primary: true, disabled: fx.busy }];
+    return [{ label: `Liberar agora por ${gemsLabel(SOCIAL_UNLOCK_PRICE)}`, onClick: fx.free, primary: true, disabled: fx.busy }];
   }
-  if (id === 'sprint') return state === 'current' ? [{ label: 'Iniciar sprint', href, primary: true }] : [];
+  if (id === 'sprint') return state === 'current' ? [{ label: 'Iniciar sprint', onClick: () => fx.guide(id, href), primary: true }] : [];
   if (id === 'backlog')
     return state === 'current'
       ? [
-          { label: 'Ir para o backlog', href: '/backlog?aba=tarefas', primary: true },
+          { label: 'Ir para o backlog', onClick: () => fx.guide(id, '/backlog?aba=tarefas'), primary: true },
           { label: 'Minha primeira trilha', onClick: fx.starter },
         ]
       : [{ label: 'Ver o backlog', href: '/backlog' }];
-  return [{ label: state === 'done' ? 'Rever' : 'Começar', href, primary: state === 'current' }];
+  // Na etapa atual, antes de ir, abre a orientação do exercício.
+  if (state === 'current') return [{ label: 'Começar', onClick: () => fx.guide(id, href), primary: true }];
+  return [{ label: 'Rever', href }];
 }
 
 function PhaseCard({

@@ -1,9 +1,10 @@
 'use client';
 
-import { AREA, type AreaId, TRILHA_CATEGORIES, type TrilhaCategory, type TrilhaDetailDto, type TrilhaDto } from '@circle/shared';
+import { AREA, type AreaId, TRILHA_CATEGORIES, type TrilhaCategory, type TrilhaDetailDto, type TrilhaDto , gemsLabel } from '@circle/shared';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Art } from '@/components/art';
+import { CoinIcon } from '@/components/coin';
 import { AreaPicker } from '@/components/backlog/forms';
 import { Icon } from '@/components/icon';
 import { AreaIcon, areasLabel, Field,IconBtn, inputCls, Seg, Tag, ImageHint } from '@/components/primitives';
@@ -36,7 +37,7 @@ export function Cover({ t, className }: { t: Pick<TrilhaDto, 'art' | 'color' | '
   );
 }
 
-export const priceLabel = (t: Pick<TrilhaDto, 'priceXp'>) => (t.priceXp ? `${t.priceXp.toLocaleString('pt-BR')} XP` : 'Grátis');
+export const priceLabel = (t: Pick<TrilhaDto, 'priceGems'>) => (t.priceGems ? gemsLabel(t.priceGems) : 'Grátis');
 
 /** Selo do status. No grupo, "pendente" é a sugestão esperando um gestor. */
 export function statusTag(t: Pick<TrilhaDto, 'status' | 'mine' | 'groupId'>): [string, string] | null {
@@ -78,7 +79,7 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
   if (editing) return <TrilhaEditSheet t={t} onClose={() => setEditing(false)} />;
 
   const go = (fn: () => Promise<unknown>, ok?: string) => run(toast, setBusy, fn, ok);
-  const needsPayment = t.priceXp > 0 && !t.acquired && !t.mine;
+  const needsPayment = t.priceGems > 0 && !t.acquired && !t.mine;
   const status = statusTag(t);
 
   let footer;
@@ -99,7 +100,7 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
     <Sheet title={t.title} onClose={onClose} footer={footer}>
       <Cover t={t} className="mb-3 aspect-[16/9] w-full overflow-hidden rounded-2xl" />
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        {t.groupId ? <Tag c="rgb(var(--a))">Trilha do grupo</Tag> : <Tag c={t.priceXp ? 'rgb(var(--a))' : '#16a34a'}>{priceLabel(t)}</Tag>}
+        {t.groupId ? <Tag c="rgb(var(--a))">Trilha do grupo</Tag> : <Tag c={t.priceGems ? '#b7791f' : '#16a34a'} className="inline-flex items-center gap-1">{t.priceGems > 0 && <CoinIcon className="h-3.5 w-3.5" />}{priceLabel(t)}</Tag>}
         {status && <Tag c={status[1]}>{status[0]}</Tag>}
         <span className="text-xs text-muted">por {t.author ? `${t.author.name} (@${t.author.handle})` : 'Circle of Life'}</span>
       </div>
@@ -192,13 +193,13 @@ function ImportStep({ t, needsPayment, onBack, onDone }: { t: TrilhaDetailDto; n
   const [name, setName] = useState(t.title);
   if (!me) return null;
 
-  const short = needsPayment && me.xp.disponivel < t.priceXp;
+  const short = needsPayment && me.xp.gems < t.priceGems;
   const ok = !short && (target !== 'new' || name.trim().length > 0);
   const doImport = () =>
     run(toast, setBusy, async () => {
       const r = await actions.import(t.id, target === 'new' ? { newInitiative: name.trim() } : { initiativeId: target });
       onDone();
-      toast(r.paid ? `Trilha comprada por ${r.paid} XP e importada para o backlog` : 'Épico importado para o backlog');
+      toast(r.paid ? `Trilha comprada por ${gemsLabel(r.paid)} e importada para o backlog` : 'Épico importado para o backlog');
       router.push('/backlog');
     });
 
@@ -238,8 +239,8 @@ function ImportStep({ t, needsPayment, onBack, onDone }: { t: TrilhaDetailDto; n
         )}
         {needsPayment && (
           <p className="rounded-xl bg-accent/5 px-3 py-2 text-sm">
-            Você tem <strong>{me.xp.disponivel.toLocaleString('pt-BR')} XP disponíveis</strong>.{' '}
-            {short ? 'Não é suficiente para esta trilha.' : `Depois da compra ficam ${(me.xp.disponivel - t.priceXp).toLocaleString('pt-BR')} XP. Seu XP total não muda.`}
+            Você tem <strong>{gemsLabel(me.xp.gems)}</strong>.{' '}
+            {short ? 'Não é suficiente para esta trilha.' : `Depois da compra ficam ${gemsLabel(me.xp.gems - t.priceGems)}. Seu XP não muda.`}
           </p>
         )}
       </div>
@@ -317,7 +318,7 @@ export function PublishSheet({ epicId, groupId, onClose }: { epicId?: string; gr
   const [eid, setEid] = useState(epicId ?? '');
   const epic = data?.epics.find(e => e.id === eid);
   const [dest, setDest] = useState(groupId ?? 'loja');
-  const [f, setF] = useState({ title: epic?.title ?? '', description: epic?.description ?? '', category: 'pessoal' as TrilhaCategory, paid: false, priceXp: 50 });
+  const [f, setF] = useState({ title: epic?.title ?? '', description: epic?.description ?? '', category: 'pessoal' as TrilhaCategory, paid: false, priceGems: 50 });
   const [cover, setCover] = useState<{ id: string; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
   if (!data) return null;
@@ -337,7 +338,7 @@ export function PublishSheet({ epicId, groupId, onClose }: { epicId?: string; gr
         title: f.title.trim(),
         description: f.description.trim(),
         category: f.category,
-        priceXp: group ? 0 : f.paid ? Math.max(1, Math.round(f.priceXp)) : 0,
+        priceGems: group ? 0 : f.paid ? Math.max(1, Math.round(f.priceGems)) : 0,
         coverFileId: cover?.id ?? null,
         groupId: group?.id ?? null,
       });
@@ -421,7 +422,7 @@ export function PublishSheet({ epicId, groupId, onClose }: { epicId?: string; gr
             <Seg
               items={[
                 { id: 'free' as const, label: 'Grátis' },
-                { id: 'paid' as const, label: 'Paga em XP' },
+                { id: 'paid' as const, label: 'Paga em círculos' },
               ]}
               value={f.paid ? 'paid' : 'free'}
               onChange={v => setF({ ...f, paid: v === 'paid' })}
@@ -429,8 +430,8 @@ export function PublishSheet({ epicId, groupId, onClose }: { epicId?: string; gr
           </Field>
         )}
         {!group && f.paid && (
-          <Field label="Quantos XP">
-            <input type="number" min={1} step={10} className={inputCls} value={f.priceXp} onChange={e => setF({ ...f, priceXp: Number(e.target.value) })} />
+          <Field label="Quantos círculos">
+            <input type="number" min={1} step={10} className={inputCls} value={f.priceGems} onChange={e => setF({ ...f, priceGems: Number(e.target.value) })} />
           </Field>
         )}
         <label className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-dashed border-line p-3 text-sm text-muted hover:border-primary/40">

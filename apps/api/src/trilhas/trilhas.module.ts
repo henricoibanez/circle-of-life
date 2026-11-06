@@ -10,7 +10,7 @@ class PublishDto {
   @IsString() @MinLength(10, { message: 'conte em pelo menos 10 caracteres para quem é a trilha' }) @MaxLength(600, { message: 'a descrição pode ter até 600 caracteres' })
   description!: string;
   @IsIn(TRILHA_CATEGORY_IDS, { message: 'categoria inválida' }) category!: TrilhaCategory;
-  @IsInt({ message: 'o preço precisa ser um número inteiro' }) @Min(0) @Max(100_000) priceXp!: number;
+  @IsInt({ message: 'o preço precisa ser um número inteiro' }) @Min(0) @Max(100_000) priceGems!: number;
   @IsOptional() @ValidateIf((_, v) => v !== null) @IsString() coverFileId?: string | null;
   /** Grupo onde publicar (vazio = loja). */
   @IsOptional() @ValidateIf((_, v) => v !== null) @IsString() groupId?: string | null;

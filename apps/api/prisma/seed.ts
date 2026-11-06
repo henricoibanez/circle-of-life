@@ -45,6 +45,7 @@ const USERS: Prisma.UserCreateInput[] = [
     role: 'admin',
     bio: 'Construindo uma vida com propósito, foco e liberdade.',
     xpTotal: 2450,
+    gems: 300,
   },
   { email: 'julia@teste.local', name: 'Julia Fernandes', handle: 'juliafernandes', bio: 'Uma página por dia.', xpTotal: 2780 },
   { email: 'lucas@teste.local', name: 'Lucas Almeida', handle: 'lucasalmeida', bio: 'Construindo coisas à noite.', xpTotal: 1940 },

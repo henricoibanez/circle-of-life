@@ -29,7 +29,8 @@ export type TrilhaDto = {
   color: string;
   coverText: string | null;
   coverUrl: string | null;
-  priceXp: number;
+  /** Preço em gemas (0 = grátis). */
+  priceGems: number;
   status: TrilhaStatus;
   rejectionReason: string | null;
   /** Nulo = trilha oficial do Circle of Life. */

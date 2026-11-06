@@ -1,8 +1,9 @@
 'use client';
 
-import { AREA, AREAS, SOCIAL_UNLOCK_PRICE, STARTER_TRILHA_ID, TRILHA_CATEGORIES } from '@circle/shared';
+import { AREA, AREAS, gemsLabel, SOCIAL_UNLOCK_PRICE, STARTER_TRILHA_ID, TRILHA_CATEGORIES } from '@circle/shared';
 import { useState } from 'react';
 import { StepsArt } from '@/components/art';
+import { CoinIcon } from '@/components/coin';
 import { Header, InfoSheet } from '@/components/header';
 import { Icon, type IconName } from '@/components/icon';
 import { AreaIcon, IconBtn, inputCls, MANY_AREAS, Tag } from '@/components/primitives';
@@ -16,7 +17,7 @@ import { kfmt, useTrilhaActions, useTrilhas } from '@/lib/trilhas';
 
 const CATS: { id: string; label: string; icon: IconName; color?: string }[] = [{ id: 'all', label: 'Todas', icon: 'grid' }, ...TRILHA_CATEGORIES];
 
-/** Loja de trilhas (como no protótipo), com trilhas pagas em XP e aprovação pelo administrador. */
+/** Loja de trilhas (como no protótipo), com trilhas pagas em gemas e aprovação pelo administrador. */
 export default function LojaPage() {
   const { data } = useTrilhas();
   const { data: me } = useMe();
@@ -33,7 +34,7 @@ export default function LojaPage() {
   const unlock = useUnlockWithConfirm();
   const free = me?.social.freeAt ? freeNow(me.social) : false;
   const freeAll = () => unlock.start();
-  const unlockLabel = free ? 'Liberar de graça' : `Liberar por ${SOCIAL_UNLOCK_PRICE} XP`;
+  const unlockLabel = free ? 'Liberar de graça' : `Liberar por ${gemsLabel(SOCIAL_UNLOCK_PRICE)}`;
   const countdown = me?.social.freeAt && !free ? `Libera de graça em ${daysLeft(me.social.freeAt) === 1 ? '1 dia' : `${daysLeft(me.social.freeAt)} dias`}` : null;
   const list = (data ?? [])
     .filter(t => (cat === 'all' || t.category === cat) && (!q || (t.title + t.description).toLowerCase().includes(q.toLowerCase())))
@@ -103,7 +104,7 @@ export default function LojaPage() {
             <div className="min-w-0 flex-1">
               <p className="font-semibold">Por enquanto, só a sua primeira trilha</p>
               <p className="mt-0.5 text-sm text-muted">
-                As outras trilhas abrem quando você concluir a sua Jornada{countdown ? `: ${countdown.toLowerCase()}, ou agora, por ${SOCIAL_UNLOCK_PRICE} XP.` : '.'}
+                As outras trilhas abrem quando você concluir a sua Jornada{countdown ? `: ${countdown.toLowerCase()}, ou agora, por ${gemsLabel(SOCIAL_UNLOCK_PRICE)}.` : '.'}
               </p>
               {me?.journeyFinished && (
                 <Button className="mt-3" disabled={unlock.busy} onClick={freeAll}>
@@ -168,7 +169,7 @@ export default function LojaPage() {
                     </span>
                   </div>
                   <div className="mt-1.5 px-0.5">
-                    <Tag c={t.priceXp ? 'rgb(var(--a))' : '#16a34a'}>{priceLabel(t)}</Tag>
+                    <Tag c={t.priceGems ? '#b7791f' : '#16a34a'} className="inline-flex items-center gap-1">{t.priceGems > 0 && <CoinIcon className="h-3.5 w-3.5" />}{priceLabel(t)}</Tag>
                     {t.mine && t.status === 'pendente' && <Tag c="#d97706" className="ml-1">Em análise</Tag>}
                     {t.mine && t.status === 'recusada' && <Tag c="#dc2626" className="ml-1">Recusada</Tag>}
                   </div>

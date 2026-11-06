@@ -31,14 +31,14 @@ describe('Loja de trilhas', () => {
     await api.app.close();
   });
 
-  const publish = async (epicId: string, priceXp = 0) =>
-    author.c.request('POST', `/epics/${epicId}/publish`, { description: 'Do sofá aos 5 km em seis semanas.', category: 'saude', priceXp });
+  const publish = async (epicId: string, priceGems = 0) =>
+    author.c.request('POST', `/epics/${epicId}/publish`, { description: 'Do sofá aos 5 km em seis semanas.', category: 'saude', priceGems });
 
   test('épico sem tarefas não pode ser publicado; iniciativa não é mais publicada', async () => {
     const ini = (await author.c.request('POST', '/initiatives', { title: 'Vazia' })).body;
     const ep = (await author.c.request('POST', '/epics', { initiativeId: ini.id, title: 'Sem tarefas', area: 'lazer' })).body;
-    assert.equal((await author.c.request('POST', `/epics/${ep.id}/publish`, { description: 'Uma descrição qualquer', category: 'saude', priceXp: 0 })).status, 400);
-    assert.equal((await author.c.request('POST', `/initiatives/${ini.id}/publish`, { description: 'Uma descrição qualquer', category: 'saude', priceXp: 0 })).status, 404);
+    assert.equal((await author.c.request('POST', `/epics/${ep.id}/publish`, { description: 'Uma descrição qualquer', category: 'saude', priceGems: 0 })).status, 400);
+    assert.equal((await author.c.request('POST', `/initiatives/${ini.id}/publish`, { description: 'Uma descrição qualquer', category: 'saude', priceGems: 0 })).status, 404);
   });
 
   test('publicar deixa pendente: só o autor e os admins veem; admin é avisado', async () => {
@@ -71,7 +71,7 @@ describe('Loja de trilhas', () => {
   });
 
   test('o admin aprova a própria trilha (pode ser o único admin)', async () => {
-    const id = (await admin.c.request('POST', `/epics/${await makeEpic(admin.c)}/publish`, { description: 'Trilha publicada pelo próprio admin.', category: 'saude', priceXp: 0 })).body.id;
+    const id = (await admin.c.request('POST', `/epics/${await makeEpic(admin.c)}/publish`, { description: 'Trilha publicada pelo próprio admin.', category: 'saude', priceGems: 0 })).body.id;
     assert.equal((await admin.c.request('GET', `/trilhas/${id}`)).body.canReview, true);
     assert.equal((await admin.c.request('POST', `/trilhas/${id}/approve`)).body.status, 'aprovada');
   });
@@ -151,18 +151,21 @@ describe('Loja de trilhas', () => {
     const poor = await loginAs(api, 'semxp');
     const r1 = await poor.c.request('POST', `/trilhas/${id}/import`, NEW);
     assert.equal(r1.status, 400);
-    assert.match(r1.body.message, /XP disponível insuficiente/);
+    assert.match(r1.body.message, /Círculos insuficientes/);
 
-    await api.prisma.user.update({ where: { id: buyer.user.id }, data: { xpTotal: 200 } });
+    await api.prisma.user.update({ where: { id: buyer.user.id }, data: { xpTotal: 200, gems: 200 } });
     const authorBefore = (await author.c.request('GET', '/me')).body.xp.total;
     const r2 = await buyer.c.request('POST', `/trilhas/${id}/import`, NEW);
     assert.equal(r2.body.paid, 50);
     const me = (await buyer.c.request('GET', '/me')).body.xp;
-    assert.deepEqual(me, { total: 200, disponivel: 150 }, 'gastar não mexe no XP total');
+    assert.deepEqual(me, { total: 200, gems: 150 }, 'paga em gemas; o XP não muda');
+    const extrato = (await buyer.c.request('GET', '/me/gems')).body;
+    assert.equal(extrato[0].reason, 'trilha_compra');
+    assert.equal(extrato[0].amount, -50);
     assert.equal((await author.c.request('GET', '/me')).body.xp.total, authorBefore + 10);
 
     await buyer.c.request('POST', `/trilhas/${id}/import`, NEW);
-    assert.equal((await buyer.c.request('GET', '/me')).body.xp.disponivel, 150, 'importar de novo não cobra de novo');
+    assert.equal((await buyer.c.request('GET', '/me')).body.xp.gems, 150, 'importar de novo não cobra de novo');
   });
 
   test('o autor importa a própria trilha sem pagar nem ganhar XP', async () => {
@@ -222,13 +225,13 @@ describe('Trilhas dos grupos', () => {
     await api.app.close();
   });
 
-  const inGroup = (c: Client, epicId: string) => c.request('POST', `/epics/${epicId}/publish`, { description: 'Plano do grupo para correr junto.', category: 'saude', priceXp: 40, groupId });
+  const inGroup = (c: Client, epicId: string) => c.request('POST', `/epics/${epicId}/publish`, { description: 'Plano do grupo para correr junto.', category: 'saude', priceGems: 40, groupId });
 
   test('gestor publica direto no grupo: grátis, só membros veem, não aparece na loja', async () => {
     const r = await inGroup(criadora.c, await makeEpic(criadora.c));
     assert.equal(r.status, 201);
     assert.equal(r.body.status, 'aprovada');
-    assert.equal(r.body.priceXp, 0, 'trilha de grupo é sempre grátis');
+    assert.equal(r.body.priceGems, 0, 'trilha de grupo é sempre grátis');
     assert.equal(r.body.groupId, groupId);
     assert.equal(r.body.canEdit, true);
     const id = r.body.id;
@@ -242,7 +245,7 @@ describe('Trilhas dos grupos', () => {
     assert.equal(imp.status, 201);
     assert.equal(imp.body.paid, 0);
     assert.equal((await criadora.c.request('GET', '/me')).body.xp.total, 0, 'download no grupo não dá XP');
-    assert.equal((await fora.c.request('POST', `/epics/${await makeEpic(fora.c)}/publish`, { description: 'Quero entrar no grupo.', category: 'saude', priceXp: 0, groupId })).status, 403);
+    assert.equal((await fora.c.request('POST', `/epics/${await makeEpic(fora.c)}/publish`, { description: 'Quero entrar no grupo.', category: 'saude', priceGems: 0, groupId })).status, 403);
   });
 
   test('membro comum sugere: fica pendente para os gestores, que aprovam ou recusam', async () => {
@@ -292,7 +295,7 @@ describe('Trilhas dos grupos', () => {
 
   test('trazer da loja cria uma cópia do grupo: a da loja não muda e o gestor edita a cópia', async () => {
     const author = await loginAs(api, 'autor-loja');
-    const pub = (await author.c.request('POST', `/epics/${await makeEpic(author.c, 'Corrida leve')}/publish`, { description: 'Para quem está começando a correr.', category: 'saude', priceXp: 0 })).body;
+    const pub = (await author.c.request('POST', `/epics/${await makeEpic(author.c, 'Corrida leve')}/publish`, { description: 'Para quem está começando a correr.', category: 'saude', priceGems: 0 })).body;
     await admin.c.request('POST', `/trilhas/${pub.id}/approve`);
 
     assert.equal((await membro.c.request('POST', `/groups/${groupId}/trilhas`, { trilhaId: pub.id })).status, 403);
@@ -316,7 +319,7 @@ describe('Trilhas dos grupos', () => {
 
   test('trilha paga só entra no grupo se o gestor já tem', async () => {
     const author = await loginAs(api, 'autor-pago');
-    const pub = (await author.c.request('POST', `/epics/${await makeEpic(author.c)}/publish`, { description: 'Plano pago de corrida.', category: 'saude', priceXp: 20 })).body;
+    const pub = (await author.c.request('POST', `/epics/${await makeEpic(author.c)}/publish`, { description: 'Plano pago de corrida.', category: 'saude', priceGems: 20 })).body;
     await admin.c.request('POST', `/trilhas/${pub.id}/approve`);
     const r = await criadora.c.request('POST', `/groups/${groupId}/trilhas`, { trilhaId: pub.id });
     assert.equal(r.status, 400);

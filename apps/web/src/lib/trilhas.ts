@@ -31,7 +31,7 @@ export function useTrilhaActions() {
     /** Importa o épico para uma iniciativa sua ou para uma nova. */
     import: async (id: string, target: TrilhaImportInput) => {
       const r = await api<{ initiativeId: string; epicId: string; paid: number; xp: XpChange }>(`/trilhas/${id}/import`, { method: 'POST', body: target });
-      qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, disponivel: r.xp.disponivel } });
+      qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, gems: r.xp.gems } });
       qc.invalidateQueries({ queryKey: BACKLOG_KEY });
       refresh(id);
       return r;

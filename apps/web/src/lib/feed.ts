@@ -1,6 +1,6 @@
 'use client';
 
-import type { AreaId, CommentDto, FeedFilter, FeedPageDto, PostDto, PostRefType, Visibility, XpChange } from '@circle/shared';
+import type { AreaId, CommentDto, FeedFilter, FeedPageDto, PostDto, PostRefType, Visibility, XpChange , ReactionKind } from '@circle/shared';
 import { type InfiniteData, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type Me } from './api';
 
@@ -48,7 +48,7 @@ export function useFeedActions() {
     qc.setQueriesData<InfiniteData<FeedPageDto>>({ queryKey: FEED_KEY }, d => d && { ...d, pages: d.pages.map(pg => ({ ...pg, posts: pg.posts.map(p => (p.id === id ? fn(p) : p)) })) });
     qc.setQueryData<PostDto>(['post', id], p => p && fn(p));
   };
-  const setXp = (xp: XpChange) => qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: xp.total, disponivel: xp.disponivel } });
+  const setXp = (xp: XpChange) => qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: xp.total, gems: xp.gems } });
   const refresh = () => qc.invalidateQueries({ queryKey: FEED_KEY });
 
   return {
@@ -96,6 +96,11 @@ export function useFeedActions() {
       patch(id, x => ({ ...x, comments: r.comments.length }));
       setXp(r.xp);
       return r;
+    },
+    /** Reagir a um comentário (curtir, não curtir, coração); `null` tira a reação. */
+    reactComment: async (id: string, commentId: string, kind: ReactionKind | null) => {
+      const list = await api<CommentDto[]>(`/posts/${id}/comments/${commentId}/reaction`, kind ? { method: 'PUT', body: { kind } } : { method: 'DELETE' });
+      qc.setQueryData<CommentDto[]>(['comments', id], list);
     },
     removeComment: async (id: string, commentId: string) => {
       await api(`/posts/${id}/comments/${commentId}`, { method: 'DELETE' });

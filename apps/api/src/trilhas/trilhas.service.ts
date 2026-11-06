@@ -14,7 +14,7 @@ type WithCounts = Trilha & {
   _count: { tasks: number; acquisitions: number };
 };
 
-export type PublishInput = { title?: string; description: string; category: TrilhaCategory; priceXp: number; coverFileId?: string | null; groupId?: string | null };
+export type PublishInput = { title?: string; description: string; category: TrilhaCategory; priceGems: number; coverFileId?: string | null; groupId?: string | null };
 export type TrilhaEditInput = { title?: string; description?: string; areas?: AreaId[]; tasks?: string[] };
 
 /**
@@ -55,7 +55,7 @@ export class TrilhasService {
       color: t.color,
       coverText: t.coverText,
       coverUrl: cover ? await this.uploads.url(cover) : null,
-      priceXp: t.priceXp,
+      priceGems: t.priceGems,
       status: t.status,
       rejectionReason: t.authorId === user.id || (t.groupId ? gestor : user.role === 'admin') ? t.rejectionReason : null,
       author: t.author,
@@ -164,7 +164,7 @@ export class TrilhasService {
     const epic = await this.prisma.epic.findFirst({ where: { id: epicId, userId: user.id }, include: { tasks: { orderBy: { position: 'asc' }, select: { title: true, description: true, areas: true } } } });
     if (!epic) throw new NotFoundException('Épico não encontrado.');
     if (!epic.tasks.length) throw new BadRequestException('Para publicar, o épico precisa ter pelo menos uma tarefa.');
-    if (input.priceXp < 0 || !Number.isInteger(input.priceXp)) throw new BadRequestException('O preço em XP precisa ser um número inteiro (0 = grátis).');
+    if (input.priceGems < 0 || !Number.isInteger(input.priceGems)) throw new BadRequestException('O preço em círculos precisa ser um número inteiro (0 = grátis).');
     if (input.coverFileId) await this.uploads.readyFile(user.id, input.coverFileId, 'trilha');
     const areas = epic.areas.length ? epic.areas : [epic.area];
     const data = {
@@ -191,7 +191,7 @@ export class TrilhasService {
     const trilha = await this.prisma.$transaction(async tx => {
       if (previous && previous.status !== 'aprovada') await tx.trilha.update({ where: { id: previous.id }, data: { status: 'despublicada' } });
       const approved = previous?.status === 'aprovada' ? previous : await tx.trilha.findFirst({ where: { authorId: user.id, groupId: null, sourceEpicId: epic.id, status: 'aprovada' } });
-      const created = await tx.trilha.create({ data: { ...data, rootId: 'tmp', replacesId: approved?.id ?? null, priceXp: input.priceXp } });
+      const created = await tx.trilha.create({ data: { ...data, rootId: 'tmp', replacesId: approved?.id ?? null, priceGems: input.priceGems } });
       return tx.trilha.update({ where: { id: created.id }, data: { rootId: previous?.rootId ?? approved?.rootId ?? created.id } });
     });
 
@@ -209,7 +209,7 @@ export class TrilhasService {
     if (!group || !role) throw new ForbiddenException('Você não faz parte desse grupo.');
     const gestor = role === 'admin';
     const created = await this.prisma.trilha.create({
-      data: { ...data, rootId: 'tmp', groupId, priceXp: 0, status: gestor ? 'aprovada' : 'pendente', ...(gestor ? { reviewedById: user.id, reviewedAt: new Date() } : {}) },
+      data: { ...data, rootId: 'tmp', groupId, priceGems: 0, status: gestor ? 'aprovada' : 'pendente', ...(gestor ? { reviewedById: user.id, reviewedAt: new Date() } : {}) },
     });
     const trilha = await this.prisma.trilha.update({ where: { id: created.id }, data: { rootId: created.id } });
     if (gestor) await this.notifyNewInGroup(user, group, trilha);
@@ -299,7 +299,7 @@ export class TrilhasService {
     if (!group || (await this.role(user.id, groupId)) !== 'admin') throw new ForbiddenException('Só os gestores do grupo trazem trilhas da loja.');
     const src = await this.prisma.trilha.findUnique({ where: { id: trilhaId }, include: { tasks: { orderBy: { position: 'asc' } } } });
     if (!src || src.groupId || src.status !== 'aprovada') throw new BadRequestException('Só trilhas aprovadas da loja podem entrar no grupo.');
-    if (src.priceXp > 0 && src.authorId !== user.id && !(await this.prisma.trilhaAcquisition.findFirst({ where: { userId: user.id, rootId: src.rootId } }))) {
+    if (src.priceGems > 0 && src.authorId !== user.id && !(await this.prisma.trilhaAcquisition.findFirst({ where: { userId: user.id, rootId: src.rootId } }))) {
       throw new BadRequestException('Essa trilha é paga: compre na loja antes de trazer para o grupo.');
     }
     if (await this.prisma.trilha.findFirst({ where: { groupId, copiedFromId: src.id, status: 'aprovada' } })) throw new ConflictException('Essa trilha já está no grupo.');
@@ -318,7 +318,7 @@ export class TrilhasService {
         art: src.art,
         color: src.color,
         coverText: src.coverText,
-        priceXp: 0,
+        priceGems: 0,
         status: 'aprovada',
         reviewedById: user.id,
         reviewedAt: new Date(),
@@ -380,11 +380,11 @@ export class TrilhasService {
       const already = await tx.trilhaAcquisition.findFirst({ where: { userId: user.id, rootId: t.rootId } });
       let paid = 0;
       if (!already && !isAuthor) {
-        if (t.priceXp > 0) {
-          await this.xp.spend(tx, user.id, t.priceXp, t.id);
-          paid = t.priceXp;
+        if (t.priceGems > 0) {
+          await this.xp.spendGems(tx, user.id, t.priceGems, t.id, 'trilha_compra');
+          paid = t.priceGems;
         }
-        await tx.trilhaAcquisition.create({ data: { userId: user.id, trilhaId: t.id, rootId: t.rootId, xpPaid: paid } });
+        await tx.trilhaAcquisition.create({ data: { userId: user.id, trilhaId: t.id, rootId: t.rootId, gemsPaid: paid } });
         // +10 XP ao autor, uma vez por pessoa que baixou (qualquer versão). Só na loja.
         if (t.authorId && !t.groupId) {
           await this.xp.grant(tx, t.authorId, 'trilha_download', `${t.rootId}:${user.id}`);
@@ -418,7 +418,7 @@ export class TrilhasService {
         `Importada da trilha ${t.title}`,
       );
       await this.activity.add(tx, user.id, 'bag', `Você importou a trilha “${t.title}”`, '/backlog');
-      return { initiativeId: initiative.id, epicId: epic.id, paid, xp: await this.xp.change(tx, user.id, -paid) };
+      return { initiativeId: initiative.id, epicId: epic.id, paid, xp: await this.xp.change(tx, user.id, 0, -paid) };
     });
   }
 }

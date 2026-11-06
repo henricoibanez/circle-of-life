@@ -1,4 +1,4 @@
-import { AREA_IDS, type AreaId, FEED_FILTERS, type FeedFilter, MAX_POST_AREAS, MAX_POST_IMAGES, POST_REF_TYPES, type PostRefType, type Visibility } from '@circle/shared';
+import { AREA_IDS, type AreaId, FEED_FILTERS, type FeedFilter, MAX_POST_AREAS, MAX_POST_IMAGES, POST_REF_TYPES, type PostRefType, REACTION_IDS, type ReactionKind, type Visibility } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ArrayMaxSize, IsArray, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { CurrentUser, Social } from '../common/decorators';
@@ -27,6 +27,9 @@ class UpdatePostDto {
   @IsOptional() @IsIn(VIS, { message: 'visibilidade inválida' }) visibility?: Visibility;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) @MaxLength(30, { each: true }) tags?: string[];
   @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_IMAGES, { message: `até ${MAX_POST_IMAGES} imagens por post` }) @IsString({ each: true }) mediaIds?: string[];
+}
+class ReactionDto {
+  @IsOptional() @IsIn(REACTION_IDS, { message: 'reação inválida' }) kind?: ReactionKind;
 }
 class CommentBody {
   @IsString() @MinLength(1, { message: 'escreva um comentário' }) @MaxLength(1000, { message: 'o comentário pode ter até 1.000 caracteres' }) text!: string;
@@ -92,6 +95,16 @@ class FeedController {
   @Post('posts/:id/comments')
   comment(@CurrentUser() u: User, @Param('id') id: string, @Body() dto: CommentBody) {
     return this.feed.comment(u, id, dto.text);
+  }
+  /** Reagir a um comentário (curtir, não curtir ou coração). */
+  @Put('posts/:id/comments/:commentId/reaction')
+  react(@CurrentUser() u: User, @Param('id') id: string, @Param('commentId') commentId: string, @Body() dto: ReactionDto) {
+    return this.feed.reactComment(u, id, commentId, dto.kind ?? 'like');
+  }
+  /** Tirar a minha reação do comentário. */
+  @Delete('posts/:id/comments/:commentId/reaction')
+  unreact(@CurrentUser() u: User, @Param('id') id: string, @Param('commentId') commentId: string) {
+    return this.feed.reactComment(u, id, commentId, null);
   }
   @Delete('posts/:id/comments/:commentId')
   @HttpCode(204)

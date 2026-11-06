@@ -60,7 +60,7 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
   };
   const applyXp = (xp?: XpChange) => {
     if (!xp) return;
-    qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: xp.total, disponivel: xp.disponivel } });
+    qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: xp.total, gems: xp.gems } });
     if (xp.gained > 0) toast(`Item concluído, +${xp.gained} XP`);
   };
   const call = async <T,>(fn: () => Promise<T>) => {

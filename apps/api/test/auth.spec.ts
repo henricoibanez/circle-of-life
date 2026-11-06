@@ -66,7 +66,7 @@ describe('Login e convites (ambiente de desenvolvimento)', () => {
     assert.equal(me.status, 200);
     assert.equal(me.body.email, 'admin@teste.local');
     assert.equal(me.body.role, 'admin');
-    assert.deepEqual(me.body.xp, { total: 0, disponivel: 0 });
+    assert.deepEqual(me.body.xp, { total: 0, gems: 0 });
 
     const out = await c.request('POST', '/auth/logout');
     assert.equal(out.status, 204);

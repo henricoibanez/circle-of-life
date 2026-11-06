@@ -3,6 +3,7 @@ import {
   BOARD_LOCKED_MESSAGE,
   JOURNEY_PHASES,
   NECRO_MIN_CHARS,
+  GEMS,
   SOCIAL_UNLOCK_PRICE,
   socialStatus,
   XP,
@@ -132,9 +133,10 @@ export class JourneyService {
       // A data vem antes do prêmio: a partir daqui o XP volta a valer (ver XpService).
       await tx.user.update({ where: { id: userId }, data: { journeyFinishedAt: new Date() } });
       const gained = await this.xp.grant(tx, userId, 'primeiros_passos', userId);
+      const gems = await this.xp.grantGems(tx, userId, 'jornada', userId, GEMS.jornada);
       await this.activity.add(tx, userId, 'trophy', 'Você concluiu a sua Jornada', '/jornada');
       const fresh = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: SOCIAL_FIELDS });
-      return { xp: await this.xp.change(tx, userId, gained), social: socialStatus(fresh) };
+      return { xp: await this.xp.change(tx, userId, gained, gems), social: socialStatus(fresh) };
     });
   }
 
@@ -145,7 +147,7 @@ export class JourneyService {
 
   /**
    * Liberar tudo (concluir a Jornada de vez): de graça depois dos 7 dias; antes
-   * disso, gastando 500 XP disponíveis.
+   * disso, gastando 500 gemas.
    */
   async unlockSocial(userId: string) {
     return this.prisma.$transaction(async tx => {
@@ -154,10 +156,10 @@ export class JourneyService {
       if (s.open) throw new BadRequestException('Você já liberou tudo.');
       if (!s.freeAt) throw new BadRequestException('Conclua a sua Jornada antes.');
       const free = new Date() >= new Date(s.freeAt);
-      if (!free) await this.xp.spend(tx, userId, SOCIAL_UNLOCK_PRICE, userId, 'rede_social');
+      if (!free) await this.xp.spendGems(tx, userId, SOCIAL_UNLOCK_PRICE, userId, 'rede_social');
       await tx.user.update({ where: { id: userId }, data: { socialUnlockedAt: new Date() } });
       await this.activity.add(tx, userId, 'trophy', 'Você concluiu a sua Jornada e liberou a rede social', '/feed');
-      return { paid: free ? 0 : SOCIAL_UNLOCK_PRICE, xp: await this.xp.change(tx, userId, 0) };
+      return { paid: free ? 0 : SOCIAL_UNLOCK_PRICE, xp: await this.xp.change(tx, userId, 0, free ? 0 : -SOCIAL_UNLOCK_PRICE) };
     });
   }
 

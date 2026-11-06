@@ -1,4 +1,4 @@
-import { AREA_IDS, type AreaId, STORY_CAPTION_MAX, STORY_MAX_AREAS, type Visibility } from '@circle/shared';
+import { AREA_IDS, type AreaId, REACTION_IDS, type ReactionKind, STORY_CAPTION_MAX, STORY_MAX_AREAS, type Visibility } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Post, Put } from '@nestjs/common';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { CurrentUser, Social } from '../common/decorators';
@@ -6,6 +6,9 @@ import type { User } from '../generated/prisma/client';
 import { SocialModule } from '../social/social.module';
 import { StoriesService } from './stories.service';
 
+class ReactionDto {
+  @IsOptional() @IsIn(REACTION_IDS, { message: 'reação inválida' }) kind?: ReactionKind;
+}
 class CreateStoryDto {
   @IsString() fileId!: string;
   @IsArray()
@@ -42,8 +45,8 @@ class StoriesController {
   }
   @Put(':id/like')
   @HttpCode(204)
-  like(@CurrentUser() u: User, @Param('id') id: string) {
-    return this.stories.like(u, id, true);
+  like(@CurrentUser() u: User, @Param('id') id: string, @Body() dto: ReactionDto) {
+    return this.stories.like(u, id, true, dto?.kind ?? 'like');
   }
   @Delete(':id/like')
   @HttpCode(204)

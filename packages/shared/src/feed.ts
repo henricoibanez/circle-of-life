@@ -44,7 +44,26 @@ export type PostDto = {
 
 export type FeedPageDto = { posts: PostDto[]; nextCursor: string | null };
 
-export type CommentDto = { id: string; author: PersonDto; mine: boolean; text: string; createdAt: string };
+/** Reações em comentários e stories (decisão do dono de 06/11/2026). Uma por pessoa. */
+export const REACTIONS = [
+  { id: 'like', label: 'Curtir', emoji: '👍' },
+  { id: 'dislike', label: 'Não curti', emoji: '👎' },
+  { id: 'heart', label: 'Amei', emoji: '❤️' },
+] as const;
+export type ReactionKind = (typeof REACTIONS)[number]['id'];
+export const REACTION_IDS = REACTIONS.map(r => r.id) as ReactionKind[];
+export type ReactionCounts = Record<ReactionKind, number>;
+export const emptyReactions = (): ReactionCounts => ({ like: 0, dislike: 0, heart: 0 });
+
+export type CommentDto = {
+  id: string;
+  author: PersonDto;
+  mine: boolean;
+  text: string;
+  createdAt: string;
+  reactions: ReactionCounts;
+  myReaction: ReactionKind | null;
+};
 
 /** Rascunho de post ao compartilhar uma conclusão ("Quer compartilhar?"). */
 export type PostDraft = { title: string; text: string; area?: AreaId | null; refType?: PostRefType; refId?: string };
@@ -63,9 +82,12 @@ export type StoryDto = {
   caption: string;
   visibility: Visibility;
   liked: boolean;
+  /** Minha reação ao story (curtir, não curtir ou coração). */
+  myReaction: ReactionKind | null;
   seen: boolean;
-  /** Só para o autor. */
+  /** Só para o autor: total de reações e quantas de cada. */
   likes: number | null;
+  reactions: ReactionCounts | null;
   views: number | null;
   createdAt: string;
   expiresAt: string;
@@ -74,4 +96,4 @@ export type StoryDto = {
 /** Stories ativos agrupados por pessoa (a sua primeiro, depois quem tem story não visto). */
 export type StoryGroupDto = { author: PersonDto; mine: boolean; allSeen: boolean; stories: StoryDto[] };
 
-export type StoryViewerDto = { person: PersonDto; viewedAt: string; liked: boolean };
+export type StoryViewerDto = { person: PersonDto; viewedAt: string; liked: boolean; reaction: ReactionKind | null };

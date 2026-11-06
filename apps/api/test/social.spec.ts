@@ -92,7 +92,7 @@ describe('Amigos e grupos', () => {
     const ini = (await adm.c.request('POST', '/initiatives', { title: 'Clássicos' })).body;
     const ep = (await adm.c.request('POST', '/epics', { initiativeId: ini.id, title: 'Odisseia', area: 'intelectual' })).body;
     await adm.c.request('POST', '/tasks', { epicId: ep.id, title: 'Canto 1' });
-    const t = (await adm.c.request('POST', `/epics/${ep.id}/publish`, { description: 'Leitura dos clássicos gregos.', category: 'estudos', priceXp: 0 })).body;
+    const t = (await adm.c.request('POST', `/epics/${ep.id}/publish`, { description: 'Leitura dos clássicos gregos.', category: 'estudos', priceGems: 0 })).body;
     assert.equal((await ana.c.request('POST', `/groups/${g.id}/trilhas`, { trilhaId: t.id })).status, 400);
     await adm.c.request('POST', `/trilhas/${t.id}/approve`);
     assert.equal((await bia.c.request('POST', `/groups/${g.id}/trilhas`, { trilhaId: t.id })).status, 403);

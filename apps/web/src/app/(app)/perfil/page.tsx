@@ -1,6 +1,6 @@
 'use client';
 
-import { PALETTES, type PaletteId } from '@circle/shared';
+import { gemsLabel, PALETTES, type PaletteId, STREAK_BASE, STREAK_STEP, streakReward } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -16,6 +16,9 @@ import { Button } from '@/components/ui/button';
 import { api, ApiError, logout, type Me } from '@/lib/api';
 import { tint } from '@/lib/color';
 import { xpVisible } from '@/lib/journey';
+import { useStreak } from '@/lib/streak';
+import { WeekDots } from '@/components/streak';
+import { CoinIcon } from '@/components/coin';
 import { useMe } from '@/lib/me';
 import { since } from '@/lib/time';
 import { disablePush, enablePush, pushActive, pushSupported } from '@/lib/notifications';
@@ -39,7 +42,33 @@ const VISIBILITY = [
   { id: 'privado' as const, label: 'Privado' },
 ];
 
-/** Meu Perfil e configurações (como no protótipo, só com XP: sem nível, streak e conquistas). */
+/** Meu Perfil e configurações (como no protótipo, com XP, gemas e ofensiva; sem nível). */
+/** Ofensiva (dias seguidos), acessos do mês e a semana atual, com o prêmio de amanhã. */
+function StreakCard() {
+  const { data: s } = useStreak();
+  if (!s) return null;
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-500/10 text-orange-500">
+          <Icon n="flame" className="h-6 w-6" fill="currentColor" sw={1} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{s.ofensiva === 1 ? '1 dia de ofensiva' : `${s.ofensiva} dias de ofensiva`}</p>
+          <p className="text-xs text-muted">{s.acessosMes === 1 ? '1 acesso neste mês' : `${s.acessosMes} acessos neste mês`}</p>
+        </div>
+      </div>
+      <div className="mt-3">
+        <WeekDots s={s} />
+      </div>
+      <p className="mt-3 text-xs text-muted">
+        Cada dia seguido que você abre o app na semana rende mais círculos: {STREAK_BASE}, {STREAK_BASE + STREAK_STEP}, {STREAK_BASE + 2 * STREAK_STEP}… até{' '}
+        {streakReward(7)}. Pulou um dia ou começou outra semana, volta para {STREAK_BASE}. Amanhã: <strong>+{gemsLabel(s.proximoPremio)}</strong>.
+      </p>
+    </Card>
+  );
+}
+
 export default function PerfilPage() {
   const qc = useQueryClient();
   const toast = useToast();
@@ -138,18 +167,20 @@ export default function PerfilPage() {
         <Card className="grid grid-cols-2 divide-x divide-line py-3 text-center">
           {[
             ['XP total', me.xp.total, 'star', 'text-amber-500'],
-            ['XP disponível', me.xp.disponivel, 'gem', 'text-accent'],
+            ['Círculos', me.xp.gems, 'coin', ''],
           ].map(([l, n, ic, c]) => (
             <div key={l as string}>
               <p className="text-[0.8125rem] text-muted">{l}</p>
               <p className="mt-0.5 text-[1.375rem] font-semibold">{(n as number).toLocaleString('pt-BR')}</p>
               <span className={`mt-0.5 inline-block ${c}`}>
-                <Icon n={ic as IconName} className="h-5 w-5" fill="currentColor" sw={1} />
+                {ic === 'coin' ? <CoinIcon className="h-5 w-5" /> : <Icon n={ic as IconName} className="h-5 w-5" fill="currentColor" sw={1} />}
               </span>
             </div>
           ))}
         </Card>
         )}
+
+        {xpVisible(me) && <StreakCard />}
 
         <Card className="p-4">
           <div className="flex items-center">

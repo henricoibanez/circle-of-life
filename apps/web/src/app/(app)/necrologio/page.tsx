@@ -7,12 +7,13 @@ import { Quill } from '@/components/art';
 import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { Header, InfoSheet } from '@/components/header';
 import { Icon, type IconName } from '@/components/icon';
+import { BackToJourney } from '@/components/journey';
 import { Card } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
-import { journeyActive } from '@/lib/journey';
+import { JOURNEY_KEY, journeyActive } from '@/lib/journey';
 import { useMe } from '@/lib/me';
 import { since } from '@/lib/time';
 
@@ -52,6 +53,8 @@ export default function NecrologioPage() {
     try {
       const r = await api<Necro>('/necrologio', { method: 'PUT', body: { html } });
       qc.setQueryData(KEY, r);
+      // O texto salvo pode concluir a etapa da Jornada.
+      qc.invalidateQueries({ queryKey: JOURNEY_KEY });
       setUpdatedAt(r.updatedAt);
       setSaved(true);
     } catch {
@@ -201,6 +204,7 @@ export default function NecrologioPage() {
             </Button>
           </Card>
         )}
+        <BackToJourney phase="necrologio" />
       </div>
     </>
   );

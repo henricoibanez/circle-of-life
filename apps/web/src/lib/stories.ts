@@ -1,6 +1,6 @@
 'use client';
 
-import type { AreaId, StoryGroupDto, StoryViewerDto, Visibility, XpChange } from '@circle/shared';
+import type { AreaId, StoryGroupDto, StoryViewerDto, Visibility, XpChange , ReactionKind } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type Me } from './api';
 
@@ -26,7 +26,7 @@ export function useStoryActions() {
   return {
     create: async (body: { fileId: string; areas: AreaId[]; caption: string; visibility: Visibility }) => {
       const r = await api<{ id: string; xp: XpChange }>('/stories', { method: 'POST', body });
-      qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, disponivel: r.xp.disponivel } });
+      qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, gems: r.xp.gems } });
       await qc.invalidateQueries({ queryKey: STORIES_KEY });
       return r;
     },
@@ -39,10 +39,11 @@ export function useStoryActions() {
       patch(id, s => ({ ...s, seen: true }));
       return api(`/stories/${id}/view`, { method: 'POST' }).catch(() => undefined);
     },
-    like: (id: string, on: boolean) => {
-      patch(id, s => ({ ...s, liked: on }));
-      return api(`/stories/${id}/like`, { method: on ? 'PUT' : 'DELETE' }).catch(e => {
-        patch(id, s => ({ ...s, liked: !on }));
+    /** Reagir ao story (curtir, não curtir, coração); `null` tira a reação. */
+    react: (id: string, kind: ReactionKind | null, prev: ReactionKind | null) => {
+      patch(id, s => ({ ...s, liked: Boolean(kind), myReaction: kind }));
+      return api(`/stories/${id}/like`, kind ? { method: 'PUT', body: { kind } } : { method: 'DELETE' }).catch(e => {
+        patch(id, s => ({ ...s, liked: Boolean(prev), myReaction: prev }));
         throw e;
       });
     },

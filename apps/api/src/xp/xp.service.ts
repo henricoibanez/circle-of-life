@@ -1,11 +1,13 @@
 import { XP, type XpChange } from '@circle/shared';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type { Prisma, XpReason } from '../generated/prisma/client';
+import type { GemReason, Prisma, XpReason } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 type Tx = Prisma.TransactionClient;
-type SpendReason = 'trilha_compra' | 'rede_social';
-type EarnReason = Exclude<XpReason, SpendReason>;
+// trilha_compra e rede_social ficaram no extrato só pelos gastos antigos de XP (antes das gemas).
+type EarnReason = Exclude<XpReason, 'trilha_compra' | 'rede_social'>;
+type GemSpendReason = 'trilha_compra' | 'rede_social';
+type GemEarnReason = Exclude<GemReason, GemSpendReason>;
 
 /** "AAAA-MM-DD" no fuso da pessoa (para as regras "primeiro do dia"). */
 export const dayKey = (timezone: string, date = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(date);
@@ -17,8 +19,10 @@ export const dayKey = (timezone: string, date = new Date()) => new Intl.DateTime
  *
  * - Cada coisa (uma tarefa, um épico…) só rende XP uma vez enquanto estiver valendo:
  *   concluir, reabrir e concluir de novo não acumula.
- * - Ganhar soma no XP total; estornar tira do total; gastar soma em "gasto".
- *   XP disponível = total − gasto, nunca negativo.
+ * - Ganhar soma no XP total; estornar tira do total. XP não se gasta.
+ * - Gemas (a moeda, decisão do dono de 06/11/2026) têm extrato próprio (GemEvent) e saldo
+ *   em User.gems: ganha na Jornada, na sprint 100% e na ofensiva; gasta na loja e para
+ *   liberar a rede social. O saldo nunca fica negativo.
  */
 @Injectable()
 export class XpService {
@@ -66,18 +70,34 @@ export class XpService {
     return this.grant(tx, userId, reason, key);
   }
 
-  /** Gasta XP disponível (compra de trilha, liberar a rede social). Recusa se não houver saldo. */
-  async spend(tx: Tx, userId: string, amount: number, refId: string, reason: SpendReason = 'trilha_compra') {
-    const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { xpTotal: true, xpSpent: true } });
-    if (u.xpTotal - u.xpSpent < amount) throw new BadRequestException('XP disponível insuficiente para essa compra.');
-    await tx.xpEvent.create({ data: { userId, reason, refId, amount: -amount } });
-    await tx.user.update({ where: { id: userId }, data: { xpSpent: { increment: amount } } });
+  /** Dá gemas por um motivo, uma vez só por `refId`. Devolve quanto ganhou. */
+  async grantGems(tx: Tx, userId: string, reason: GemEarnReason, refId: string, amount: number) {
+    if (amount <= 0 || (await tx.gemEvent.count({ where: { userId, reason, refId } }))) return 0;
+    // Durante a Jornada, o único prêmio é o da própria Jornada (como no XP).
+    if (reason !== 'jornada' && (await this.onJourney(tx, userId))) return 0;
+    await tx.gemEvent.create({ data: { userId, reason, refId, amount } });
+    await tx.user.update({ where: { id: userId }, data: { gems: { increment: amount } } });
+    return amount;
+  }
+
+  /** Gasta gemas (compra de trilha, liberar a rede social). Recusa se não houver saldo. */
+  async spendGems(tx: Tx, userId: string, amount: number, refId: string, reason: GemSpendReason) {
+    if (amount <= 0) return;
+    // Só desconta se ainda houver saldo (protege contra duas compras ao mesmo tempo).
+    const { count } = await tx.user.updateMany({ where: { id: userId, gems: { gte: amount } }, data: { gems: { decrement: amount } } });
+    if (!count) throw new BadRequestException('Círculos insuficientes para essa compra.');
+    await tx.gemEvent.create({ data: { userId, reason, refId, amount: -amount } });
   }
 
   /** Totais atuais, para a tela mostrar depois de uma ação. */
-  async change(tx: Tx, userId: string, gained: number): Promise<XpChange> {
-    const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { xpTotal: true, xpSpent: true } });
-    return { gained, total: u.xpTotal, disponivel: Math.max(0, u.xpTotal - u.xpSpent) };
+  async change(tx: Tx, userId: string, gained: number, gemsGained = 0): Promise<XpChange> {
+    const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { xpTotal: true, gems: true } });
+    return { gained, total: u.xpTotal, gems: u.gems, gemsGained };
+  }
+
+  /** Extrato de gemas (mais recente primeiro). */
+  gemHistory(userId: string, take = 100) {
+    return this.prisma.gemEvent.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take, select: { id: true, amount: true, reason: true, createdAt: true } });
   }
 
   /** Extrato (mais recente primeiro). */

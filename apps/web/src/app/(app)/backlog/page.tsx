@@ -11,6 +11,7 @@ import { useBacklogSheets } from '@/components/backlog/use-backlog-sheets';
 import { useCelebrate } from '@/components/celebrate';
 import { useGoBack } from '@/components/header';
 import { Icon } from '@/components/icon';
+import { JourneyStepDone } from '@/components/journey';
 import { Bar, Card, Empty, IconBtn, inputCls, Seg, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
@@ -27,8 +28,15 @@ export default function BacklogPage() {
     <SelectionProvider>
       <Backlog />
       <BulkBar />
+      <BacklogJourneyStep />
     </SelectionProvider>
   );
+}
+
+/** Na Jornada: parabéns quando a etapa do backlog termina aqui (ex.: primeira tarefa enviada para a sprint). */
+function BacklogJourneyStep() {
+  const { dataUpdatedAt } = useBacklog();
+  return <JourneyStepDone phase="backlog" watch={dataUpdatedAt} />;
 }
 
 function Backlog() {

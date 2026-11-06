@@ -34,6 +34,43 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
   const [media, setMedia] = useState<{ id: string; url: string }[]>(post?.media ?? []);
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
+  // Fotos escolhidas que a pessoa ainda não confirmou ("Usar esta foto"). Só são enviadas ao confirmar.
+  const [pending, setPending] = useState<{ key: number; file: File; preview: string }[]>([]);
+  const nextKey = useRef(0);
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  const locked = pending.length > 0;
+  // Libera as prévias da memória ao fechar o formulário.
+  useEffect(() => () => pendingRef.current.forEach(p => URL.revokeObjectURL(p.preview)), []);
+
+  /** Tira uma foto ainda não confirmada (ou todas, sem `key`). */
+  const dropPending = (key?: number) => {
+    pending.filter(p => key === undefined || p.key === key).forEach(p => URL.revokeObjectURL(p.preview));
+    setPending(x => (key === undefined ? [] : x.filter(p => p.key !== key)));
+  };
+
+  /** "Usar esta foto": envia as fotos confirmadas e libera o resto do formulário. */
+  const confirmPending = async () => {
+    const files = pending.map(p => p.file);
+    dropPending();
+    setUploading(n => n + files.length);
+    await Promise.all(
+      files.map(async file => {
+        try {
+          const up = await uploadImage(file, 'post', 1200);
+          setMedia(x => [...x, { id: up.id, url: up.url }]);
+        } catch (err) {
+          toast(err instanceof Error ? err.message : 'Não foi possível abrir essa imagem');
+        } finally {
+          setUploading(n => n - 1);
+        }
+      }),
+    );
+  };
+
+  /** Enquanto houver foto sem confirmar, o resto do formulário fica bloqueado e apagado. */
+  const lock = (cls: string) =>
+    locked ? { inert: true, 'aria-disabled': true, className: `${cls} pointer-events-none select-none opacity-40 transition` } : { className: `${cls} transition` };
 
   const publish = async () => {
     setBusy(true);
@@ -81,7 +118,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
           <Button variant="line" className="flex-1" onClick={onClose}>
             Cancelar
           </Button>
-          <Button className="flex-1" disabled={busy || uploading > 0 || (!f.text.trim() && !f.title.trim())} onClick={publish}>
+          <Button className="flex-1" disabled={busy || locked || uploading > 0 || (!f.text.trim() && !f.title.trim())} onClick={publish}>
             {post ? 'Salvar' : 'Publicar'}
           </Button>
         </>
@@ -92,6 +129,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
           <Avatar name={me?.name} photo={me?.photoUrl} />
           <p className="font-semibold">{me?.name}</p>
         </div>
+        <div {...lock('space-y-4')}>
         <Field label="Conquista (opcional)">
           <input className={inputCls} maxLength={120} value={f.title} onChange={e => setF({ ...f, title: e.target.value })} placeholder="Ex.: Sprint 12 concluída" />
         </Field>
@@ -104,6 +142,36 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
           onChange={e => setF({ ...f, text: e.target.value })}
           placeholder="O que aconteceu na sua sprint?"
         />
+        </div>
+        {locked && (
+          <div className="rounded-2xl border border-primary/40 bg-primary/5 p-3">
+            <div className="grid grid-cols-4 gap-2">
+              {pending.map(p => (
+                <div key={p.key} className="relative overflow-hidden rounded-xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.preview} alt="" className="aspect-square w-full object-cover" />
+                  <button
+                    aria-label="Tirar esta foto"
+                    onClick={() => dropPending(p.key)}
+                    className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white"
+                  >
+                    <Icon n="x" className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button variant="line" className="flex-1" onClick={() => dropPending()}>
+                Cancelar
+              </Button>
+              <Button className="flex-1" onClick={confirmPending}>
+                {pending.length > 1 ? 'Usar estas fotos' : 'Usar esta foto'}
+              </Button>
+            </div>
+            <p className="mt-2 text-center text-xs text-muted">{pending.length > 1 ? 'Confirme as fotos para continuar.' : 'Confirme a foto para continuar.'}</p>
+          </div>
+        )}
+        <div {...lock('space-y-4')}>
         <div className="grid grid-cols-4 gap-2">
           {media.map(m => (
             <div key={m.id} className="relative overflow-hidden rounded-xl">
@@ -123,7 +191,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
               Enviando…
             </div>
           ))}
-          {media.length + uploading < MAX_POST_IMAGES && (
+          {media.length + uploading + pending.length < MAX_POST_IMAGES && (
             <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-line text-muted hover:text-primary">
               <Icon n="camera" />
               <span className="sr-only">Adicionar imagens</span>
@@ -132,22 +200,11 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
                 accept="image/*"
                 multiple
                 className="sr-only"
-                onChange={async e => {
-                  const files = [...(e.target.files ?? [])].slice(0, MAX_POST_IMAGES - media.length - uploading);
+                onChange={e => {
+                  const files = [...(e.target.files ?? [])].slice(0, MAX_POST_IMAGES - media.length - uploading - pending.length);
                   e.target.value = '';
-                  setUploading(n => n + files.length);
-                  await Promise.all(
-                    files.map(async file => {
-                      try {
-                        const up = await uploadImage(file, 'post', 1200);
-                        setMedia(x => [...x, { id: up.id, url: up.url }]);
-                      } catch (err) {
-                        toast(err instanceof Error ? err.message : 'Não foi possível abrir essa imagem');
-                      } finally {
-                        setUploading(n => n - 1);
-                      }
-                    }),
-                  );
+                  // Primeiro mostra a prévia; o envio só acontece em "Usar esta foto".
+                  setPending(x => [...x, ...files.map(file => ({ key: nextKey.current++, file, preview: URL.createObjectURL(file) }))]);
                 }}
               />
             </label>
@@ -184,6 +241,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
             {f.visibility === 'publico' ? 'Todas as pessoas do app.' : f.visibility === 'amigos' ? 'Só os seus amigos.' : 'Só você.'}
             {f.groups.length > 0 && (f.visibility === 'publico' ? ' O post também aparece nos grupos escolhidos.' : ' E os membros dos grupos escolhidos.')}
           </p>
+        </div>
         </div>
       </div>
     </Sheet>

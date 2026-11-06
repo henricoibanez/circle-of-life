@@ -108,7 +108,7 @@ export function socialStatus(u: { journey: boolean; journeyFinishedAt: Date | nu
 }
 
 /** Mensagem da trava da rede social (a API devolve com status 403). */
-export const SOCIAL_LOCKED_MESSAGE = `Isso abre quando você concluir a sua Jornada: por ${SOCIAL_UNLOCK_PRICE} XP ou de graça depois de ${SOCIAL_WAIT_DAYS} dias.`;
+export const SOCIAL_LOCKED_MESSAGE = `Isso abre quando você concluir a sua Jornada: por ${SOCIAL_UNLOCK_PRICE} círculos ou de graça depois de ${SOCIAL_WAIT_DAYS} dias.`;
 
 /** Trilha oficial recomendada na Jornada (criada por migration): uma ação em cada área da vida. */
 export const STARTER_TRILHA_ID = 'trilha-primeiros-passos';

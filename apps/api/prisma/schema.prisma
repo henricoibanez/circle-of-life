@@ -81,10 +81,10 @@ model User {
   /// Quando viu o troféu "Jornada concluída" (com a apresentação da rede social).
   journeyCelebratedAt   DateTime?
   timezone              String     @default("America/Sao_Paulo")
-  /// Tudo que a pessoa já ganhou de XP (cópia rápida da soma do extrato, etapa 6).
+  /// Tudo que a pessoa já ganhou de XP (cópia rápida da soma do extrato). XP não se gasta.
   xpTotal               Int        @default(0)
-  /// XP gasto comprando trilhas. XP disponível = xpTotal - xpSpent.
-  xpSpent               Int        @default(0)
+  /// Saldo de gemas, a moeda do app (cópia rápida da soma do extrato GemEvent; decisão do dono de 06/11/2026).
+  gems                  Int        @default(0)
   /// Usuários criados pelo seed para o login de desenvolvimento.
   isTestUser            Boolean    @default(false)
   createdAt             DateTime   @default(now())
@@ -97,6 +97,9 @@ model User {
   tasks                  Task[]
   sprints                Sprint[]
   xpEvents               XpEvent[]
+  gemEvents              GemEvent[]
+  loginDays              UserLoginDay[]
+  commentReactions       CommentReaction[]
   activity               ActivityEvent[]
   files                  File[]
   rodaScores             RodaScore[]
@@ -351,7 +354,47 @@ enum XpReason {
   rede_social
 }
 
-/// Extrato de XP: cada ganho (+), estorno (-) e gasto. O total fica copiado em User.xpTotal / xpSpent.
+/// Motivos do extrato de gemas.
+enum GemReason {
+  /// Prêmio de "Concluir minha jornada".
+  jornada
+  /// Sprint encerrada com todas as tarefas prontas.
+  sprint
+  /// Acesso do dia (ofensiva da semana).
+  ofensiva
+  /// Compra de trilha (negativo).
+  trilha_compra
+  /// Liberar a rede social antes dos 7 dias da Jornada (negativo).
+  rede_social
+}
+
+/// Extrato de gemas: cada ganho (+) e gasto (-). O saldo fica copiado em User.gems.
+model GemEvent {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    GemReason
+  refId     String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, reason, refId])
+  @@map("gem_events")
+}
+
+/// Dias em que a pessoa abriu o app (no fuso dela), para a ofensiva e os acessos do mês.
+model UserLoginDay {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "AAAA-MM-DD" no fuso da pessoa.
+  day       String
+  createdAt DateTime @default(now())
+
+  @@id([userId, day])
+  @@map("user_login_days")
+}
+
+/// Extrato de XP: cada ganho (+) e estorno (-). O total fica copiado em User.xpTotal.
 model XpEvent {
   id        String   @id @default(cuid())
   userId    String
@@ -620,7 +663,8 @@ model Trilha {
   color           String              @default("#5e873c")
   coverText       String?
   /// 0 = grátis. Trilhas de grupo são sempre grátis.
-  priceXp         Int                 @default(0)
+  /// Preço em gemas (0 = grátis).
+  priceGems       Int                 @default(0)
   status          TrilhaStatus        @default(pendente)
   reviewedById    String?
   reviewedAt      DateTime?
@@ -670,7 +714,7 @@ model TrilhaAcquisition {
   trilhaId  String
   trilha    Trilha   @relation(fields: [trilhaId], references: [id], onDelete: Cascade)
   rootId    String
-  xpPaid    Int      @default(0)
+  gemsPaid  Int      @default(0)
   createdAt DateTime @default(now())
 
   @@id([userId, trilhaId])
@@ -882,9 +926,30 @@ model Comment {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   text      String
   createdAt DateTime @default(now())
+  reactions CommentReaction[]
 
   @@index([postId, createdAt])
   @@map("comments")
+}
+
+/// Reações: curtir, não curtir ou coração (decisão do dono de 06/11/2026). Uma por pessoa.
+enum ReactionKind {
+  like
+  dislike
+  heart
+}
+
+model CommentReaction {
+  commentId String
+  comment   Comment      @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      ReactionKind
+  createdAt DateTime     @default(now())
+
+  @@id([commentId, userId])
+  @@index([commentId])
+  @@map("comment_reactions")
 }
 
 // ---------- Stories ----------
@@ -911,12 +976,14 @@ model Story {
   @@map("stories")
 }
 
+/// Reação a um story (curtir, não curtir ou coração). Uma por pessoa.
 model StoryLike {
   storyId   String
-  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  story     Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      ReactionKind @default(like)
+  createdAt DateTime     @default(now())
 
   @@id([storyId, userId])
   @@map("story_likes")

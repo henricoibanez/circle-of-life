@@ -1,14 +1,16 @@
 'use client';
 
+import { gemsLabel } from '@circle/shared';
 import type { AreaId, PostRefType } from '@circle/shared';
 import { socialLocked } from '@/lib/journey';
 import { useMe } from '@/lib/me';
 import { PostForm } from './feed/post-form';
+import { CoinIcon } from '@/components/coin';
 import { Icon, type IconName } from './icon';
 import { Sheet, useSheets } from './sheet';
 import { Button } from './ui/button';
 
-export type Celebration = { icon?: IconName; title: string; text: string; xp?: number; area?: AreaId | null; refType?: PostRefType; refId?: string };
+export type Celebration = { icon?: IconName; title: string; text: string; xp?: number; gems?: number; area?: AreaId | null; refType?: PostRefType; refId?: string };
 
 /**
  * Folha de comemoração (épico encerrado, sprint concluída, iniciativa concluída, sonho…),
@@ -30,6 +32,11 @@ export function CelebrateSheet({ data, onClose }: { data: Celebration; onClose: 
         {(data.xp ?? 0) > 0 && (
           <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1.5 font-bold text-amber-600">
             <Icon n="star" className="h-4 w-4" fill="currentColor" />+{data.xp} XP
+          </p>
+        )}{' '}
+        {(data.gems ?? 0) > 0 && (
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1.5 font-bold text-amber-700">
+            <CoinIcon className="h-4 w-4" />+{gemsLabel(data.gems!)}
           </p>
         )}
         {!canShare ? (

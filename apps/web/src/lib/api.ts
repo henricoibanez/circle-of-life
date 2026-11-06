@@ -44,7 +44,7 @@ export type Me = {
     themeMode: 'auto' | 'light' | 'dark';
     defaultPostVisibility: 'publico' | 'amigos' | 'privado';
   };
-  xp: { total: number; disponivel: number };
+  xp: { total: number; gems: number };
   /** Passa pela Jornada de primeiro acesso (a aba Jornada fica no lugar do Feed). */
   journey: boolean;
   /** Rede social (Feed, stories, amigos, grupos): aberta ou, na Jornada, quando abre. */

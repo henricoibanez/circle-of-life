@@ -1,4 +1,5 @@
-import type { AreaId, CommentDto, FeedFilter, FeedPageDto, PostDto, PostRefType, Visibility } from '@circle/shared';
+import type { AreaId, CommentDto, ReactionKind, FeedFilter, FeedPageDto, PostDto, PostRefType, Visibility } from '@circle/shared';
+import { countReactions } from './reactions';
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma, User } from '../generated/prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -277,9 +278,21 @@ export class FeedService {
 
   async comments(user: User, id: string): Promise<CommentDto[]> {
     await this.visiblePost(user.id, id);
-    const rows = await this.prisma.comment.findMany({ where: { postId: id }, include: { author: { select: PERSON_SELECT } }, orderBy: { createdAt: 'asc' } });
+    const rows = await this.prisma.comment.findMany({
+      where: { postId: id },
+      include: { author: { select: PERSON_SELECT }, reactions: { select: { userId: true, kind: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
     const people = await this.people.many(rows.map(r => r.author));
-    return rows.map((r, i) => ({ id: r.id, author: people[i]!, mine: r.authorId === user.id, text: r.text, createdAt: r.createdAt.toISOString() }));
+    return rows.map((r, i) => ({
+      id: r.id,
+      author: people[i]!,
+      mine: r.authorId === user.id,
+      text: r.text,
+      createdAt: r.createdAt.toISOString(),
+      reactions: countReactions(r.reactions),
+      myReaction: r.reactions.find(x => x.userId === user.id)?.kind ?? null,
+    }));
   }
 
   async comment(user: User, id: string, text: string) {
@@ -299,6 +312,17 @@ export class FeedService {
       refId: id,
     });
     return { comments: await this.comments(user, id), xp };
+  }
+
+  /** Reagir a um comentário (curtir, não curtir ou coração); `kind` nulo tira a reação. Devolve os comentários. */
+  async reactComment(user: User, postId: string, commentId: string, kind: ReactionKind | null) {
+    await this.visiblePost(user.id, postId);
+    const c = await this.prisma.comment.findFirst({ where: { id: commentId, postId } });
+    if (!c) throw new NotFoundException('Comentário não encontrado.');
+    const key = { commentId_userId: { commentId, userId: user.id } };
+    if (!kind) await this.prisma.commentReaction.deleteMany({ where: { commentId, userId: user.id } });
+    else await this.prisma.commentReaction.upsert({ where: key, create: { commentId, userId: user.id, kind }, update: { kind } });
+    return this.comments(user, postId);
   }
 
   /** Apaga um comentário: quem escreveu ou o autor do post. */

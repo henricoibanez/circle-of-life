@@ -12,6 +12,7 @@ import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { postText, useComments, useFeedActions } from '@/lib/feed';
+import { ReactionBar } from './reactions';
 import { since } from '@/lib/time';
 
 const first = (name: string) => name.split(' ')[0];
@@ -248,6 +249,13 @@ export function CommentsSheet({ id, onClose }: { id: string; onClose: () => void
                 {c.mine ? 'Você' : c.author.name} <span className="text-xs font-normal text-muted">{since(c.createdAt)}</span>
               </p>
               <p className="mt-0.5 whitespace-pre-wrap text-[0.9375rem]">{c.text}</p>
+              <div className="-ml-1 mt-1.5">
+                <ReactionBar
+                  mine={c.myReaction}
+                  counts={c.reactions}
+                  onPick={k => actions.reactComment(id, c.id, k).catch(e => toast(e instanceof ApiError ? e.message : 'Não foi possível reagir.'))}
+                />
+              </div>
             </div>
             {c.mine && (
               <IconBtn

@@ -30,9 +30,9 @@ const SECTIONS: [string, string[]][] = [
     ],
   ],
   [
-    'XP',
+    'XP e círculos',
     [
-      'O XP é uma pontuação para acompanhar a sua evolução e trocar por trilhas dentro do app. Ele não tem valor em dinheiro e as regras de pontuação podem mudar durante o beta.',
+      'O XP é uma pontuação para acompanhar a sua evolução. Os círculos são a moeda do app, usadas para trocar por trilhas e funcionalidades. Nenhum dos dois tem valor em dinheiro e as regras podem mudar durante o beta.',
     ],
   ],
   [

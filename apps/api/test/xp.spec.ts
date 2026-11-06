@@ -19,7 +19,7 @@ describe('XP (regras provisórias)', () => {
     const epic = (await me.c.request('POST', '/epics', { initiativeId: ini.id, title: 'E', area: 'lazer' })).body;
     const ids: string[] = [];
     for (let i = 0; i < tasks; i++) ids.push((await me.c.request('POST', '/tasks', { epicId: epic.id, title: `T${i}` })).body.id);
-    const xp = async () => (await me.c.request('GET', '/me')).body.xp as { total: number; disponivel: number };
+    const xp = async () => (await me.c.request('GET', '/me')).body.xp as { total: number; gems: number };
     const move = (id: string, status: string) => me.c.request('POST', `/tasks/${id}/move`, { status });
     return { me, ini, epic, ids, xp, move };
   };
@@ -27,7 +27,7 @@ describe('XP (regras provisórias)', () => {
   test('concluir tarefa dá +10; reabrir tira; concluir de novo não acumula', async () => {
     const { ids, xp, move } = await setup('xp1');
     const r = await move(ids[0]!, 'done');
-    assert.deepEqual(r.body.xp, { gained: 10, total: 10, disponivel: 10 });
+    assert.deepEqual(r.body.xp, { gained: 10, total: 10, gems: 0, gemsGained: 0 });
     assert.equal((await move(ids[0]!, 'doing')).body.xp.gained, -10);
     assert.equal((await xp()).total, 0);
     await move(ids[0]!, 'done');
@@ -66,18 +66,21 @@ describe('XP (regras provisórias)', () => {
     assert.equal(reopened.body.xp.gained, -100);
   });
 
-  test('sprint completa dá +100; incompleta não dá', async () => {
+  test('sprint completa dá +100 XP e 50 gemas; incompleta não dá', async () => {
     const full = await setup('xp5', 2);
     for (const id of full.ids) await full.move(id, 'done');
     const r = await full.me.c.request('POST', '/sprints/current/close');
     assert.equal(r.body.full, true);
     assert.equal(r.body.xp.gained, 100);
+    assert.equal(r.body.xp.gemsGained, 50);
+    assert.equal(r.body.xp.gems, 50);
 
     const partial = await setup('xp6', 2);
     await partial.move(partial.ids[0]!, 'done');
     await partial.move(partial.ids[1]!, 'doing');
     const r2 = await partial.me.c.request('POST', '/sprints/current/close');
     assert.equal(r2.body.xp.gained, 0);
+    assert.equal(r2.body.xp.gemsGained, 0, 'com card em andamento, sem gemas');
   });
 
   test('excluir tarefa pronta tira o XP dela (não dá para "fabricar" XP)', async () => {
@@ -99,10 +102,9 @@ describe('XP (regras provisórias)', () => {
     assert.equal(activity[0].link, '/board');
   });
 
-  test('XP disponível = total menos o gasto', async () => {
-    const { me, ids, move, xp } = await setup('xp9', 3);
+  test('XP só cresce; concluir tarefas não rende gemas', async () => {
+    const { ids, move, xp } = await setup('xp9', 3);
     for (const id of ids) await move(id, 'done');
-    await api.prisma.user.update({ where: { id: me.user.id }, data: { xpSpent: 25 } });
-    assert.deepEqual(await xp(), { total: 30, disponivel: 5 });
+    assert.deepEqual(await xp(), { total: 30, gems: 0 });
   });
 });

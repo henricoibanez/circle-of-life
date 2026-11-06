@@ -58,7 +58,7 @@ export class UsersService {
         themeMode: user.themeMode,
         defaultPostVisibility: user.defaultPostVisibility,
       },
-      xp: { total: user.xpTotal, disponivel: Math.max(0, user.xpTotal - user.xpSpent) },
+      xp: { total: user.xpTotal, gems: user.gems },
       /** Passa pela Jornada de primeiro acesso (a aba Jornada fica no lugar do Feed). */
       journey: user.journey,
       /** Rede social aberta ou, na Jornada, quando abre (trava das abas Feed e Grupos). */

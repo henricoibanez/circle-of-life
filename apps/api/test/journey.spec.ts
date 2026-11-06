@@ -142,8 +142,9 @@ describe('Jornada de primeiro acesso', () => {
     const r = await me.c.request('POST', '/journey/social/unlock');
     assert.equal(r.status, 201);
     assert.equal(r.body.paid, 500);
-    assert.equal(r.body.xp.disponivel, 500);
-    assert.equal(r.body.xp.total, 1000, 'gastar não tira do total');
+    assert.equal(r.body.xp.gems, 500, 'a Jornada dá 1.000 gemas; liberar antes custa 500');
+    assert.equal(r.body.xp.gemsGained, -500);
+    assert.equal(r.body.xp.total, 1000, 'gastar gemas não mexe no XP');
     assert.equal((await me.c.request('GET', '/feed')).status, 200);
     assert.equal((await me.c.request('POST', '/journey/social/unlock')).status, 400, 'já liberado');
 
@@ -155,14 +156,15 @@ describe('Jornada de primeiro acesso', () => {
     assert.equal((await me.c.request('GET', '/me')).body.journeyCelebrated, true);
   });
 
-  test('depois de 7 dias, libera de graça e mantém os 1.000 XP', async () => {
+  test('depois de 7 dias, libera de graça e mantém as 1.000 gemas', async () => {
     const { me } = await ateASprint('esperou');
     await me.c.request('POST', '/journey/finish');
     await api.prisma.user.update({ where: { id: me.user.id }, data: { journeyFinishedAt: new Date(Date.now() - 8 * 86_400_000) } });
     const r = await me.c.request('POST', '/journey/social/unlock');
     assert.equal(r.status, 201);
     assert.equal(r.body.paid, 0);
-    assert.equal(r.body.xp.disponivel, 1000);
+    assert.equal(r.body.xp.gems, 1000);
+    assert.equal(r.body.xp.total, 1000);
     assert.equal((await me.c.request('GET', '/feed')).status, 200);
   });
 

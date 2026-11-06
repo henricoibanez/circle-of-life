@@ -58,7 +58,7 @@ export function useBacklogActions() {
     mutationFn: ({ path, method, body }: { path: string; method: string; body?: Body }) => api<any>(path, { method, body }),
     onSuccess: (data: { xp?: XpChange } | undefined) => {
       // Ações que mexem no XP devolvem os totais novos: o número aparece atualizado na hora.
-      if (data?.xp) qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: data.xp!.total, disponivel: data.xp!.disponivel } });
+      if (data?.xp) qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: data.xp!.total, gems: data.xp!.gems } });
       qc.invalidateQueries({ queryKey: BACKLOG_KEY });
       qc.invalidateQueries({ queryKey: ['sprints'] });
       qc.invalidateQueries({ queryKey: ['task'] });

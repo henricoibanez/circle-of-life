@@ -53,7 +53,7 @@ export function useCloseSprint() {
   return useSprintMutation(
     () => api<CloseSprintResult>('/sprints/current/close', { method: 'POST' }),
     'Não foi possível encerrar a sprint.',
-    r => qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, disponivel: r.xp.disponivel } }),
+    r => qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, gems: r.xp.gems } }),
   );
 }
 

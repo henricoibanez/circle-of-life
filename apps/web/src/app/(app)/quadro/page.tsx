@@ -10,11 +10,13 @@ import { useCelebrate } from '@/components/celebrate';
 import { ConfirmSheet } from '@/components/confirm';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
+import { BackToJourney } from '@/components/journey';
 import { AreaIcon, Field, inputCls, Ring, Seg, ImageHint } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api, ApiError, type Me } from '@/lib/api';
+import { JOURNEY_KEY } from '@/lib/journey';
 import { fmtDay } from '@/lib/sprints';
 import { uploadImage } from '@/lib/upload';
 
@@ -176,6 +178,7 @@ function Quadro() {
                 </div>
               </section>
             )}
+            <BackToJourney phase="quadro" />
           </>
         )}
       </div>
@@ -195,6 +198,8 @@ function DreamSheet({ dream, onClose }: { dream?: DreamDto; onClose: () => void 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: DREAMS });
     qc.invalidateQueries({ queryKey: CONQ });
+    // Um sonho novo pode concluir a etapa da Jornada.
+    qc.invalidateQueries({ queryKey: JOURNEY_KEY });
   };
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -222,7 +227,7 @@ function DreamSheet({ dream, onClose }: { dream?: DreamDto; onClose: () => void 
       if (dream) {
         await api(`/dreams/${dream.id}`, { method: 'PATCH', body });
         const r = await api<{ xp: XpChange }>(`/dreams/${dream.id}/realize`, { method: 'POST' });
-        qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, disponivel: r.xp.disponivel } });
+        qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, gems: r.xp.gems } });
         onClose();
         celebrate({ icon: 'star', title: 'Sonho realizado', text: f.text, xp: r.xp.gained, area: f.area, refType: 'sonho', refId: dream.id });
       }

@@ -76,7 +76,7 @@ describe('Stories', () => {
 
     const notes = ((await ana.c.request('GET', '/notifications')).body as { type: string; title: string }[]).filter(n => n.type === 'curtida_story');
     assert.equal(notes.length, 1);
-    assert.equal(notes[0]!.title, 'caio e mais 1 pessoa curtiram seu story');
+    assert.equal(notes[0]!.title, 'caio e mais 1 pessoa reagiram ao seu story');
   });
 
   test('não dá para ver story "Somente amigos" de quem não é amigo', async () => {
