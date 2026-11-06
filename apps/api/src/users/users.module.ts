@@ -116,11 +116,20 @@ export class UsersService {
     };
   }
 
-  /** Exclui a conta e tudo dela: dados (em cascata no banco) e arquivos no storage. */
+  /**
+   * Exclui a conta e tudo dela: dados (em cascata no banco) e arquivos no storage.
+   * Também apaga os convites e códigos do e-mail dela, para um admin poder convidar
+   * de novo e a pessoa começar do zero (decisão do dono de 06/11/2026).
+   */
   async deleteAccount(userId: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true } });
     const files = await this.prisma.file.findMany({ where: { userId }, select: { id: true } });
     for (const f of files) await this.uploads.remove(userId, f.id).catch(() => undefined);
-    await this.prisma.user.delete({ where: { id: userId } });
+    await this.prisma.$transaction([
+      this.prisma.invite.deleteMany({ where: { OR: [{ acceptedUserId: userId }, { email: user.email }] } }),
+      this.prisma.emailCode.deleteMany({ where: { email: user.email } }),
+      this.prisma.user.delete({ where: { id: userId } }),
+    ]);
   }
 }
 

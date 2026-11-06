@@ -72,4 +72,21 @@ describe('Perfil e configurações', () => {
     assert.equal(await api.prisma.initiative.count({ where: { userId: user.id } }), 0);
     assert.equal((await c.request('GET', '/me')).status, 401);
   });
+
+  test('excluir a conta apaga o convite dela, e o admin pode convidar de novo', async () => {
+    const admin = await loginAs(api, 'perfadm', { role: 'admin' });
+    const pessoa = await loginAs(api, 'perf7');
+    const email = pessoa.user.email;
+    await api.prisma.invite.create({
+      data: { email, tokenHash: `teste-${Date.now()}`, invitedById: admin.user.id, expiresAt: new Date(Date.now() + 86_400_000), acceptedAt: new Date(), acceptedUserId: pessoa.user.id },
+    });
+    await api.prisma.emailCode.create({ data: { email, purpose: 'senha', codeHash: 'x', expiresAt: new Date(Date.now() + 600_000) } });
+    assert.equal((await pessoa.c.request('DELETE', '/me', { confirm: 'DELETAR' })).status, 204);
+    assert.equal(await api.prisma.invite.count({ where: { email } }), 0, 'convite apagado');
+    assert.equal(await api.prisma.emailCode.count({ where: { email } }), 0, 'códigos apagados');
+    const list = (await admin.c.request('GET', '/invites')).body as { email: string }[];
+    assert.ok(!list.some(i => i.email === email), 'não aparece mais como aceito');
+    const again = await admin.c.request('POST', '/invites', { email });
+    assert.equal(again.status, 201, 'pode convidar de novo, como se fosse do zero');
+  });
 });
