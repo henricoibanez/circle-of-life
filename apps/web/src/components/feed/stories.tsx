@@ -33,8 +33,11 @@ export function AreaWatermark({ areas, className = '' }: { areas: AreaId[]; clas
   );
 }
 
-/** Faixa de stories no topo do feed: criar post, seu story e os stories de quem você pode ver. */
-export function StoryRow({ onNewPost }: { onNewPost: () => void }) {
+/**
+ * Faixa de stories no topo do feed: o seu story e, à direita, os de quem você pode ver.
+ * Sem "Criar post" aqui (decisão do dono de 05/11/2026): o post nasce no botão "+" do menu.
+ */
+export function StoryRow() {
   const { data: me } = useMe();
   const { data: groups } = useStories();
   // Só depois de montar: o servidor não conhece a pessoa logada (evita diferença na hidratação).
@@ -51,14 +54,6 @@ export function StoryRow({ onNewPost }: { onNewPost: () => void }) {
 
   return (
     <div className="no-bar flex gap-3 overflow-x-auto px-4 pb-3 pt-2">
-      <button onClick={onNewPost} className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5">
-        <span className="grid h-[4.125rem] w-[4.125rem] place-items-center rounded-2xl border border-line bg-surface shadow-soft">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-onprimary">
-            <Icon n="plus" sw={2.5} />
-          </span>
-        </span>
-        <span className="text-xs">Criar post</span>
-      </button>
       {me && hydrated && (
         <div className="relative flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5">
           <button

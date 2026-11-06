@@ -11,7 +11,8 @@
  * Tailwind no bloco @theme: bg-primary, text-muted, border-line, bg-sunk…
  * Os componentes do shadcn/ui usam as mesmas cores (background, foreground,
  * border, ring…), mapeadas mais abaixo. Atenção: aqui "muted" é o cinza de
- * TEXTO do protótipo e "accent" é o roxo; para fundos neutros use bg-sunk.
+ * TEXTO do protótipo e "accent" segue a cor do tema (decisão do dono de
+ * 05/11/2026: era um roxo fixo); para fundos neutros use bg-sunk.
  */
 
 /*
@@ -47,7 +48,7 @@
   --line: 233 235 228;
   --onp: 255 255 255;
   --p: var(--pl);
-  --a: 124 77 222;
+  --a: var(--p);
   color-scheme: light;
 
   /* Nomes usados pelos componentes do shadcn/ui, apontando para o tema acima. */
@@ -81,14 +82,14 @@
   :root:not([data-theme='light']) {
     --bg: 16 18 15; --surface: 26 29 25; --sunk: 34 38 33;
     --ink: 236 238 232; --muted: 152 158 147; --line: 46 51 44;
-    --onp: 18 20 16; --p: var(--pd); --a: 172 142 245;
+    --onp: 18 20 16; --p: var(--pd); --a: var(--p);
     color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
   --bg: 16 18 15; --surface: 26 29 25; --sunk: 34 38 33;
   --ink: 236 238 232; --muted: 152 158 147; --line: 46 51 44;
-  --onp: 18 20 16; --p: var(--pd); --a: 172 142 245;
+  --onp: 18 20 16; --p: var(--pd); --a: var(--p);
   color-scheme: dark;
 }
 

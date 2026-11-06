@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Header, InfoSheet } from '@/components/header';
 import { Icon, type IconName } from '@/components/icon';
-import { AreaIcon, Ring, Tag } from '@/components/primitives';
+import { AreaIcon, MANY_AREAS, Ring, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -160,10 +160,10 @@ export default function AnalisePage() {
 
             {a.padroes.length > 0 && (
               <>
-                <SectionTitle icon="trend" color="#7c4dde">
+                <SectionTitle icon="trend" color="rgb(var(--a))">
                   Seus padrões de evolução
                 </SectionTitle>
-                <Points items={a.padroes} color="#7c4dde" />
+                <Points items={a.padroes} color="rgb(var(--a))" />
               </>
             )}
 
@@ -251,8 +251,7 @@ export default function AnalisePage() {
         <button
           disabled={busy || !sel.length || Boolean(waiting)}
           onClick={run}
-          className="w-full rounded-[1.375rem] py-4 text-center text-white disabled:opacity-50"
-          style={{ background: 'linear-gradient(90deg, #7c4dde, #9d6bf0)' }}
+          className="w-full rounded-[1.375rem] bg-accent py-4 text-center text-onprimary disabled:opacity-50"
         >
           <span className="flex items-center justify-center gap-2 text-[1.0625rem] font-semibold">
             <Icon n="sparkles" />
@@ -335,9 +334,11 @@ function SuggestionCard({ s, reportId, index, imported }: { s: AnalysisSuggestio
             </p>
           )}
           <div className="mt-1.5 flex flex-wrap gap-1">
-            {s.iniciativa.areas.map(ar => (
-              <AreaIcon key={ar} id={ar} size="w-6 h-6" icon="w-3.5 h-3.5" />
-            ))}
+            {s.iniciativa.areas.length >= MANY_AREAS ? (
+              <AreaIcon areas={s.iniciativa.areas} size="w-6 h-6" count={false} />
+            ) : (
+              s.iniciativa.areas.map(ar => <AreaIcon key={ar} id={ar} size="w-6 h-6" icon="w-3.5 h-3.5" />)
+            )}
           </div>
         </div>
       </div>

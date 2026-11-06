@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Art } from '@/components/art';
 import { AreaPicker } from '@/components/backlog/forms';
 import { Icon } from '@/components/icon';
-import { AreaIcon, Field, IconBtn, inputCls, Seg, Tag, ImageHint } from '@/components/primitives';
+import { AreaIcon, areasLabel, Field,IconBtn, inputCls, Seg, Tag, ImageHint } from '@/components/primitives';
 import { Sheet } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
@@ -99,7 +99,7 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
     <Sheet title={t.title} onClose={onClose} footer={footer}>
       <Cover t={t} className="mb-3 aspect-[16/9] w-full overflow-hidden rounded-2xl" />
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        {t.groupId ? <Tag c="#7c4dde">Trilha do grupo</Tag> : <Tag c={t.priceXp ? '#7c4dde' : '#16a34a'}>{priceLabel(t)}</Tag>}
+        {t.groupId ? <Tag c="rgb(var(--a))">Trilha do grupo</Tag> : <Tag c={t.priceXp ? 'rgb(var(--a))' : '#16a34a'}>{priceLabel(t)}</Tag>}
         {status && <Tag c={status[1]}>{status[0]}</Tag>}
         <span className="text-xs text-muted">por {t.author ? `${t.author.name} (@${t.author.handle})` : 'Circle of Life'}</span>
       </div>
@@ -107,12 +107,12 @@ export function TrilhaSheet({ id, onClose }: { id: string; onClose: () => void }
       <p className="text-[0.9375rem] text-ink/80">{t.description}</p>
       {t.rejectionReason && t.status === 'recusada' && <p className="mt-3 rounded-xl bg-red-500/5 px-3 py-2 text-sm text-red-700">Motivo da recusa: {t.rejectionReason}</p>}
       <div className="mt-4 flex items-center gap-2">
-        <AreaIcon id={t.area} size="w-7 h-7" icon="w-4 h-4" />
+        <AreaIcon id={t.area} areas={t.areas} size="w-7 h-7" icon="w-4 h-4" />
         <p className="flex-1 font-semibold">{t.title}</p>
-        <Tag c="#7c4dde">Épico</Tag>
+        <Tag c="rgb(var(--a))">Épico</Tag>
       </div>
       <p className="mt-0.5 text-xs text-muted">
-        {t.areas.map(a => AREA[a].name).join(', ')} • {t.tasks.length === 1 ? '1 tarefa' : `${t.tasks.length} tarefas`}
+        {areasLabel(t.areas)} • {t.tasks.length === 1 ? '1 tarefa' : `${t.tasks.length} tarefas`}
       </p>
       <ul className="mt-1 divide-y divide-line">
         {t.tasks.map((task, i) => (

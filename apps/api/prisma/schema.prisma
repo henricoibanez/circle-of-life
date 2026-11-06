@@ -117,6 +117,7 @@ model User {
   blocksGot              Block[]             @relation("BlocksGot")
   groupMemberships       GroupMember[]
   groupBans              GroupBan[]
+  groupRequests          GroupRequest[]
   posts                  Post[]
   postLikes              PostLike[]
   postSaves              PostSave[]
@@ -534,6 +535,10 @@ enum NotificationType {
   grupo_resposta
   grupo_trilha_sugerida
   grupo_gestor
+  grupo_pedido
+  grupo_convite
+  grupo_aprovado
+  grupo_recusado
 }
 
 /// Notificação do sino (e, se ativado, também enviada ao celular).
@@ -725,9 +730,12 @@ model Group {
   icon        String        @default("users")
   art         String        @default("lake")
   coverFileId String?       @unique
+  /// Privado: só entra quem for aprovado por um gestor ou aceitar um convite (decisão do dono de 05/11/2026).
+  private     Boolean       @default(false)
   createdById String?
   createdAt   DateTime      @default(now())
   members     GroupMember[]
+  requests    GroupRequest[]
   trilhas     Trilha[]
   posts       PostGroup[]
   topics      GroupTopic[]
@@ -747,6 +755,29 @@ model GroupBan {
   @@id([groupId, userId])
   @@index([userId])
   @@map("group_bans")
+}
+
+/// Pedido para entrar ("pedido", feito pela pessoa) ou convite ("convite", feito por um gestor).
+/// Só existe enquanto está pendente: aprovar, aceitar, recusar ou cancelar apaga o registro.
+enum GroupRequestKind {
+  pedido
+  convite
+}
+
+model GroupRequest {
+  groupId     String
+  group       Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  /// Quem vai entrar no grupo.
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        GroupRequestKind
+  /// Gestor que convidou (só nos convites).
+  invitedById String?
+  createdAt   DateTime         @default(now())
+
+  @@id([groupId, userId])
+  @@index([userId])
+  @@map("group_requests")
 }
 
 model GroupMember {

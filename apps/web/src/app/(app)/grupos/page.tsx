@@ -62,6 +62,15 @@ function GruposTab() {
   const match = (g: GroupDto) => g.name.toLowerCase().includes(q.toLowerCase());
   const mine = (data?.mine ?? []).filter(match);
   const sug = (data?.suggested ?? []).filter(match);
+  const invites = data?.invites ?? [];
+  const run = async (fn: () => Promise<unknown>, ok: string) => {
+    try {
+      await fn();
+      toast(ok);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : 'Algo deu errado. Tente de novo.');
+    }
+  };
 
   return (
     <>
@@ -69,6 +78,30 @@ function GruposTab() {
         <Icon n="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar grupos…" className={inputCls + ' pl-10'} />
       </div>
+      {invites.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-[1.0625rem] font-semibold">Convites para você</h2>
+          <Card className="divide-y divide-line">
+            {invites.map(g => (
+              <div key={g.id} className="flex items-center gap-3 p-3.5">
+                <Link href={`/grupos/${g.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                  <GroupCover g={g} className="h-12 w-12 shrink-0 overflow-hidden rounded-full" />
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{g.name}</span>
+                    <span className="block truncate text-xs text-muted">{g.members === 1 ? '1 membro' : `${g.members} membros`}</span>
+                  </span>
+                </Link>
+                <Button variant="line" className="px-3 py-1.5" onClick={() => run(() => actions.cancelRequest(g.id), 'Convite recusado')}>
+                  Recusar
+                </Button>
+                <Button className="px-3 py-1.5" onClick={() => run(() => actions.join(g.id), `Você entrou em ${g.name}`)}>
+                  Aceitar
+                </Button>
+              </div>
+            ))}
+          </Card>
+        </section>
+      )}
       <h2 className="text-[1.0625rem] font-semibold">Meus grupos</h2>
       {mine.map(g => (
         <div key={g.id} className="overflow-hidden rounded-3xl border border-line/80 bg-surface shadow-soft">
@@ -82,6 +115,12 @@ function GruposTab() {
               <p className="flex flex-wrap items-center gap-2 text-[1.1875rem] font-semibold">
                 {g.name}
                 {g.admin && <span className="rounded-md border border-white/20 bg-white/15 px-1.5 py-0.5 text-[0.625rem] font-semibold">Gestor</span>}
+                {g.private && (
+                  <span className="inline-flex items-center gap-1 rounded-md border border-white/20 bg-white/15 px-1.5 py-0.5 text-[0.625rem] font-semibold">
+                    <Icon n="lock" className="h-3 w-3" />
+                    Privado
+                  </span>
+                )}
               </p>
               <p className="mt-1 text-[0.8125rem] text-white/80">{g.description}</p>
             </div>
@@ -112,23 +151,30 @@ function GruposTab() {
               <Link href={`/grupos/${g.id}`} aria-label={`Ver ${g.name}`}>
                 <GroupCover g={g} className="h-24 w-full" />
               </Link>
-              <button
-                aria-label={`Entrar em ${g.name}`}
-                onClick={async () => {
-                  try {
-                    await actions.join(g.id);
-                    toast(`Você entrou em ${g.name}`);
-                  } catch (e) {
-                    toast(e instanceof ApiError ? e.message : 'Não foi possível entrar.');
-                  }
-                }}
-                className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-accent"
-              >
-                <Icon n="userPlus" className="h-4 w-4" />
-              </button>
+              {g.pending === 'pedido' ? (
+                <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[0.625rem] font-semibold text-ink">Pedido enviado</span>
+              ) : (
+                <button
+                  aria-label={g.private ? `Pedir para entrar em ${g.name}` : `Entrar em ${g.name}`}
+                  onClick={async () => {
+                    try {
+                      await actions.join(g.id);
+                      toast(g.private ? 'Pedido enviado aos gestores' : `Você entrou em ${g.name}`);
+                    } catch (e) {
+                      toast(e instanceof ApiError ? e.message : 'Não foi possível entrar.');
+                    }
+                  }}
+                  className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-accent"
+                >
+                  <Icon n="userPlus" className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <Link href={`/grupos/${g.id}`} className="block p-3">
-              <p className="text-[0.875rem] font-semibold leading-tight">{g.name}</p>
+              <p className="flex items-center gap-1 text-[0.875rem] font-semibold leading-tight">
+                {g.private && <Icon n="lock" className="h-3.5 w-3.5 shrink-0 text-muted" aria-label="Grupo privado" />}
+                {g.name}
+              </p>
               <p className="text-[0.6875rem] text-muted">{g.members === 1 ? '1 membro' : `${g.members} membros`}</p>
               <p className="mt-1 line-clamp-2 text-[0.6875rem] leading-snug text-ink/75">{g.description}</p>
               <p className="mt-2 inline-flex items-center gap-1 text-[0.6875rem]" style={{ color: AREA[g.area].color }}>
@@ -142,7 +188,7 @@ function GruposTab() {
       </div>
 
       <div className="flex items-center gap-3 rounded-2xl bg-accent/5 p-4">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-white">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent text-onprimary">
           <Icon n="users" />
         </span>
         <div className="flex-1">

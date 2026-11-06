@@ -8,11 +8,11 @@ import { PostCard } from '@/components/feed/post-card';
 import { usePostForm } from '@/components/feed/post-form';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icon';
-import { Avatar, Card, Empty, IconBtn, inputCls, Tag } from '@/components/primitives';
+import { Avatar, Card, Empty, IconBtn, inputCls, Seg, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { ForumSection, TopicSheet } from '@/components/social/forum';
 import { useMiniProfile } from '@/components/social/mini-profile';
-import { AddTrilhaSheet, GroupCover, GroupForm } from '@/components/social/group-sheets';
+import { AddTrilhaSheet, GroupCover, GroupForm, InviteSheet, RejectSheet } from '@/components/social/group-sheets';
 import { useToast } from '@/components/toasts';
 import { Cover, PublishSheet, statusTag, TrilhaSheet } from '@/components/trilhas/trilha-sheets';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { mix } from '@/lib/color';
 import { useFeed } from '@/lib/feed';
 import { useMe } from '@/lib/me';
 import { useGroup, useSocialActions } from '@/lib/social';
+import { since } from '@/lib/time';
 
 /** Página de um grupo: trilhas do grupo (e sugestões), fórum, posts e membros com os gestores. */
 export default function GrupoPage() {
@@ -36,6 +37,11 @@ function Grupo() {
   const topico = useSearchParams().get('topico');
   const openedTopic = useRef(false);
   const [memberQuery, setMemberQuery] = useState('');
+  const params = useSearchParams();
+  // "?aba=membros" (aviso de pedido no sino) abre direto nas solicitações.
+  const fromRequest = params.get('aba') === 'membros';
+  const [memberTab, setMemberTab] = useState<'ativos' | 'solicitacoes'>(fromRequest ? 'solicitacoes' : 'ativos');
+  const scrolled = useRef(false);
   const router = useRouter();
   const { data: g, error } = useGroup(id);
   const { data: me } = useMe();
@@ -52,6 +58,12 @@ function Grupo() {
     openedTopic.current = true;
     openSheet(close => <TopicSheet groupId={id} topicId={topico} onClose={close} />);
   }, [topico, g?.member, id, openSheet]);
+
+  useEffect(() => {
+    if (!fromRequest || !g || scrolled.current) return;
+    scrolled.current = true;
+    document.getElementById('membros')?.scrollIntoView({ behavior: 'smooth' });
+  }, [fromRequest, g]);
 
   if (error) {
     return (
@@ -136,11 +148,43 @@ function Grupo() {
                 <Icon n={AREA[g.area].icon} className="h-4 w-4" />
                 {AREA[g.area].name}
               </span>
+              <span className="inline-flex items-center gap-1">
+                <Icon n={g.private ? 'lock' : 'globe'} className="h-4 w-4" />
+                {g.private ? 'Privado' : 'Público'}
+              </span>
             </p>
-            {!g.member && (
-              <Button variant="accent" className="mt-4 w-full" onClick={() => run(() => actions.join(g.id), `Você entrou em ${g.name}`)}>
-                <Icon n="userPlus" className="h-4 w-4" />
-                Entrar no grupo
+            {!g.member && g.pending === 'convite' && (
+              <div className="mt-4 rounded-2xl bg-white/15 p-3">
+                <p className="text-sm font-semibold">Você foi convidado para este grupo</p>
+                <div className="mt-2 flex gap-2">
+                  <Button variant="line" className="flex-1 border-white/30 bg-transparent text-white hover:bg-white/10" onClick={() => run(() => actions.cancelRequest(g.id), 'Convite recusado')}>
+                    Recusar
+                  </Button>
+                  <Button className="flex-1 bg-white text-ink hover:bg-white/90" onClick={() => run(() => actions.join(g.id), `Você entrou em ${g.name}`)}>
+                    Aceitar
+                  </Button>
+                </div>
+              </div>
+            )}
+            {!g.member && g.pending === 'pedido' && (
+              <div className="mt-4 rounded-2xl bg-white/15 p-3">
+                <p className="flex items-center gap-2 text-sm font-semibold">
+                  <Icon n="mail" className="h-4 w-4" />
+                  Pedido enviado. Agora é só esperar um gestor aprovar.
+                </p>
+                <Button variant="line" className="mt-2 w-full border-white/30 bg-transparent text-white hover:bg-white/10" onClick={() => run(() => actions.cancelRequest(g.id), 'Pedido cancelado')}>
+                  Cancelar pedido
+                </Button>
+              </div>
+            )}
+            {!g.member && !g.pending && (
+              <Button
+                variant="accent"
+                className="mt-4 w-full"
+                onClick={() => run(() => actions.join(g.id), g.private ? 'Pedido enviado aos gestores' : `Você entrou em ${g.name}`)}
+              >
+                <Icon n={g.private ? 'lock' : 'userPlus'} className="h-4 w-4" />
+                {g.private ? 'Pedir para entrar' : 'Entrar no grupo'}
               </Button>
             )}
           </div>
@@ -209,9 +253,83 @@ function Grupo() {
           </section>
         )}
 
-        <section>
-          <h2 className="text-[1.0625rem] font-semibold">Membros</h2>
-          <p className="mb-2 text-xs text-muted">Gestores aprovam as trilhas sugeridas e cuidam das trilhas do grupo.{g.canManageGestores ? ' Toque em ⋯ para escolher os gestores.' : ''}</p>
+        <section id="membros" className="scroll-mt-20">
+          <div className="flex items-center gap-2">
+            <h2 className="flex-1 text-[1.0625rem] font-semibold">Membros</h2>
+            {g.admin && (
+              <Button variant="aline" className="rounded-full px-3 py-1.5 text-[0.75rem]" onClick={() => openSheet(close => <InviteSheet group={g} onClose={close} />)}>
+                <Icon n="userPlus" className="h-4 w-4" />
+                Convidar
+              </Button>
+            )}
+          </div>
+          {!g.member && g.private ? (
+            <p className="mt-1 text-sm text-muted">Só os membros veem quem está no grupo.</p>
+          ) : (
+            <>
+          {g.admin && (
+            <div className="mt-2">
+              <Seg
+                items={[
+                  { id: 'ativos', label: `Ativos (${g.memberList.length})` },
+                  { id: 'solicitacoes', label: g.requests.length ? `Solicitações (${g.requests.length})` : 'Solicitações' },
+                ]}
+                value={memberTab}
+                onChange={setMemberTab}
+              />
+            </div>
+          )}
+          {g.admin && memberTab === 'solicitacoes' ? (
+            <div className="mt-3 space-y-4">
+              <Card className="divide-y divide-line">
+                {g.requests.length === 0 && (
+                  <p className="p-3.5 text-sm text-muted">{g.private ? 'Nenhum pedido aguardando.' : 'Grupo público: qualquer pessoa entra direto, sem pedido.'}</p>
+                )}
+                {g.requests.map(p => (
+                  <div key={p.id} className="flex items-center gap-3 p-3.5">
+                    <button onClick={() => openProfile(p.id)} aria-label={`Ver perfil de ${p.name}`} className="shrink-0">
+                      <Avatar name={p.name} photo={p.photoUrl} />
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{p.name}</p>
+                      <p className="truncate text-xs text-muted">
+                        @{p.handle} • pediu {since(p.createdAt)}
+                      </p>
+                    </div>
+                    <Button variant="line" className="px-3 py-1.5" onClick={() => openSheet(close => <RejectSheet group={g} person={p} onClose={close} />)}>
+                      Recusar
+                    </Button>
+                    <Button className="px-3 py-1.5" onClick={() => run(() => actions.approve(g.id, p.id), `${p.name} entrou no grupo`)}>
+                      Aprovar
+                    </Button>
+                  </div>
+                ))}
+              </Card>
+              {g.invites.length > 0 && (
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold">Convites enviados</h3>
+                  <Card className="divide-y divide-line">
+                    {g.invites.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 p-3.5">
+                        <Avatar name={p.name} photo={p.photoUrl} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{p.name}</p>
+                          <p className="truncate text-xs text-muted">
+                            @{p.handle} • convidado {since(p.createdAt)}
+                          </p>
+                        </div>
+                        <Button variant="line" className="px-3 py-1.5" onClick={() => run(() => actions.cancelInvite(g.id, p.id), 'Convite cancelado')}>
+                          Cancelar
+                        </Button>
+                      </div>
+                    ))}
+                  </Card>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+          <p className="mb-2 mt-1 text-xs text-muted">Gestores aprovam as trilhas sugeridas e cuidam das trilhas do grupo.{g.canManageGestores ? ' Toque em ⋯ para escolher os gestores.' : ''}</p>
           {g.memberList.length > 5 && (
             <div className="relative mb-2">
               <Icon n="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -301,6 +419,10 @@ function Grupo() {
                 ))}
               </Card>
             </div>
+          )}
+            </>
+          )}
+            </>
           )}
         </section>
       </div>

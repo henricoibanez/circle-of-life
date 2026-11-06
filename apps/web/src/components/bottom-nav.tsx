@@ -74,7 +74,7 @@ export function AddSheet({ onClose }: { onClose: () => void }) {
   const { data: me } = useMe();
   const all: { n: IconName; title: string; d: string; bg: string; ic: string; open: () => void }[] = [
     { n: 'target', title: 'Nova Iniciativa', d: 'Objetivo estratégico de alto nível', bg: 'bg-primary/5', ic: 'bg-primary text-onprimary', open: () => sheets.openInitiative() },
-    { n: 'layersArea', title: 'Novo Épico', d: 'Conjunto de entregáveis relacionados', bg: 'bg-accent/5', ic: 'bg-accent text-white', open: () => sheets.openEpic() },
+    { n: 'layersArea', title: 'Novo Épico', d: 'Conjunto de entregáveis relacionados', bg: 'bg-accent/5', ic: 'bg-accent text-onprimary', open: () => sheets.openEpic() },
     { n: 'checkSq', title: 'Nova Tarefa', d: 'Ação específica e executável', bg: 'bg-sunk/60', ic: 'bg-emerald-600 text-white', open: () => sheets.openTask() },
     { n: 'edit', title: 'Novo post', d: 'Compartilhar algo no feed', bg: 'bg-sunk/60', ic: 'bg-ink text-bg', open: () => newPost() },
   ];

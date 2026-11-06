@@ -1,11 +1,11 @@
 'use client';
 
-import { AREA, SOCIAL_UNLOCK_PRICE, STARTER_TRILHA_ID, TRILHA_CATEGORIES } from '@circle/shared';
+import { AREA, AREAS, SOCIAL_UNLOCK_PRICE, STARTER_TRILHA_ID, TRILHA_CATEGORIES } from '@circle/shared';
 import { useState } from 'react';
 import { StepsArt } from '@/components/art';
 import { Header, InfoSheet } from '@/components/header';
 import { Icon, type IconName } from '@/components/icon';
-import { AreaIcon, IconBtn, inputCls, Tag } from '@/components/primitives';
+import { AreaIcon, IconBtn, inputCls, MANY_AREAS, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { Cover, priceLabel, TrilhaSheet } from '@/components/trilhas/trilha-sheets';
 import { Button } from '@/components/ui/button';
@@ -154,8 +154,8 @@ export default function LojaPage() {
                   <p className="mt-2 px-0.5 text-[0.875rem] font-semibold leading-tight">{t.title}</p>
                   <p className="mt-1 line-clamp-3 px-0.5 text-[0.7188rem] leading-snug text-muted">{t.description}</p>
                   <div className="mt-2 flex items-center gap-1.5 px-0.5 text-[0.6875rem] text-muted">
-                    <AreaIcon id={t.area} size="w-6 h-6" icon="w-3.5 h-3.5" />
-                    <span className="truncate">{AREA[t.area].name}</span>
+                    <AreaIcon id={t.area} areas={t.areas} size="w-6 h-6" icon="w-3.5 h-3.5" />
+                    <span className="truncate">{t.areas.length >= MANY_AREAS ? (t.areas.length >= AREAS.length ? 'Todas as áreas' : `${t.areas.length} áreas`) : AREA[t.area].name}</span>
                   </div>
                   <div className="mt-2 flex items-center gap-2 px-0.5 text-[0.6875rem] text-muted">
                     <span className="inline-flex items-center gap-1">
@@ -168,7 +168,7 @@ export default function LojaPage() {
                     </span>
                   </div>
                   <div className="mt-1.5 px-0.5">
-                    <Tag c={t.priceXp ? '#7c4dde' : '#16a34a'}>{priceLabel(t)}</Tag>
+                    <Tag c={t.priceXp ? 'rgb(var(--a))' : '#16a34a'}>{priceLabel(t)}</Tag>
                     {t.mine && t.status === 'pendente' && <Tag c="#d97706" className="ml-1">Em análise</Tag>}
                     {t.mine && t.status === 'recusada' && <Tag c="#dc2626" className="ml-1">Recusada</Tag>}
                   </div>

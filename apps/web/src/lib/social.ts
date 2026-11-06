@@ -1,6 +1,6 @@
 'use client';
 
-import type { AreaId, FriendsDto, GroupDetailDto, GroupDto, MiniProfileDto } from '@circle/shared';
+import type { AreaId, FriendsDto, GroupDetailDto, GroupInviteSearchDto, GroupListDto, MiniProfileDto } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
 
@@ -12,14 +12,24 @@ export function useFriends() {
 }
 
 export function useGroups() {
-  return useQuery({ queryKey: GROUPS_KEY, queryFn: () => api<{ mine: GroupDto[]; suggested: GroupDto[] }>('/groups') });
+  return useQuery({ queryKey: GROUPS_KEY, queryFn: () => api<GroupListDto>('/groups') });
 }
 
 export function useGroup(id: string) {
   return useQuery({ queryKey: ['group', id], queryFn: () => api<GroupDetailDto>(`/groups/${id}`), retry: false });
 }
 
-export type GroupInput = { name: string; description: string; area: AreaId; coverFileId?: string | null };
+export type GroupInput = { name: string; description: string; area: AreaId; coverFileId?: string | null; private?: boolean };
+
+/** Gestor: busca pessoas do app para convidar ao grupo. */
+export function useInviteSearch(groupId: string, q: string) {
+  const term = q.trim();
+  return useQuery({
+    queryKey: ['group-invite-search', groupId, term],
+    queryFn: () => api<GroupInviteSearchDto[]>(`/groups/${groupId}/invite-search?q=${encodeURIComponent(term)}`),
+    enabled: term.replace(/^@/, '').length >= 2,
+  });
+}
 
 export function useSocialActions() {
   const qc = useQueryClient();
@@ -55,6 +65,16 @@ export function useSocialActions() {
     removeMember: (id: string, userId: string) => api<GroupDetailDto>(`/groups/${id}/members/${userId}`, { method: 'DELETE' }).then(groups),
     banMember: (id: string, userId: string) => api<GroupDetailDto>(`/groups/${id}/members/${userId}/ban`, { method: 'POST' }).then(groups),
     unban: (id: string, userId: string) => api<GroupDetailDto>(`/groups/${id}/bans/${userId}`, { method: 'DELETE' }).then(groups),
+    /** Cancelar o meu pedido para entrar ou recusar o convite que recebi. */
+    cancelRequest: (id: string) => api<GroupDetailDto>(`/groups/${id}/request`, { method: 'DELETE' }).then(groups),
+    approve: (id: string, userId: string) => api<GroupDetailDto>(`/groups/${id}/requests/${userId}/approve`, { method: 'POST' }).then(groups),
+    reject: (id: string, userId: string, reason?: string) => api<GroupDetailDto>(`/groups/${id}/requests/${userId}/reject`, { method: 'POST', body: { reason } }).then(groups),
+    invite: (id: string, userId: string) =>
+      api<GroupDetailDto>(`/groups/${id}/invites`, { method: 'POST', body: { userId } }).then(g => {
+        qc.invalidateQueries({ queryKey: ['group-invite-search', id] });
+        return groups(g);
+      }),
+    cancelInvite: (id: string, userId: string) => api<GroupDetailDto>(`/groups/${id}/invites/${userId}`, { method: 'DELETE' }).then(groups),
 
     /** Bloquear/desbloquear: o bloqueio mexe em feed, stories, busca e amizade. */
     block: (id: string) => api<MiniProfileDto>(`/people/${id}/block`, { method: 'POST' }).then(afterBlock),

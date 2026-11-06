@@ -12,7 +12,7 @@ import { fmtDay, useSprints } from '@/lib/sprints';
 
 type Tab = 'geral' | 'area' | 'evo' | 'entregas';
 const DAY = 864e5;
-const DC = ['#7c4dde', '#e2668a', '#f5b942', '#8fbf6a'];
+const DC = ['rgb(var(--a))', '#e2668a', '#f5b942', '#8fbf6a'];
 const WD = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const isoDay = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
@@ -192,7 +192,7 @@ function Geral({ data, days, setDays, setTab }: { data: BacklogDto; days: number
         <Stat n={done.length} l="Concluídas" ic="checkCircle" c="#16a34a" d={delta === null ? null : `${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta)}% vs período anterior`} />
         <Stat n={doing} l="Em andamento" ic="clock" c="#f59e0b" />
         <Stat n={late} l="Atrasadas" ic="xCircle" c="#e5484d" />
-        <Stat n={total} l="Total de tarefas" ic="flag" c="#7c4dde" />
+        <Stat n={total} l="Total de tarefas" ic="flag" c="rgb(var(--a))" />
       </div>
       <Card className="flex gap-3 p-4">
         <div className="flex w-[38%] shrink-0 flex-col items-center border-r border-line pr-3">

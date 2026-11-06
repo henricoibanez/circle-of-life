@@ -30,6 +30,10 @@ const ICONS: Record<string, [IconName, string]> = {
   grupo_gestor: ['verified', '#7c4dde'],
   grupo_topico: ['msg', '#7c4dde'],
   grupo_resposta: ['msg', '#7c4dde'],
+  grupo_pedido: ['userPlus', '#f59e0b'],
+  grupo_convite: ['mail', '#14b8a6'],
+  grupo_aprovado: ['checkCircle', '#16a34a'],
+  grupo_recusado: ['xCircle', '#dc2626'],
 };
 
 /** Notificações do sino, numa folha (no computador, janela central): ler, marcar, apagar e limpar. */

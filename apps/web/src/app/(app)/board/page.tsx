@@ -9,7 +9,7 @@ import { Header, useGoBack } from '@/components/header';
 import { BoardLocked } from '@/components/journey';
 import { useBoardLocked, useJourney } from '@/lib/journey';
 import { Icon } from '@/components/icon';
-import { AreaIcon, Bar, Card, IconBtn, inputCls, Prio } from '@/components/primitives';
+import { AreaIcon, AreaIcons, Bar, Card, IconBtn, inputCls, Prio } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { taskAreas, useBacklog, useBacklogActions } from '@/lib/backlog';
 import { boardTasks, fmtDay, sprintPeriod, useSprints } from '@/lib/sprints';
@@ -162,10 +162,8 @@ export default function BoardPage() {
             </span>
           )}
           {areas.length > 0 && (
-            <span className="ml-auto flex gap-0.5">
-              {areas.map(id => (
-                <Icon key={id} n={AREA[id].icon} className="h-4 w-4" style={{ color: AREA[id].color }} />
-              ))}
+            <span className="ml-auto flex">
+              <AreaIcons areas={areas} />
             </span>
           )}
         </div>
@@ -367,7 +365,7 @@ export default function BoardPage() {
                     const ep = epicOf(t);
                     return (
                       <button key={t.id} onClick={() => openTask(t.id)} className="flex w-full items-center gap-3 p-3.5 text-left">
-                        <AreaIcon id={data ? taskAreas(data, t)[0] : undefined} size="w-9 h-9" icon="w-4 h-4" />
+                        <AreaIcon id={data ? taskAreas(data, t)[0] : undefined} areas={data ? taskAreas(data, t) : undefined} size="w-9 h-9" icon="w-4 h-4" />
                         <span className="min-w-0 flex-1">
                           <span className={`block truncate font-medium ${t.status === 'done' ? 'text-muted line-through' : ''}`}>{t.title}</span>
                           <span className="block truncate text-xs text-muted">{ep?.title}</span>

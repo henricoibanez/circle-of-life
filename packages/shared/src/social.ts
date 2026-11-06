@@ -57,10 +57,34 @@ export type GroupDto = {
   /** Faço parte? Sou gestor? (`admin` = gestor do grupo.) */
   member: boolean;
   admin: boolean;
+  /** Grupo privado: só entra quem um gestor aprovar ou quem aceitar um convite. */
+  private: boolean;
+  /** Meu pedido para entrar está aguardando ("pedido") ou recebi um convite ("convite"). */
+  pending: GroupRequestKind | null;
+};
+
+export type GroupRequestKind = 'pedido' | 'convite';
+
+/** Pedido ou convite pendente, como o gestor vê na aba Membros. */
+export type GroupRequestDto = PersonDto & { createdAt: string };
+
+/** Pessoa na busca para convidar: se já está no grupo, convidada, pediu para entrar ou banida. */
+export type GroupInviteSearchDto = PersonDto & { status: 'membro' | 'convidado' | 'pediu' | 'banido' | null };
+
+export type GroupListDto = {
+  mine: GroupDto[];
+  suggested: GroupDto[];
+  /** Grupos que me convidaram (aceitar ou recusar). */
+  invites: GroupDto[];
 };
 
 export type GroupDetailDto = GroupDto & {
+  /** Num grupo privado, quem não é membro não vê a lista (vem vazia). */
   memberList: (PersonDto & { role: 'admin' | 'member'; creator: boolean })[];
+  /** Só para gestores: pedidos para entrar aguardando resposta. */
+  requests: GroupRequestDto[];
+  /** Só para gestores: convites enviados e ainda não respondidos. */
+  invites: GroupRequestDto[];
   /** Posso escolher quem é gestor (o criador; se ele saiu, os gestores). */
   canManageGestores: boolean;
   /** Pessoas banidas do grupo (só preenchido para gestores, para poder desbanir). */

@@ -4,7 +4,7 @@ import { AREA, type BacklogDto, type EpicDto, type TaskDto } from '@circle/share
 import { useState } from 'react';
 import { useCelebrate } from '@/components/celebrate';
 import { Icon } from '@/components/icon';
-import { Bar, IconBtn, Prio, Tag } from '@/components/primitives';
+import { AreaIcon, AreaIcons, Bar, IconBtn, MANY_AREAS, Prio, Tag } from '@/components/primitives';
 import { useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { PublishSheet } from '@/components/trilhas/trilha-sheets';
@@ -97,21 +97,19 @@ export function EpicCard({ e, data, nested, showIni, reorder }: { e: EpicDto; da
   return (
     <div className="overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-soft">
       <div className="flex items-start gap-3 p-4">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl" style={{ background: tint(a.color, 0.12), color: a.color }}>
-          <Icon n={a.icon} className="h-7 w-7" sw={1.6} />
-        </span>
+        {e.areas.length >= MANY_AREAS ? (
+          <AreaIcon areas={e.areas} size="h-14 w-14" rounded="rounded-2xl" />
+        ) : (
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl" style={{ background: tint(a.color, 0.12), color: a.color }}>
+            <Icon n={a.icon} className="h-7 w-7" sw={1.6} />
+          </span>
+        )}
         <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(!open)} aria-expanded={open}>
           {showIni && <p className="truncate text-xs text-muted">{data.initiatives.find(i => i.id === e.initiativeId)?.title}</p>}
           <p className="flex flex-wrap items-center gap-2">
             <span className="text-[1.125rem] font-semibold">{e.title}</span>
             <Tag c={a.color}>Épico</Tag>
-            {e.areas.length > 1 && (
-              <span className="flex gap-0.5">
-                {e.areas.map(id => (
-                  <Icon key={id} n={AREA[id].icon} className="h-4 w-4" style={{ color: AREA[id].color }} />
-                ))}
-              </span>
-            )}
+            {e.areas.length > 1 && e.areas.length < MANY_AREAS && <AreaIcons areas={e.areas} />}
             {e.closedAt && <Tag>Encerrado</Tag>}
           </p>
           {e.description && <p className="mt-0.5 text-sm text-muted">{e.description}</p>}

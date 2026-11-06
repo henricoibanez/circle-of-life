@@ -1,6 +1,6 @@
 import { AREA_IDS, type AreaId } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import { CurrentUser, Social } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { TrilhasModule } from '../trilhas/trilhas.module';
@@ -18,12 +18,14 @@ class GroupDto {
   @IsString() @MaxLength(300, { message: 'a descrição pode ter até 300 caracteres' }) description!: string;
   @IsIn(AREA_IDS, { message: 'área inválida' }) area!: AreaId;
   @IsOptional() @ValidateIf((_, v) => v !== null) @IsString() coverFileId?: string | null;
+  @IsOptional() @IsBoolean() private?: boolean;
 }
 class GroupPatchDto {
   @IsOptional() @IsString() @MinLength(3, { message: 'o nome precisa ter pelo menos 3 caracteres' }) @MaxLength(60, { message: 'o nome pode ter até 60 caracteres' }) name?: string;
   @IsOptional() @IsString() @MaxLength(300, { message: 'a descrição pode ter até 300 caracteres' }) description?: string;
   @IsOptional() @IsIn(AREA_IDS, { message: 'área inválida' }) area?: AreaId;
   @IsOptional() @ValidateIf((_, v) => v !== null) @IsString() coverFileId?: string | null;
+  @IsOptional() @IsBoolean() private?: boolean;
 }
 class TopicBody {
   @IsString() @MinLength(3, { message: 'o título precisa ter pelo menos 3 caracteres' }) @MaxLength(120, { message: 'o título pode ter até 120 caracteres' }) title!: string;
@@ -34,6 +36,12 @@ class ReplyBody {
 }
 class GroupTrilhaDto {
   @IsString() trilhaId!: string;
+}
+class RejectDto {
+  @IsOptional() @IsString() @MaxLength(300, { message: 'o motivo pode ter até 300 caracteres' }) reason?: string;
+}
+class InviteDto {
+  @IsString() userId!: string;
 }
 class MemberRoleDto {
   @IsIn(['admin', 'member'], { message: 'papel inválido' }) role!: 'admin' | 'member';
@@ -134,6 +142,36 @@ class GroupsController {
   @Delete(':id/bans/:userId')
   unban(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string) {
     return this.groups.unban(u, id, userId);
+  }
+  /** Cancelar o meu pedido para entrar ou recusar o convite que recebi. */
+  @Delete(':id/request')
+  cancelRequest(@CurrentUser() u: User, @Param('id') id: string) {
+    return this.groups.cancelRequest(u, id);
+  }
+  /** Gestor: aprovar um pedido para entrar. */
+  @Post(':id/requests/:userId/approve')
+  approve(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string) {
+    return this.groups.approve(u, id, userId);
+  }
+  /** Gestor: recusar um pedido, com motivo opcional. */
+  @Post(':id/requests/:userId/reject')
+  reject(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string, @Body() dto: RejectDto) {
+    return this.groups.reject(u, id, userId, dto.reason);
+  }
+  /** Gestor: buscar pessoas para convidar. */
+  @Get(':id/invite-search')
+  inviteSearch(@CurrentUser() u: User, @Param('id') id: string, @Query('q') q = '') {
+    return this.groups.inviteSearch(u, id, q.slice(0, 60));
+  }
+  /** Gestor: convidar alguém. */
+  @Post(':id/invites')
+  invite(@CurrentUser() u: User, @Param('id') id: string, @Body() dto: InviteDto) {
+    return this.groups.invite(u, id, dto.userId);
+  }
+  /** Gestor: cancelar um convite. */
+  @Delete(':id/invites/:userId')
+  cancelInvite(@CurrentUser() u: User, @Param('id') id: string, @Param('userId') userId: string) {
+    return this.groups.cancelInvite(u, id, userId);
   }
 }
 

@@ -61,7 +61,7 @@ function Feed() {
         <Wordmark className="flex-1 text-[1.5rem]" />
         <Bell />
       </header>
-      <StoryRow onNewPost={() => newPost()} />
+      <StoryRow />
       <div className="space-y-4 px-4 pb-8">
         {postId ? (
           <>

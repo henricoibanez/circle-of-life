@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
 import { PostForm } from '@/components/feed/post-form';
 import { Icon, type IconName } from '@/components/icon';
-import { Avatar, Card, IconBtn, inputCls } from '@/components/primitives';
+import { AreaIcons, Avatar, Card, IconBtn, inputCls } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useMiniProfile } from '@/components/social/mini-profile';
 import { useToast } from '@/components/toasts';
@@ -85,14 +85,7 @@ export function PostCard({ p }: { p: PostDto }) {
                     {areas[0]!.name}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1">
-                    {areas.map(a => (
-                      <span key={a.id} title={a.name} style={{ color: a.color }}>
-                        <Icon n={a.icon} className="h-4 w-4" />
-                        <span className="sr-only">{a.name}</span>
-                      </span>
-                    ))}
-                  </span>
+                  <AreaIcons areas={p.areas} />
                 )}
               </>
             )}

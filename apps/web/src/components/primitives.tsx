@@ -1,6 +1,6 @@
 'use client';
 
-import { AREA, type AreaId } from '@circle/shared';
+import { AREA, AREAS, type AreaId } from '@circle/shared';
 import type { ComponentProps, CSSProperties, ReactNode } from 'react';
 import { tint } from '@/lib/color';
 import { IMAGE_SIZE, type UploadPurpose } from '@/lib/upload';
@@ -23,7 +23,63 @@ export function ImageHint({ purpose, className = '' }: { purpose: UploadPurpose;
   );
 }
 
-export function AreaIcon({ id, size = 'w-11 h-11', icon = 'w-5 h-5', color }: { id?: AreaId | null; size?: string; icon?: string; color?: string }) {
+/**
+ * A partir de quantas áreas um item conta como "de várias áreas" e ganha o ícone
+ * de roda colorida em vez do ícone da área principal (decisão do dono de 05/11/2026).
+ */
+export const MANY_AREAS = 3;
+
+/** "Todas as áreas da vida" quando são as 10; senão, os nomes separados por vírgula. */
+export const areasLabel = (areas: AreaId[]) => (areas.length >= AREAS.length ? 'Todas as áreas da vida' : areas.map(a => AREA[a].name).join(', '));
+
+/** Fileira de ícones pequenos das áreas; com MANY_AREAS ou mais, vira a mini roda colorida. */
+export function AreaIcons({ areas, className = 'h-4 w-4' }: { areas: AreaId[]; className?: string }) {
+  if (new Set(areas).size >= MANY_AREAS) return <AreaIcon areas={areas} size={className} count={false} />;
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {areas.map(id => (
+        <span key={id} title={AREA[id].name} style={{ color: AREA[id].color }}>
+          <Icon n={AREA[id].icon} className={className} />
+          <span className="sr-only">{AREA[id].name}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Ícone da área. Com `areas` de MANY_AREAS ou mais, mostra uma mini roda com as cores
+ * de cada área (representa "várias vidas aqui dentro").
+ */
+export function AreaIcon({
+  id,
+  areas,
+  size = 'w-11 h-11',
+  icon = 'w-5 h-5',
+  color,
+  rounded = 'rounded-full',
+  count = true,
+}: {
+  id?: AreaId | null;
+  areas?: AreaId[];
+  size?: string;
+  icon?: string;
+  color?: string;
+  rounded?: string;
+  /** Mostra o número de áreas no meio da roda (desligue nos ícones bem pequenos). */
+  count?: boolean;
+}) {
+  const many = areas && new Set(areas).size >= MANY_AREAS ? [...new Set(areas)] : null;
+  if (many) {
+    const step = 100 / many.length;
+    const slices = many.map((x, i) => `${AREA[x].color} ${i * step}% ${(i + 1) * step}%`).join(', ');
+    const label = many.length >= AREAS.length ? 'Todas as áreas da vida' : `${many.length} áreas da vida`;
+    return (
+      <span role="img" aria-label={label} title={label} className={`${size} grid shrink-0 place-items-center ${rounded}`} style={{ background: `conic-gradient(${slices})` }}>
+        <span className="grid h-[58%] w-[58%] place-items-center rounded-full bg-surface text-[0.625rem] font-bold leading-none text-ink">{count && many.length}</span>
+      </span>
+    );
+  }
   const a = id ? AREA[id] : undefined;
   const c = color || a?.color || '#888888';
   return (
@@ -102,7 +158,7 @@ export function Tag({ children, c = 'rgb(var(--p))', className = '' }: { childre
   return (
     <span
       className={`whitespace-nowrap rounded-md px-2 py-0.5 text-[0.6875rem] font-semibold ${className}`}
-      style={{ color: c, background: c.startsWith('#') ? tint(c, 0.12) : 'rgb(var(--p) / .12)' }}
+      style={{ color: c, background: c.startsWith('#') ? tint(c, 0.12) : c.replace(/\)$/, ' / .12)') }}
     >
       {children}
     </span>
