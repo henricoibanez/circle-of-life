@@ -1,6 +1,7 @@
 import type { AnalysisContent, AnalysisImportBody, AnalysisLatestDto, AnalysisReportDto, AnalysisSource, AnalysisSuggestion, AreaId } from '@circle/shared';
 import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createTasksInBulk } from '../backlog/bulk-tasks';
 import { ActivityService } from '../xp/activity.service';
 import type { Env } from '../config/env';
 import type { AnalysisReport, User } from '../generated/prisma/client';
@@ -176,19 +177,13 @@ export class AnalysisService {
         data: { userId: user.id, title: s.iniciativa.titulo, description: descricao, areas: [...new Set([...s.iniciativa.areas, ...epicos.flatMap(e => e.areas)])], source: 'ia', position },
       });
       for (const [i, e] of epicos.entries()) {
-        await tx.epic.create({
-          data: {
-            userId: user.id,
-            initiativeId: ini.id,
-            title: e.titulo,
-            area: e.areas[0]!,
-            areas: e.areas,
-            position: i,
-            tasks: {
-              create: e.tarefas.map((t, j) => ({ userId: user.id, title: t.titulo, description: t.descricao, position: j, logs: { create: { text: 'Criada a partir da análise inteligente' } } })),
-            },
-          },
-        });
+        const epic = await tx.epic.create({ data: { userId: user.id, initiativeId: ini.id, title: e.titulo, area: e.areas[0]!, areas: e.areas, position: i } });
+        await createTasksInBulk(
+          tx,
+          epic.id,
+          e.tarefas.map((t, j) => ({ userId: user.id, title: t.titulo, description: t.descricao, position: j })),
+          'Criada a partir da análise inteligente',
+        );
       }
       await tx.analysisReport.update({ where: { id }, data: { imported: [...new Set([...r.imported, index])] } });
       await this.activity.add(tx, user.id, 'sparkles', `Você importou a sugestão “${s.iniciativa.titulo}” da análise`, '/backlog');

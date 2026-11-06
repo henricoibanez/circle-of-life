@@ -1,6 +1,7 @@
 import type { AreaId, ArtVariant, TrilhaCategory, TrilhaDetailDto, TrilhaDto, TrilhaImportInput } from '@circle/shared';
 import { AREA, SOCIAL_LOCKED_MESSAGE, socialStatus, STARTER_TRILHA_ID } from '@circle/shared';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { createTasksInBulk } from '../backlog/bulk-tasks';
 import type { Prisma, Trilha, User } from '../generated/prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -408,26 +409,14 @@ export class TrilhasService {
       }
       const position = await tx.epic.count({ where: { initiativeId: initiative.id } });
       const epic = await tx.epic.create({
-        data: {
-          userId: user.id,
-          initiativeId: initiative.id,
-          title: t.title,
-          description: t.description,
-          area: t.area,
-          areas: trilhaAreas,
-          position,
-          tasks: {
-            create: tasks.map(x => ({
-              userId: user.id,
-              title: x.title,
-              description: x.description,
-              areas: x.areas,
-              position: x.position,
-              logs: { create: { text: `Importada da trilha ${t.title}` } },
-            })),
-          },
-        },
+        data: { userId: user.id, initiativeId: initiative.id, title: t.title, description: t.description, area: t.area, areas: trilhaAreas, position },
       });
+      await createTasksInBulk(
+        tx,
+        epic.id,
+        tasks.map(x => ({ userId: user.id, title: x.title, description: x.description, areas: x.areas, position: x.position })),
+        `Importada da trilha ${t.title}`,
+      );
       await this.activity.add(tx, user.id, 'bag', `Você importou a trilha “${t.title}”`, '/backlog');
       return { initiativeId: initiative.id, epicId: epic.id, paid, xp: await this.xp.change(tx, user.id, -paid) };
     });

@@ -111,6 +111,26 @@ describe('Loja de trilhas', () => {
     assert.equal((await buyer.c.request('POST', `/trilhas/${id}/import`, { initiativeId: other.id })).status, 404);
   });
 
+  test('importar trilha grande (80 tarefas) traz tudo, na ordem, com descrição, áreas e histórico', async () => {
+    const ini = (await author.c.request('POST', '/initiatives', { title: 'Artes liberais' })).body;
+    const ep = (await author.c.request('POST', '/epics', { initiativeId: ini.id, title: 'Mitologia', area: 'intelectual' })).body;
+    const t0 = (await author.c.request('POST', '/tasks', { epicId: ep.id, title: 'Episódio 1' })).body;
+    await author.c.request('PATCH', `/tasks/${t0.id}`, { description: 'Ouvir e anotar', areas: ['intelectual', 'espiritualidade'] });
+    const rest = Array.from({ length: 79 }, (_, i) => ({ epicId: ep.id, title: `Episódio ${i + 2}` }));
+    await api.prisma.task.createMany({ data: rest.map((t, i) => ({ ...t, userId: author.user.id, position: i + 1 })) });
+    const id = (await publish(ep.id)).body.id;
+    await admin.c.request('POST', `/trilhas/${id}/approve`);
+    const r = await buyer.c.request('POST', `/trilhas/${id}/import`, NEW);
+    assert.equal(r.status, 201);
+    const tasks = await api.prisma.task.findMany({ where: { epicId: r.body.epicId }, orderBy: { position: 'asc' }, include: { logs: true } });
+    assert.equal(tasks.length, 80);
+    assert.equal(tasks[0]!.title, 'Episódio 1');
+    assert.equal(tasks[0]!.description, 'Ouvir e anotar');
+    assert.deepEqual(tasks[0]!.areas, ['intelectual', 'espiritualidade']);
+    assert.equal(tasks[79]!.title, 'Episódio 80');
+    assert.ok(tasks.every(t => t.userId === buyer.user.id && t.status === 'backlog' && t.logs.length === 1 && t.logs[0]!.text.startsWith('Importada da trilha')));
+  });
+
   test('importar grátis dá +10 XP ao autor (uma vez por pessoa)', async () => {
     const id = (await publish(await makeEpic(author.c))).body.id;
     await admin.c.request('POST', `/trilhas/${id}/approve`);

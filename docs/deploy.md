@@ -13,7 +13,7 @@ O beta está no ar:
 | Site | `circle-of-life-app` (Root Directory `apps/web`) | https://circle-of-life-app.vercel.app |
 | API | `circle-of-life` (Root Directory `apps/api`) | https://circle-of-life-three.vercel.app |
 
-Banco e fotos no Supabase (região São Paulo). E-mail desligado. Os commits deste projeto usam o e-mail pessoal do dono (a Vercel só publica commits de autor ligado à conta).
+Banco e fotos no Supabase (região São Paulo). A API roda na Vercel também em São Paulo (`"regions": ["gru1"]` em `apps/api/vercel.json`): perto do banco, cada consulta leva milissegundos; com a API nos EUA, cada ida ao banco custava ~120 ms e operações grandes (importar trilha com dezenas de tarefas) passavam do tempo limite. E-mail desligado. Os commits deste projeto usam o e-mail pessoal do dono (a Vercel só publica commits de autor ligado à conta).
 
 **Na Vercel, a API roda a partir de um arquivo único** (`dist/vercel.cjs`, gerado por `apps/api/scripts/vercel-bundle.mjs`): o carregador de funções da Vercel não aceita os pacotes do Nest 12 separados.
 

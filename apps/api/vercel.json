@@ -4,6 +4,7 @@
   "installCommand": "npm install -g pnpm@12.10.1 && cd ../.. && pnpm install --frozen-lockfile --filter \"@circle/api...\"",
   "buildCommand": "cd ../.. && pnpm --filter @circle/shared build && pnpm --filter @circle/api build && pnpm --filter @circle/api db:deploy && cd apps/api && node scripts/vercel-bundle.mjs",
   "outputDirectory": "public",
+  "regions": ["gru1"],
   "functions": {
     "api/index.js": {
       "includeFiles": "dist/vercel.cjs",
