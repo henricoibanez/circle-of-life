@@ -51,6 +51,8 @@ export const GEMS = {
   jornada: 1000,
   /** Encerrar sprint com todas as tarefas prontas (e pelo menos uma). */
   sprint: 50,
+  /** Responder uma pesquisa rápida (uma vez por pesquisa; decisão do dono de 07/11/2026). */
+  pesquisa: 50,
 } as const;
 
 /** Nome da moeda nas telas. */

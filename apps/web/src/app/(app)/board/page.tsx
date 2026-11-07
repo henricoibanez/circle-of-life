@@ -13,6 +13,7 @@ import { AreaIcon, AreaIcons, Bar, Card, IconBtn, inputCls, Prio } from '@/compo
 import { useSheets } from '@/components/sheet';
 import { taskAreas, useBacklog, useBacklogActions } from '@/lib/backlog';
 import { boardTasks, fmtDay, sprintPeriod, useSprints } from '@/lib/sprints';
+import { PushAsk } from '@/components/push-ask';
 
 const COLS: { id: 'todo' | 'doing' | 'done'; label: string; c: string }[] = [
   { id: 'todo', label: 'A Fazer', c: '#9ca3af' },
@@ -218,6 +219,10 @@ export default function BoardPage() {
         </div>
         {search && <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Pesquisar título da tarefa" className={inputCls + ' mt-3'} />}
       </header>
+
+      <div className="mx-4 mb-3 empty:hidden">
+        <PushAsk />
+      </div>
 
       {late.length > 0 && (
         <div className="mx-4 mb-3 overflow-hidden rounded-2xl border border-red-500/20 bg-red-500/5">

@@ -111,6 +111,11 @@ model User {
   notifications          Notification[]      @relation("NotificationsReceived")
   notified               Notification[]      @relation("NotificationsCaused")
   pushSubscriptions      PushSubscription[]
+  notificationPrefs      NotificationPrefs?
+  notificationLog        NotificationLog[]
+  releasesCreated        Release[]           @relation("ReleasesCreated")
+  surveysCreated         Survey[]            @relation("SurveysCreated")
+  surveyResponses        SurveyResponse[]
   trilhas                Trilha[]            @relation("TrilhasAuthored")
   trilhaFavorites        TrilhaFavorite[]
   trilhaAcquisitions     TrilhaAcquisition[]
@@ -306,29 +311,29 @@ model TaskLog {
 
 /// Sprint de 14 dias. Sempre existe uma em andamento (closedAt vazio) por usuário.
 model Sprint {
-  id         String    @id @default(cuid())
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  number     Int
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  number             Int
   /// Nome dado pela pessoa. Vazio = "Sprint N".
-  name        String    @default("")
+  name               String    @default("")
   /// Objetivo da sprint (opcional).
-  description String    @default("")
+  description        String    @default("")
   /// Duração em dias: 7, 14 (padrão) ou 30; 0 = indeterminada (sem prazo).
-  length      Int       @default(14)
+  length             Int       @default(14)
   /// Quando a pessoa apertou "Iniciar sprint". Null = em planejamento (ainda não começou).
-  startAt    DateTime?
+  startAt            DateTime?
   /// Fim previsto (startAt + duração − 1 dia). Null quando não começou ou é indeterminada (sem prazo).
-  plannedEnd DateTime?
+  plannedEnd         DateTime?
   /// Já mostrou o aviso "concluir sem sprint não rende XP" neste intervalo entre sprints.
-  offSprintWarned Boolean @default(false)
+  offSprintWarned    Boolean   @default(false)
   /// Quando avisou que o prazo venceu (uma vez por sprint).
   deadlineNotifiedAt DateTime?
-  closedAt   DateTime?
+  closedAt           DateTime?
   /// Preenchidos ao encerrar: "prontas/total".
-  doneCount  Int?
-  totalCount Int?
-  tasks      Task[]
+  doneCount          Int?
+  totalCount         Int?
+  tasks              Task[]
 
   @@unique([userId, number])
   @@map("sprints")
@@ -366,6 +371,8 @@ enum GemReason {
   trilha_compra
   /// Liberar a rede social antes dos 7 dias da Jornada (negativo).
   rede_social
+  /// Responder uma pesquisa rápida (decisão do dono de 07/11/2026).
+  pesquisa
 }
 
 /// Extrato de gemas: cada ganho (+) e gasto (-). O saldo fica copiado em User.gems.
@@ -565,7 +572,30 @@ enum NotificationType {
   curtida
   curtida_story
   comentario
+  /// Antigo: um aviso por tarefa (substituído pelo resumo diário tarefas_atrasadas).
   tarefa_atrasada
+  /// Resumo diário das tarefas atrasadas.
+  tarefas_atrasadas
+  /// Épico com todas as tarefas prontas, não encerrado e sem tarefa nova há 3 dias.
+  epico_sem_proximo
+  /// Épico criado há 3 dias ou mais e ainda sem nenhuma tarefa.
+  epico_vazio
+  /// Dica: área da vida sem tarefa criada nem concluída há 30 dias.
+  area_parada
+  /// Dica: a pessoa não abre o app há 3 (e depois 7) dias.
+  volte_ao_app
+  /// Dica: um grupo público ligado às áreas da pessoa.
+  grupo_sugerido
+  /// Dica: "Aconteceu algo bom que não estava planejado?"
+  algo_bom
+  /// Jornada parada há 2 dias ou mais (o único aviso automático durante a Jornada).
+  jornada_parada
+  /// "Lembra disso?": uma conquista de pelo menos 30 dias atrás.
+  lembranca
+  /// Novidades de uma versão do app (publicadas pelo admin).
+  novidade
+  /// Pesquisa rápida (nota de 1 a 5).
+  pesquisa
   sprint_iniciada
   sprint_prazo
   trilha_baixada
@@ -586,24 +616,132 @@ enum NotificationType {
 
 /// Notificação do sino (e, se ativado, também enviada ao celular).
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation("NotificationsReceived", fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  title     String
-  body      String           @default("")
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation("NotificationsReceived", fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  title       String
+  body        String           @default("")
   /// Tela para onde a notificação leva.
-  link      String
+  link        String
   /// Quem causou (curtiu, comentou…), se houver.
-  actorId   String?
-  actor     User?            @relation("NotificationsCaused", fields: [actorId], references: [id], onDelete: Cascade)
+  actorId     String?
+  actor       User?            @relation("NotificationsCaused", fields: [actorId], references: [id], onDelete: Cascade)
   /// O que gerou (tarefa, post…), para agrupar e evitar repetidas.
-  refId     String?
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
+  refId       String?
+  /// Foto mostrada no aviso ("Lembra disso?"). Só o id; se a foto for apagada, o aviso fica sem ela.
+  imageFileId String?
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
 
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+/// Categoria do aviso (o que a pessoa pode desligar). O mapa tipo → categoria fica em packages/shared/src/notifications.ts.
+enum NotificationCategory {
+  atividade
+  alertas
+  dicas
+  lembrancas
+  novidades
+  pesquisas
+}
+
+/// Quantos avisos automáticos por dia e por semana (valores em packages/shared/src/notifications.ts).
+enum NotificationVolume {
+  pouco
+  normal
+  mais
+}
+
+/// Preferências de notificação. Sem linha = padrão (Normal, silêncio das 22h às 8h, tudo ligado).
+model NotificationPrefs {
+  userId      String                 @id
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  volume      NotificationVolume     @default(normal)
+  /// Horário de silêncio (hora local, 0 a 23): nada vai para o celular de quietStart até quietEnd.
+  quietStart  Int                    @default(22)
+  quietEnd    Int                    @default(8)
+  /// Categorias desligadas no sino (também não vão para o celular).
+  offBell     NotificationCategory[] @default([])
+  /// Categorias que não vão para o celular.
+  offPush     NotificationCategory[] @default([])
+  /// Quando a pessoa respondeu "Agora não" ao convite para ligar as notificações no celular.
+  pushAskedAt DateTime?
+  updatedAt   DateTime               @updatedAt
+
+  @@map("notification_prefs")
+}
+
+/// Novidades de uma versão do app. O admin escreve e publica; ao publicar, todo mundo
+/// fora da Jornada recebe a notificação, que abre a tela da novidade (decisão do dono de 07/11/2026).
+model Release {
+  id          String    @id @default(cuid())
+  /// Ex.: "1.4".
+  version     String
+  title       String
+  /// Texto simples: parágrafos separados por linha em branco; linhas com "- " viram lista.
+  body        String
+  createdById String?
+  createdBy   User?     @relation("ReleasesCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Null = rascunho.
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("releases")
+}
+
+/// Pesquisa rápida: uma pergunta com nota de 1 a 5, respondida no sino. Responder rende círculos.
+model Survey {
+  id          String           @id @default(cuid())
+  question    String
+  createdById String?
+  createdBy   User?            @relation("SurveysCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Null = rascunho. Ao publicar, sai para quem está fora da Jornada e não recebeu pesquisa nos últimos 30 dias.
+  publishedAt DateTime?
+  /// Encerrada: não aceita mais respostas.
+  closedAt    DateTime?
+  createdAt   DateTime         @default(now())
+  responses   SurveyResponse[]
+
+  @@map("surveys")
+}
+
+/// Resposta de uma pessoa a uma pesquisa (uma por pessoa).
+model SurveyResponse {
+  id        String   @id @default(cuid())
+  surveyId  String
+  survey    Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Nota de 1 a 5.
+  score     Int
+  /// Comentário opcional.
+  comment   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([surveyId, userId])
+  @@map("survey_responses")
+}
+
+/// Registro dos avisos automáticos já mandados: não repetir (mesma chave) e contar os limites.
+/// Não some quando a pessoa limpa o sino. Apagado depois de 1 ano.
+model NotificationLog {
+  id       String               @id @default(cuid())
+  userId   String
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type     NotificationType
+  category NotificationCategory
+  /// Identifica o aviso (ex.: "tarefas_atrasadas:2026-11-07"). A mesma chave não sai duas vezes.
+  key      String
+  sentAt   DateTime             @default(now())
+
+  @@unique([userId, key])
+  @@index([userId, sentAt])
+  @@map("notification_log")
 }
 
 /// Aparelho que aceitou receber notificações no celular (Web Push).
@@ -684,15 +822,15 @@ model Trilha {
 }
 
 model TrilhaTask {
-  id       String @id @default(cuid())
-  trilhaId String
-  trilha   Trilha @relation(fields: [trilhaId], references: [id], onDelete: Cascade)
-  title    String
+  id          String @id @default(cuid())
+  trilhaId    String
+  trilha      Trilha @relation(fields: [trilhaId], references: [id], onDelete: Cascade)
+  title       String
   /// Vai para a descrição da tarefa ao importar.
   description String @default("")
   /// Áreas próprias da tarefa (vazio = as do épico).
-  areas    Area[] @default([])
-  position Int
+  areas       Area[] @default([])
+  position    Int
 
   @@map("trilha_tasks")
 }
@@ -767,17 +905,17 @@ enum GroupRole {
 
 /// Grupo criado por um usuário: pessoas interessadas num assunto e trilhas prontas.
 model Group {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
   description String
   area        Area
-  icon        String        @default("users")
-  art         String        @default("lake")
-  coverFileId String?       @unique
+  icon        String         @default("users")
+  art         String         @default("lake")
+  coverFileId String?        @unique
   /// Privado: só entra quem for aprovado por um gestor ou aceitar um convite (decisão do dono de 05/11/2026).
-  private     Boolean       @default(false)
+  private     Boolean        @default(false)
   createdById String?
-  createdAt   DateTime      @default(now())
+  createdAt   DateTime       @default(now())
   members     GroupMember[]
   requests    GroupRequest[]
   trilhas     Trilha[]
@@ -919,13 +1057,13 @@ model PostSave {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
   text      String
-  createdAt DateTime @default(now())
+  createdAt DateTime          @default(now())
   reactions CommentReaction[]
 
   @@index([postId, createdAt])

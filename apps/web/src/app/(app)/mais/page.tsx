@@ -98,6 +98,8 @@ export default function MaisPage() {
           <section className="space-y-3">
             <h2 className="px-1 text-sm font-semibold text-muted">Administração</h2>
             <Row href="/admin/convites" n="envelope" c="#0ea5e9" title="Convites" d="Convide pessoas por e-mail para entrar no app." />
+            <Row href="/admin/novidades" n="rocket" c="#7c4dde" title="Novidades" d="Conte o que mudou em cada versão do app." />
+            <Row href="/admin/pesquisas" n="star" c="#f59e0b" title="Pesquisas" d="Pergunte algo rápido e veja as notas." />
           </section>
         )}
       </div>

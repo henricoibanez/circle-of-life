@@ -139,7 +139,7 @@ export class StoriesService {
     const title = n > 1 ? `${first} e mais ${n - 1} ${n - 1 === 1 ? 'pessoa reagiram' : 'pessoas reagiram'} ao seu story` : `${first} reagiu ao seu story`;
     const unread = await this.prisma.notification.findFirst({ where: { userId: s.authorId, type: 'curtida_story', refId: id, readAt: null } });
     if (unread) await this.prisma.notification.update({ where: { id: unread.id }, data: { title, actorId: user.id, createdAt: new Date() } });
-    else await this.notifications.notify({ userId: s.authorId, type: 'curtida_story', title, body: s.caption, link: '/feed', actorId: user.id, refId: id });
+    else await this.notifications.notify({ userId: s.authorId, type: 'curtida_story', title, body: s.caption, link: `/feed?story=${id}`, actorId: user.id, refId: id });
   }
 
   /** "Visto por": só o autor. Quem também curtiu aparece marcado. */

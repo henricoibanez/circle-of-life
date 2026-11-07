@@ -18,6 +18,8 @@ import { InvitesModule } from './invites/invites.module';
 import { JourneyModule } from './journey/journey.module';
 import { MailModule } from './mail/mail.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { EngagementModule } from './notifications/engagement.module';
+import { AnnouncementsModule } from './notifications/announcements.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SocialModule } from './social/social.module';
 import { StoriesModule } from './stories/stories.module';
@@ -38,6 +40,8 @@ import { XpModule } from './xp/xp.module';
     // Tarefas agendadas (ex.: aviso de atrasadas). Desligadas nos testes automáticos.
     ...(process.env.DISABLE_SCHEDULE === 'true' ? [] : [ScheduleModule.forRoot()]),
     NotificationsModule,
+    EngagementModule,
+    AnnouncementsModule,
     UploadsModule,
     AuthModule,
     CalendarModule,

@@ -126,7 +126,7 @@ export class SprintsService {
           type: 'sprint_iniciada',
           title: `${name} começou`,
           body: started.plannedEnd ? `Termina em ${ddmm(started.plannedEnd, user.timezone)}. Bom trabalho!` : 'Sem prazo: você encerra quando quiser.',
-          link: '/board',
+          link: '/sprint',
           refId: started.id,
         },
         tx,

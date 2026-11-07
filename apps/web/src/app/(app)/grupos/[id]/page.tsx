@@ -59,6 +59,15 @@ function Grupo() {
     openSheet(close => <TopicSheet groupId={id} topicId={topico} onClose={close} />);
   }, [topico, g?.member, id, openSheet]);
 
+  // Aviso do sino ("?trilha=..."): abre a trilha do grupo (nova, sugerida, aprovada ou recusada).
+  const trilhaParam = params.get('trilha');
+  const openedTrilha = useRef(false);
+  useEffect(() => {
+    if (!trilhaParam || !g || openedTrilha.current) return;
+    openedTrilha.current = true;
+    openSheet(close => <TrilhaSheet id={trilhaParam} onClose={close} />);
+  }, [trilhaParam, g, openSheet]);
+
   useEffect(() => {
     if (!fromRequest || !g || scrolled.current) return;
     scrolled.current = true;

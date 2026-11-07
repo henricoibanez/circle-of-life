@@ -1,5 +1,6 @@
 'use client';
 
+import type { NotificationPrefsDto, SurveyDto } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
 
@@ -10,9 +11,23 @@ export type NotificationItem = {
   body: string;
   link: string;
   actorName: string | null;
+  /** Foto do aviso ("Lembra disso?"). */
+  imageUrl: string | null;
+  /** Pesquisa rápida, para responder no próprio sino. */
+  survey: SurveyDto | null;
   read: boolean;
   createdAt: string;
 };
+
+export const PREFS_KEY = ['notifications', 'prefs'];
+export function useNotificationPrefs() {
+  return useQuery({ queryKey: PREFS_KEY, queryFn: () => api<NotificationPrefsDto>('/notifications/prefs') });
+}
+
+/** Responde a pesquisa (nota de 1 a 5 e comentário opcional). */
+export function answerSurvey(id: string, score: number, comment?: string) {
+  return api<{ survey: SurveyDto; gemsGained: number }>(`/surveys/${id}/answer`, { method: 'POST', body: { score, ...(comment !== undefined ? { comment } : {}) } });
+}
 
 export const NOTIF_KEY = ['notifications'];
 export const UNREAD_KEY = ['notifications', 'unread'];

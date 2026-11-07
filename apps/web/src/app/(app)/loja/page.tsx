@@ -1,7 +1,8 @@
 'use client';
 
 import { AREA, AREAS, gemsLabel, SOCIAL_UNLOCK_PRICE, STARTER_TRILHA_ID, TRILHA_CATEGORIES } from '@circle/shared';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { StepsArt } from '@/components/art';
 import { CoinIcon } from '@/components/coin';
 import { Header, InfoSheet } from '@/components/header';
@@ -17,8 +18,16 @@ import { kfmt, useTrilhaActions, useTrilhas } from '@/lib/trilhas';
 
 const CATS: { id: string; label: string; icon: IconName; color?: string }[] = [{ id: 'all', label: 'Todas', icon: 'grid' }, ...TRILHA_CATEGORIES];
 
-/** Loja de trilhas (como no protótipo), com trilhas pagas em gemas e aprovação pelo administrador. */
 export default function LojaPage() {
+  return (
+    <Suspense>
+      <Loja />
+    </Suspense>
+  );
+}
+
+/** Loja de trilhas (como no protótipo), com trilhas pagas em gemas e aprovação pelo administrador. */
+function Loja() {
   const { data } = useTrilhas();
   const { data: me } = useMe();
   const actions = useTrilhaActions();
@@ -26,6 +35,15 @@ export default function LojaPage() {
   const [cat, setCat] = useState('all');
   const [q, setQ] = useState('');
   const open = (id: string) => openSheet(close => <TrilhaSheet id={id} onClose={close} />);
+
+  // Aviso do sino ("/loja?trilha=..."): abre direto a trilha (pendente, aprovada, recusada ou baixada).
+  const trilhaParam = useSearchParams().get('trilha');
+  const openedTrilha = useRef(false);
+  useEffect(() => {
+    if (!trilhaParam || openedTrilha.current) return;
+    openedTrilha.current = true;
+    openSheet(close => <TrilhaSheet id={trilhaParam} onClose={close} />);
+  }, [trilhaParam, openSheet]);
 
   const isAdmin = me?.role === 'admin';
   // Jornada (decisão do dono de 04/11/2026): até liberar tudo, só a trilha "Primeiros passos" abre; as outras ficam borradas.

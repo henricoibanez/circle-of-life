@@ -11,3 +11,4 @@ export * from './feed';
 export * from './analysis';
 export * from './backlog-io';
 export * from './journey';
+export * from './notifications';

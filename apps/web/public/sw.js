@@ -20,6 +20,9 @@ self.addEventListener('push', event => {
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       lang: 'pt-BR',
+      // Foto do "Lembra disso?" (o Android mostra; o iPhone ignora).
+      ...(data.image ? { image: data.image } : {}),
+      ...(data.tag ? { tag: data.tag } : {}),
       data: { link: data.link },
     }),
   );

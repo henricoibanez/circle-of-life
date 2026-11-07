@@ -38,12 +38,13 @@ export function AreaWatermark({ areas, className = '' }: { areas: AreaId[]; clas
  * Faixa de stories no topo do feed: o seu story e, à direita, os de quem você pode ver.
  * Sem "Criar post" aqui (decisão do dono de 05/11/2026): o post nasce no botão "+" do menu.
  */
-export function StoryRow() {
+export function StoryRow({ storyId }: { storyId?: string | null }) {
   const { data: me } = useMe();
   const { data: groups } = useStories();
   // Só depois de montar: o servidor não conhece a pessoa logada (evita diferença na hidratação).
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
   const { openSheet } = useSheets();
+  const toast = useToast();
   const mine = groups?.find(g => g.mine);
   const others = groups?.filter(g => !g.mine) ?? [];
   const open = (authorId: string) => {
@@ -51,6 +52,17 @@ export function StoryRow() {
     const i = list.findIndex(g => g.author.id === authorId);
     if (i >= 0) openSheet(close => <StoryViewer groups={list} start={i} onClose={close} />);
   };
+
+  // Aviso do sino ("/feed?story=..."): abre o story curtido; se já passou das 24 horas, avisa.
+  const openedStory = useRef(false);
+  useEffect(() => {
+    if (!storyId || !groups || openedStory.current) return;
+    openedStory.current = true;
+    const g = groups.find(x => x.stories.some(s => s.id === storyId));
+    if (g) open(g.author.id);
+    else toast('Esse story já saiu do ar (stories duram 24 horas).');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyId, groups]);
   const newStory = () => openSheet(close => <StoryForm onClose={close} />);
 
   return (

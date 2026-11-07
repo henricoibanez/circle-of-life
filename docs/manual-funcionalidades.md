@@ -67,6 +67,44 @@ O Circle of Life pode ser "instalado" na tela inicial do celular, como um app co
 
 Em **Meu Perfil**, ligue **Notificações no celular** para receber avisos de tarefas atrasadas, curtidas, comentários e outros, mesmo com o app fechado. No iPhone, adicione o app à tela inicial antes de ligar.
 
+### Avisos: quantos, quando e quais
+
+Logo abaixo, no cartão **Avisos**, você decide:
+
+- **Quantos lembretes do app**: Pouco (até 1 por dia e 3 por semana), Normal (até 2 por dia e 6 por semana, o padrão) ou Mais (até 3 por dia e 10 por semana). Vale para os lembretes que o app manda sozinho: alertas, dicas (no máximo uma por dia) e lembranças. Avisos de pessoas, novidades e pesquisas não contam.
+- **Horário de silêncio**: por padrão, das 22h às 8h. Nesse horário nada chega ao celular; o sino continua recebendo.
+- **O que receber**: ligue ou desligue no **sino** e no **celular** cada tipo de aviso: **Atividade** (curtidas, comentários, amizades, grupos e trilhas), **Alertas** (tarefas atrasadas, prazo da sprint, épicos parados e a Jornada), **Dicas**, **Lembranças**, **Novidades** e **Pesquisas**.
+
+O app nunca manda o mesmo lembrete duas vezes. Tarefas atrasadas chegam num **resumo por dia**, a partir das 8h, e não num aviso por tarefa. Durante a Jornada, o único lembrete é o da própria Jornada: se você ficar 2, 5 ou 10 dias sem avançar, o app lembra qual é o próximo passo.
+
+**Convite no Board.** Depois da Jornada, se o seu celular ainda não recebe notificações, aparece no topo do Board o cartão "Quer um lembrete da sua vida?". Toque em **Ligar** ou em **Agora não** (ele volta em 60 dias).
+
+### Dicas
+
+Para você não esquecer de priorizar a sua vida, o app manda no máximo **uma dica por dia**:
+
+- **Volte ao app**: depois de 3 e de 7 dias sem abrir o app.
+- **Área parada**: uma área da vida sem nenhuma tarefa criada ou concluída há 30 dias. Tocar abre o backlog já filtrado por ela.
+- **Um grupo para você**: um grupo público ligado às áreas em que você mais trabalha (no máximo um por mês).
+- **Aconteceu algo bom?**: se você não posta há 14 dias, um convite para compartilhar algo bom que não estava planejado. Tocar abre o novo post.
+
+### Lembra disso?
+
+De vez em quando (no máximo uma vez por semana), o app sorteia uma conquista sua de pelo menos um mês atrás: uma tarefa concluída, um épico encerrado ou uma iniciativa concluída. "Lembra disso? Há 3 meses você concluiu “Correr 5 km”." Tocar abre a tela com a foto (se a tarefa tiver anexo ou se você compartilhou com foto), a data, as áreas e o botão **Compartilhar**.
+
+### Novidades e pesquisas
+
+Quando o app ganha uma versão nova, chega no sino **Novidades da versão…**. Toque para ler o que mudou.
+
+De vez em quando chega uma **Pesquisa rápida** (no máximo uma por mês). Toque numa das 5 estrelas, ali mesmo no sino, para dar a sua nota de 1 a 5 e ganhar **50 círculos**. Se quiser, escreva um comentário. No celular, tocar na notificação abre a pergunta no app.
+
+O app também avisa sobre **épicos parados** (no máximo um aviso desses por dia):
+
+- **Épico sem tarefas**: o épico existe há 3 dias e ainda não tem nenhuma tarefa. É a hora de pensar no primeiro passo.
+- **Épico concluído?**: todas as tarefas do épico estão prontas e nada novo entrou há 3 dias. Encerre o épico (vira conquista) ou planeje o próximo passo.
+
+Tocar no aviso abre o backlog já no épico, destacado.
+
 ---
 
 ## 3. A Jornada
@@ -155,9 +193,11 @@ As telas dos exercícios, da análise, dos relatórios, da loja e de grupos têm
 
 O **sino** fica no topo do Feed, da Jornada e do Perfil, com o número de avisos não lidos. Ele abre uma folha onde você pode:
 
-- tocar num aviso para ir à tela relacionada;
+- tocar num aviso para ir direto ao item: o grupo, a trilha (já aberta, na loja ou no grupo), o post, o story curtido (se ainda estiver no ar), o tópico do fórum, a tela da sprint, o épico no backlog etc.;
 - **Marcar como lida** ou **Marcar como não lida**, e **Apagar** um aviso;
 - **Marcar todas como lidas** e **Limpar todas**.
+
+Os avisos ficam em duas abas: **Para você** (lembretes, dicas, lembranças, novidades e pesquisas) e **Atividade** (o que as outras pessoas fizeram). O número ao lado de cada aba mostra quantos não foram lidos.
 
 Você recebe avisos de: pedidos e aceites de amizade, curtidas e comentários, curtidas em stories, tarefas atrasadas, sprint iniciada, prazo da sprint vencido, trilha baixada, trilha aprovada ou recusada, novidades dos grupos (novas trilhas, sugestões, tópicos e respostas no fórum, pedidos, convites, aprovações e quando você vira gestor).
 
@@ -570,13 +610,25 @@ Abra pelo cartão do seu nome no **Mais** ou por **Configurações**. A tela **M
 
 ## 12. Para administradores
 
-Quem é administrador vê, no **Mais**, a seção **Administração**.
+Quem é administrador vê, no **Mais**, a seção **Administração**: Convites, Novidades e Pesquisas.
 
 ### Convites
 
 Em **Convites**, digite o **E-mail da pessoa** e toque em **Convidar**. A lista mostra cada convite como **Pendente**, **Aceito** ou **Expirado**, quem enviou, quando e até quando vale. Dá para reenviar ou cancelar convites.
 
 Se o envio de e-mails estiver desligado, o convite fica registrado mesmo assim. Avise a pessoa para entrar no app com a conta Google daquele e-mail.
+
+### Novidades
+
+Em **Novidades**, escreva a **Versão** (ex.: 1.4), o **Título** e **O que mudou**, em frases curtas. Uma linha em branco separa os parágrafos; linhas que começam com "- " viram lista. Use **Pré-visualizar** para ver como fica e **Salvar rascunho**. Rascunhos podem ser editados ou apagados.
+
+Toque em **Publicar** para avisar todo mundo que está fora da Jornada: chega no sino (e no celular) "Novidades da versão 1.4", que abre a tela com o texto. Depois de publicada, a novidade não muda mais.
+
+### Pesquisas
+
+Em **Pesquisas**, escreva a pergunta (ex.: "O que está achando do app?") e toque em **Criar rascunho**. Ao **Publicar**, a pesquisa vai para quem está fora da Jornada e não recebeu outra pesquisa nos últimos 30 dias. A pessoa responde com uma nota de 1 a 5 no próprio sino, pode escrever um comentário e ganha 50 círculos.
+
+Cada pesquisa mostra quantas pessoas receberam e responderam, a média, quantas notas de cada valor e os comentários (sem nomes). **Exportar Excel** baixa tudo numa planilha. **Encerrar** fecha a pesquisa para novas respostas.
 
 ### Aprovar trilhas
 

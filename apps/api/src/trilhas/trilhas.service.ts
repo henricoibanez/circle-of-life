@@ -197,7 +197,7 @@ export class TrilhasService {
 
     const admins = await this.prisma.user.findMany({ where: { role: 'admin' }, select: { id: true } });
     for (const a of admins) {
-      await this.notifications.notify({ userId: a.id, type: 'trilha_pendente', title: 'Trilha aguardando aprovação', body: `${user.name} publicou “${trilha.title}”.`, link: '/loja', actorId: user.id, refId: trilha.id });
+      await this.notifications.notify({ userId: a.id, type: 'trilha_pendente', title: 'Trilha aguardando aprovação', body: `${user.name} publicou “${trilha.title}”.`, link: `/loja?trilha=${trilha.id}`, actorId: user.id, refId: trilha.id });
     }
     return this.detail(user, trilha.id);
   }
@@ -221,7 +221,7 @@ export class TrilhasService {
           type: 'grupo_trilha_sugerida',
           title: `Sugestão de trilha em ${group.name}`,
           body: `${user.name} sugeriu “${trilha.title}”.`,
-          link: `/grupos/${groupId}`,
+          link: `/grupos/${groupId}?trilha=${trilha.id}`,
           actorId: user.id,
           refId: trilha.id,
         });
@@ -234,7 +234,7 @@ export class TrilhasService {
     const members = await this.prisma.groupMember.findMany({ where: { groupId: group.id, userId: { not: actor.id } }, select: { userId: true } });
     for (const m of members) {
       if (m.userId === t.authorId) continue;
-      await this.notifications.notify({ userId: m.userId, type: 'grupo_trilha', title: `Nova trilha em ${group.name}`, body: `“${t.title}”`, link: `/grupos/${group.id}`, actorId: actor.id, refId: t.id });
+      await this.notifications.notify({ userId: m.userId, type: 'grupo_trilha', title: `Nova trilha em ${group.name}`, body: `“${t.title}”`, link: `/grupos/${group.id}?trilha=${t.id}`, actorId: actor.id, refId: t.id });
     }
   }
 
@@ -255,7 +255,7 @@ export class TrilhasService {
       if (t.replacesId) await tx.trilha.update({ where: { id: t.replacesId }, data: { status: 'despublicada' } });
     });
     const where = t.group ? `já está no grupo ${t.group.name}` : 'já está na loja';
-    const link = t.group ? `/grupos/${t.group.id}` : '/loja';
+    const link = t.group ? `/grupos/${t.group.id}?trilha=${id}` : `/loja?trilha=${id}`;
     if (t.authorId && t.authorId !== user.id) {
       await this.notifications.notify({ userId: t.authorId, type: 'trilha_aprovada', title: 'Sua trilha foi aprovada', body: `“${t.title}” ${where}.`, link, actorId: user.id, refId: id });
     }
@@ -272,7 +272,7 @@ export class TrilhasService {
         type: 'trilha_recusada',
         title: 'Sua trilha não foi aprovada',
         body: reason?.trim() ? `“${t.title}”: ${reason.trim()}` : `“${t.title}” precisa de ajustes. Ajuste o épico e publique de novo.`,
-        link: t.group ? `/grupos/${t.group.id}` : '/loja',
+        link: t.group ? `/grupos/${t.group.id}?trilha=${id}` : `/loja?trilha=${id}`,
         actorId: user.id,
         refId: id,
       });
@@ -391,7 +391,7 @@ export class TrilhasService {
           // Só fala em XP quando o autor ganhou de verdade (na Jornada, por exemplo, não ganha).
           const bonus = gained > 0 ? ` +${gained} XP para você.` : '';
           await this.notifications.notify(
-            { userId: t.authorId, type: 'trilha_baixada', title: 'Baixaram sua trilha', body: `${user.name} importou “${t.title}”.${bonus}`, link: '/loja', actorId: user.id, refId: t.id },
+            { userId: t.authorId, type: 'trilha_baixada', title: 'Baixaram sua trilha', body: `${user.name} importou “${t.title}”.${bonus}`, link: `/loja?trilha=${t.id}`, actorId: user.id, refId: t.id },
             tx,
           );
         }

@@ -95,7 +95,7 @@ export function EpicCard({ e, data, nested, showIni, reorder }: { e: EpicDto; da
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-soft">
+    <div id={`epico-${e.id}`} className="scroll-mt-24 overflow-hidden rounded-2xl border border-line/80 bg-surface shadow-soft transition">
       <div className="flex items-start gap-3 p-4">
         {e.areas.length >= MANY_AREAS ? (
           <AreaIcon areas={e.areas} size="h-14 w-14" rounded="rounded-2xl" />

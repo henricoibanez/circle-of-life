@@ -6,6 +6,7 @@ import type { Env } from '../config/env';
 import { RateLimitService } from '../auth/rate-limit.service';
 import { SessionModule } from '../auth/auth.module';
 import { RodaModule, RodaService } from '../exercises/roda.module';
+import { EngagementModule, EngagementService } from '../notifications/engagement.module';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StoriesModule } from '../stories/stories.module';
 import { StoriesService } from '../stories/stories.service';
@@ -23,6 +24,7 @@ class CronController {
     private readonly stories: StoriesService,
     private readonly rate: RateLimitService,
     private readonly roda: RodaService,
+    private readonly engagement: EngagementService,
   ) {}
 
   @Public()
@@ -34,6 +36,8 @@ class CronController {
     const got = Buffer.from(auth ?? '');
     if (got.length !== expected.length || !timingSafeEqual(got, expected)) throw new UnauthorizedException();
     await this.notifications.hourly();
+    // Lembranças, dicas e aviso da Jornada (depois dos alertas, que têm prioridade no limite do dia).
+    await this.engagement.hourly();
     // Roda da Vida: guarda a avaliação de quem mexeu nas notas e não registrou.
     await this.roda.autoSnapshots();
     const stories = await this.stories.cleanup();
@@ -43,5 +47,5 @@ class CronController {
   }
 }
 
-@Module({ imports: [StoriesModule, SessionModule, RodaModule], controllers: [CronController] })
+@Module({ imports: [StoriesModule, SessionModule, RodaModule, EngagementModule], controllers: [CronController] })
 export class CronModule {}

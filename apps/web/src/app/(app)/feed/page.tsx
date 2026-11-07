@@ -49,6 +49,15 @@ function Feed() {
   const [chip, setChip] = useState<FeedFilter>('para');
   const [area, setArea] = useState<AreaId | null>(null);
 
+  // "/feed?novo=post" (dica "Aconteceu algo bom?") abre o formulário de post.
+  const novo = params.get('novo');
+  useEffect(() => {
+    if (novo !== 'post') return;
+    router.replace('/feed');
+    newPost();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [novo]);
+
   const query: FeedParams = { filter: chip, area: area ?? undefined };
   const feed = useFeed(query);
   const single = usePost(postId);
@@ -61,7 +70,7 @@ function Feed() {
         <Wordmark className="flex-1 text-[1.5rem]" />
         <Bell />
       </header>
-      <StoryRow />
+      <StoryRow storyId={params.get('story')} />
       <div className="space-y-4 px-4 pb-8">
         {postId ? (
           <>

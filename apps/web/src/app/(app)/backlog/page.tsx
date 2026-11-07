@@ -66,9 +66,29 @@ function Backlog() {
   const [open, setOpen] = useState<Record<string, boolean> | null>(null);
   const [st, setSt] = useState<TaskFilter>('backlog');
   // "/backlog?aba=tarefas" abre direto na aba Tarefas (ex.: "Selecionar itens" do quadro vazio).
+  // "/backlog?area=financas" (dica de área parada) já abre filtrado por aquela área.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('aba') === 'tarefas') setTab('tar');
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('aba') === 'tarefas') setTab('tar');
+    const a = p.get('area');
+    if (a && AREAS.some(x => x.id === a)) setArea(a as AreaId);
   }, []);
+  // "/backlog?epico=ID" (alerta de épico no sino) abre a iniciativa do épico e leva até ele, destacado.
+  const epicParam = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('epico');
+  const epicIni = epicParam ? data?.epics.find(e => e.id === epicParam)?.initiativeId : undefined;
+  useEffect(() => {
+    if (!epicParam || !epicIni) return;
+    setTab('ini');
+    setOpen(o => ({ ...(o ?? {}), [epicIni]: true }));
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`epico-${epicParam}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.add('ring-2', 'ring-primary');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 2500);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [epicParam, epicIni]);
   // Trocar de aba ou de filtro limpa a seleção (para não agir em tarefas que não estão na tela).
   const sel = useSelection();
   const { clear } = sel;

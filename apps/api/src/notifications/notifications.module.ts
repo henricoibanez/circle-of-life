@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Global, Headers, HttpCode, Module, Param, Post } from '@nestjs/common';
+import { NOTIFICATION_CATEGORIES, NOTIFICATION_VOLUMES, type NotificationCategory, type NotificationVolume } from '@circle/shared';
+import { Body, Controller, Delete, Get, Global, Headers, HttpCode, Module, Param, Post, Put } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import { IsString, IsUrl, ValidateNested } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsOptional, IsString, IsUrl, Max, Min, ValidateNested } from 'class-validator';
 import { CurrentUser } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { NotificationsService } from './notifications.service';
@@ -16,6 +17,14 @@ class SubscribeDto {
 class UnsubscribeDto {
   @IsString() endpoint!: string;
 }
+const VOLUMES = Object.keys(NOTIFICATION_VOLUMES) as NotificationVolume[];
+class PrefsDto {
+  @IsOptional() @IsIn(VOLUMES, { message: 'quantidade inválida' }) volume?: NotificationVolume;
+  @IsOptional() @IsInt() @Min(0) @Max(23) quietStart?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(23) quietEnd?: number;
+  @IsOptional() @IsArray() @IsIn(NOTIFICATION_CATEGORIES, { each: true, message: 'categoria inválida' }) offBell?: NotificationCategory[];
+  @IsOptional() @IsArray() @IsIn(NOTIFICATION_CATEGORIES, { each: true, message: 'categoria inválida' }) offPush?: NotificationCategory[];
+}
 
 @Controller()
 class NotificationsController {
@@ -24,6 +33,21 @@ class NotificationsController {
   @Get('notifications')
   list(@CurrentUser() u: User) {
     return this.n.list(u.id);
+  }
+  /** Preferências: o que receber, no sino e no celular, quanto e o horário de silêncio. */
+  @Get('notifications/prefs')
+  prefs(@CurrentUser() u: User) {
+    return this.n.prefs(u.id);
+  }
+  @Put('notifications/prefs')
+  savePrefs(@CurrentUser() u: User, @Body() dto: PrefsDto) {
+    return this.n.savePrefs(u.id, dto);
+  }
+  /** "Agora não" no convite para ligar as notificações no celular. */
+  @Post('notifications/push-ask/dismiss')
+  @HttpCode(204)
+  dismissPushAsk(@CurrentUser() u: User) {
+    return this.n.dismissPushAsk(u.id);
   }
   @Get('notifications/unread-count')
   async unread(@CurrentUser() u: User) {

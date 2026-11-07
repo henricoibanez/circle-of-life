@@ -284,7 +284,7 @@ describe('Trilhas dos grupos', () => {
     g = (await outro.c.request('GET', `/groups/${groupId}`)).body;
     assert.ok(g.trilhaList.some((t: { id: string }) => t.id === id));
     const note = (await membro.c.request('GET', '/notifications')).body.find((n: { type: string }) => n.type === 'trilha_aprovada');
-    assert.equal(note.link, `/grupos/${groupId}`);
+    assert.equal(note.link, `/grupos/${groupId}?trilha=${id}`);
 
     const r2 = await inGroup(membro.c, await makeEpic(membro.c, 'Maratona amanhã'));
     await criadora.c.request('POST', `/trilhas/${r2.body.id}/reject`, { reason: 'Muito puxado para iniciantes.' });
