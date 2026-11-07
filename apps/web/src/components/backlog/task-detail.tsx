@@ -3,10 +3,11 @@
 import { AREA, STATUS_LABEL, type AreaId, type TaskDto, type TaskStatus, type XpChange } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icon';
 import { Bar, IconBtn, inputCls, Prio, Seg, ImageHint } from '@/components/primitives';
-import { Sheet } from '@/components/sheet';
+import { ConfirmSheet } from '@/components/confirm';
+import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api, ApiError, type Me } from '@/lib/api';
@@ -14,7 +15,7 @@ import { BACKLOG_KEY, useBacklog, useBacklogActions } from '@/lib/backlog';
 import { useMe } from '@/lib/me';
 import { AreaPicker } from './forms';
 import { tint } from '@/lib/color';
-import { useSprints } from '@/lib/sprints';
+import { fmtDay, useSprints } from '@/lib/sprints';
 import { since } from '@/lib/time';
 import { uploadImage } from '@/lib/upload';
 import { useBacklogSheets } from './use-backlog-sheets';
@@ -51,6 +52,8 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
   const areasTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const { data: backlog } = useBacklog();
   const { data: me } = useMe();
+  const { openSheet } = useSheets();
+  const router = useRouter();
 
   useEffect(() => {
     if (error instanceof ApiError && error.status === 404) onClose();
@@ -118,7 +121,7 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
     clearTimeout(areasTimer.current);
     areasTimer.current = setTimeout(() => save({ areas: v }), 600);
   };
-  // Ao pôr ou mudar o prazo, o app pergunta se a pessoa quer a tarefa na Google Agenda.
+  // Ao pôr ou mudar o prazo, o app pergunta, ao fechar o detalhe, se a pessoa quer a tarefa na Google Agenda.
   // (Se ela já estiver na agenda, o servidor atualiza o evento sozinho; sem prazo, tira da agenda.)
   const changeDue = async (v: string) => {
     await save({ dueDate: v || null });
@@ -127,7 +130,6 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
   const toggleCalendar = (on: boolean) =>
     (on ? actions.addToCalendar(id) : actions.removeFromCalendar(id))
       .then(() => {
-        setAskCal(false);
         if (on) toast('Tarefa na sua Google Agenda');
         refresh();
       })
@@ -135,6 +137,47 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
   const epics = (backlog?.epics ?? []).filter(e => !e.closedAt || e.id === t.epicId);
   const iniTitle = (iid: string) => backlog?.initiatives.find(i => i.id === iid)?.title ?? '';
   const calendar = me?.googleCalendar;
+  const close = () => {
+    onClose();
+    if (!askCal || !t.dueDate || t.inCalendar) return;
+    const day = fmtDay(t.dueDate + 'T12:00');
+    if (calendar?.connected) {
+      openSheet(c => (
+        <ConfirmSheet
+          title="Agendar na Google Agenda?"
+          confirm="Agendar"
+          cancel="Agora não"
+          onClose={c}
+          onConfirm={() => actions.addToCalendar(id).then(() => toast('Tarefa na sua Google Agenda'))}
+        >
+          “{t.title}” entra na sua agenda no dia {day}.
+        </ConfirmSheet>
+      ));
+    } else if (calendar?.askConnect) {
+      // Sem agenda conectada: fechar sem conectar conta como "Agora não" e só sugere de novo depois de alguns dias.
+      let connecting = false;
+      openSheet(c => (
+        <ConfirmSheet
+          title="Agendar na Google Agenda?"
+          confirm="Conectar a agenda"
+          cancel="Agora não"
+          onClose={() => {
+            c();
+            if (connecting) return;
+            api('/calendar/ask/dismiss', { method: 'POST' })
+              .then(() => qc.invalidateQueries({ queryKey: ['me'] }))
+              .catch(() => undefined);
+          }}
+          onConfirm={() => {
+            connecting = true;
+            router.push('/perfil');
+          }}
+        >
+          Para colocar “{t.title}” na sua agenda no dia {day}, conecte a Google Agenda nas Configurações.
+        </ConfirmSheet>
+      ));
+    }
+  };
   // Campo que parece texto e vira caixa de edição ao tocar.
   const fieldCls =
     'w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 font-medium hover:bg-sunk focus:border-primary/50 focus:bg-surface focus:outline-none';
@@ -147,7 +190,7 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
 
   return (
     <Sheet
-      onClose={onClose}
+      onClose={close}
       fixed
       icon={
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ background: tint(area.color, 0.12), color: area.color }}>
@@ -275,38 +318,7 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
               )}
             </div>
           </div>
-          {askCal && t.dueDate && !t.inCalendar && calendar?.connected && (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-              <p className="flex items-center gap-2 font-semibold">
-                <Icon n="calendar" className="h-4 w-4 text-primary" />
-                Colocar na sua Google Agenda?
-              </p>
-              <p className="mt-0.5 text-xs text-muted">A tarefa entra na agenda no dia do prazo.</p>
-              <div className="mt-2.5 flex gap-2">
-                <Button className="flex-1" onClick={() => toggleCalendar(true)} disabled={actions.busy}>
-                  Adicionar
-                </Button>
-                <Button variant="line" className="flex-1" onClick={() => setAskCal(false)}>
-                  Agora não
-                </Button>
-              </div>
-            </div>
-          )}
-          {askCal && t.dueDate && calendar?.available && !calendar.connected && (
-            <div className="rounded-xl bg-sunk p-3 text-xs text-muted">
-              <p>
-                Quer as tarefas com prazo na sua agenda?{' '}
-                <Link href="/perfil" onClick={onClose} className="font-semibold text-primary">
-                  Conecte a Google Agenda
-                </Link>{' '}
-                nas Configurações.
-              </p>
-              <button type="button" onClick={() => setAskCal(false)} className="mt-1.5 font-semibold text-ink/70">
-                Agora não
-              </button>
-            </div>
-          )}
-          {calendar?.connected && t.dueDate && !(askCal && !t.inCalendar) && (
+          {calendar?.connected && t.dueDate && (
             <label className="flex items-center gap-2.5 rounded-xl bg-sunk px-3.5 py-2.5">
               <input type="checkbox" checked={t.inCalendar} onChange={e => toggleCalendar(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--p))]" />
               <Icon n="calendar" className="h-4 w-4 text-primary" />

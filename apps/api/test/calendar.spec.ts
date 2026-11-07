@@ -18,7 +18,7 @@ describe('Google Agenda', () => {
 
   test('/me informa o estado da Google Agenda', async () => {
     const m = (await me.c.request('GET', '/me')).body;
-    assert.deepEqual(m.googleCalendar, { available: false, connected: false });
+    assert.deepEqual(m.googleCalendar, { available: false, connected: false, askConnect: false });
   });
 
   test('conectar sem Google configurado é recusado; desconectar é inofensivo', async () => {

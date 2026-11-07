@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Global, HttpCode, Module, Query, Res } from '@nestjs/common';
+import { Controller, Delete, Get, Global, HttpCode, Module, Post, Query, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import type { Response } from 'express';
@@ -32,6 +32,13 @@ class CalendarController {
     } catch {
       res.redirect(`${web}/perfil?agenda=erro`);
     }
+  }
+
+  /** "Agora não" na sugestão de conectar a agenda (volta depois de alguns dias). */
+  @Post('ask/dismiss')
+  @HttpCode(204)
+  dismissAsk(@CurrentUser() u: User) {
+    return this.calendar.dismissAsk(u.id);
   }
 
   /** Desconectar a Google Agenda. */

@@ -37,7 +37,8 @@ export type Me = {
   role: 'member' | 'admin';
   photoUrl: string | null;
   googleConnected: boolean;
-  googleCalendar: { available: boolean; connected: boolean };
+  /** askConnect: sugerir conectar a agenda ao pôr um prazo (sem "Agora não" recente). */
+  googleCalendar: { available: boolean; connected: boolean; askConnect: boolean };
   preferences: {
     palette: 'natureza' | 'serenity' | 'soft' | 'dourado' | 'mindful' | 'premium';
     randomTheme: boolean;

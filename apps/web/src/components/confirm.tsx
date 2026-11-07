@@ -9,6 +9,7 @@ export function ConfirmSheet({
   title,
   children,
   confirm = 'Confirmar',
+  cancel = 'Cancelar',
   danger,
   onConfirm,
   onClose,
@@ -16,6 +17,8 @@ export function ConfirmSheet({
   title: string;
   children: ReactNode;
   confirm?: string;
+  /** Texto do botão que fecha sem fazer nada. */
+  cancel?: string;
   danger?: boolean;
   onConfirm: () => Promise<unknown> | void;
   onClose: () => void;
@@ -28,7 +31,7 @@ export function ConfirmSheet({
       footer={
         <>
           <Button variant="line" className="flex-1" onClick={onClose}>
-            Cancelar
+            {cancel}
           </Button>
           <Button
             className={`flex-1 ${danger ? '!bg-red-600 !text-white' : ''}`}

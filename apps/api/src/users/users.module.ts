@@ -51,7 +51,7 @@ export class UsersService {
       role: user.role,
       photoUrl: photo ? await this.uploads.url(photo) : null,
       googleConnected: Boolean(user.googleId),
-      googleCalendar: { available: this.calendar.available, connected: this.calendar.connected(user) },
+      googleCalendar: { available: this.calendar.available, connected: this.calendar.connected(user), askConnect: this.calendar.askConnect(user) },
       preferences: {
         palette: user.palette,
         randomTheme: user.randomTheme,

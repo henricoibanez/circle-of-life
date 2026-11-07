@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { calendarAskDue } from '@circle/shared';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { Env } from '../config/env';
@@ -37,6 +38,16 @@ export class CalendarService {
 
   connected(user: User) {
     return Boolean(user.googleCalendarToken);
+  }
+
+  /** Sugerir conectar a agenda ao pôr um prazo: Google configurado, agenda não conectada e sem "Agora não" recente. */
+  askConnect(user: User, now = new Date()) {
+    return this.available && !this.connected(user) && calendarAskDue(user.calendarAskedAt, now);
+  }
+
+  /** "Agora não" na sugestão de conectar a agenda: só sugere de novo depois de CALENDAR_ASK_AGAIN_DAYS dias. */
+  async dismissAsk(userId: string) {
+    await this.prisma.user.update({ where: { id: userId }, data: { calendarAskedAt: new Date() } });
   }
 
   private get redirectUri() {

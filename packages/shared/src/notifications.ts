@@ -50,6 +50,17 @@ export const MEMORY_EVERY_DAYS = 7;
 export const SURVEY_EVERY_DAYS = 30;
 /** Convite para ligar o celular: se a pessoa disser "Agora não", volta depois de tantos dias. */
 export const PUSH_ASK_AGAIN_DAYS = 60;
+/**
+ * Google Agenda não conectada: ao pôr um prazo, o app sugere conectar. Se a pessoa disser
+ * "Agora não", só sugere de novo depois de tantos dias (decisão do dono de 07/11/2026).
+ * Com a agenda conectada, pergunta em toda tarefa (sem pausa).
+ */
+export const CALENDAR_ASK_AGAIN_DAYS = 7;
+
+/** Já pode sugerir conectar a Google Agenda de novo? (askedAt = último "Agora não"). */
+export function calendarAskDue(askedAt: Date | null, now = new Date()) {
+  return !askedAt || askedAt.getTime() <= now.getTime() - CALENDAR_ASK_AGAIN_DAYS * 86_400_000;
+}
 
 /** Como cada área aparece na dica "Que tal pensar em algo para …?". */
 export const AREA_TIP_NAME: Record<string, string> = {

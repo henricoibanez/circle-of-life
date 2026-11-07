@@ -51,6 +51,8 @@ model User {
   googleId              String?    @unique
   /// Token para criar eventos na Google Agenda da pessoa (quando ela conecta nas Configurações). Null = não conectada.
   googleCalendarToken   String?
+  /// Quando a pessoa respondeu "Agora não" à sugestão de conectar a Google Agenda (volta depois de CALENDAR_ASK_AGAIN_DAYS dias).
+  calendarAskedAt       DateTime?
   /// Resumo (scrypt) da senha, para quem entra com e-mail e senha. Nunca a senha em si.
   passwordHash          String?
   /// Quando aceitou os termos de uso (no cadastro com senha).

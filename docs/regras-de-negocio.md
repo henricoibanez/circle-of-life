@@ -251,6 +251,9 @@ Todas as regras desta seção são **provisórias**. Os valores ficam num único
 
 - **RN-BKL-22** — Uma tarefa **com prazo** pode ser colocada na Google Agenda da pessoa (depois de conectar a agenda nas Configurações). Sem prazo, é recusado.
 - **RN-BKL-23** — Mudar o prazo atualiza o evento; tirar o prazo tira o evento; excluir a tarefa apaga o evento. Problemas com a agenda nunca impedem a edição da tarefa.
+- **RN-BKL-23a** — Pergunta da agenda (decisão do dono de 07/11/2026): ao fechar o detalhe de uma tarefa cujo prazo foi posto ou mudado (e que não está na agenda):
+  - com a agenda **conectada**, o app pergunta **sempre**, em toda tarefa;
+  - **sem** a agenda conectada (e com o Google configurado), sugere conectar; "Agora não" (ou fechar) **pausa a sugestão por 7 dias** (`CALENDAR_ASK_AGAIN_DAYS`), guardado na conta (`users.calendarAskedAt`), valendo em qualquer aparelho. Código: `calendarAskDue` em `packages/shared/src/notifications.ts` e `askConnect` no `CalendarService`.
 
 ### Exportar e importar planilha
 
