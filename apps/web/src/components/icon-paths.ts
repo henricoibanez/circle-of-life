@@ -7,7 +7,7 @@ export const ICON_PATHS = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
   board: 'M4 4h6v16H4zM14 4h6v10h-6z', backlog: 'M3 7l3-3h12l3 3v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM3 7h18M9 12c.8 1 1.8 1.5 3 1.5s2.2-.5 3-1.5',
   grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
-  plus: 'M12 5v14M5 12h14', x: 'M18 6 6 18M6 6l12 12', check: 'M20 6 9 17l-5-5',
+  plus: 'M12 5v14M5 12h14', play: 'M8 5v14l11-7z', x: 'M18 6 6 18M6 6l12 12', check: 'M20 6 9 17l-5-5',
   chevL: 'M15 18l-6-6 6-6', chevR: 'M9 18l6-6-6-6', chevD: 'M6 9l6 6 6-6', chevU: 'M18 15l-6-6-6 6',
   arrowL: 'M19 12H5M11 18l-6-6 6-6',
   heart: 'M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z',

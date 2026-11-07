@@ -1031,6 +1031,9 @@ model PostMedia {
   fileId   String @unique
   file     File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
   position Int
+  /// Vídeo: trecho exibido (início e fim, em segundos). O arquivo vai inteiro; só esse trecho aparece.
+  clipStart Float?
+  clipEnd   Float?
 
   @@index([postId])
   @@map("post_media")
@@ -1105,6 +1108,9 @@ model Story {
   areas      Area[]
   /// Legenda curta (até 150 caracteres).
   caption    String      @default("")
+  /// Vídeo: trecho exibido (início e fim, em segundos), no máximo MEDIA_RULES.story.video.maxSeconds.
+  clipStart  Float?
+  clipEnd    Float?
   visibility Visibility
   expiresAt  DateTime
   createdAt  DateTime    @default(now())

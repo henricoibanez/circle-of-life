@@ -76,5 +76,5 @@ export class UpdateChecklistItemDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(200) text?: string;
 }
 export class AttachDto {
-  @IsString({ message: 'envie a imagem antes de anexar' }) fileId!: string;
+  @IsString({ message: 'envie o arquivo antes de anexar' }) fileId!: string;
 }

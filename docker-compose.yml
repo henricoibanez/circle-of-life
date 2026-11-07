@@ -46,7 +46,7 @@ services:
     image: chrislusf/seaweedfs:4.48
     command: >
       server -ip=storage -ip.bind=0.0.0.0 -dir=/data -s3
-      -s3.config=/etc/seaweedfs/s3.json -master.volumeSizeLimitMB=64
+      -s3.config=/etc/seaweedfs/s3.json -master.volumeSizeLimitMB=64 -volume.max=0
     ports: ['8333:8333']
     volumes:
       - storage_data:/data

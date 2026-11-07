@@ -81,9 +81,15 @@ export class StorageService implements OnModuleInit {
     });
   }
 
-  /** URL temporária para o navegador VER um arquivo (o bucket é privado). */
-  downloadUrl(key: string, seconds = 3600) {
-    return getSignedUrl(this.publicClient, new GetObjectCommand({ Bucket: this.bucket, Key: key }), { expiresIn: seconds });
+  /**
+   * URL temporária para o navegador VER um arquivo (o bucket é privado).
+   * Com `fileName`, o arquivo abre com o nome original (útil para documentos: ao baixar, não vira um código).
+   */
+  downloadUrl(key: string, seconds = 3600, fileName?: string) {
+    const disposition = fileName ? `inline; filename*=UTF-8''${encodeURIComponent(fileName)}` : undefined;
+    return getSignedUrl(this.publicClient, new GetObjectCommand({ Bucket: this.bucket, Key: key, ResponseContentDisposition: disposition }), {
+      expiresIn: seconds,
+    });
   }
 
   /** Tamanho do arquivo no storage, ou null se ele não existe. */

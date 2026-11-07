@@ -237,7 +237,7 @@ Todas as regras desta seção são **provisórias**. Os valores ficam num único
 
 ### Checklist e anexos
 
-- **RN-BKL-20** — Anexos são imagens enviadas pela própria pessoa (ver RN-ARQ). Remover um anexo apaga a imagem do storage.
+- **RN-BKL-20** — Anexos são **fotos, vídeos e documentos** (PDF, Word, Excel, PowerPoint, TXT e CSV) enviados pela própria pessoa (ver RN-ARQ). Remover um anexo apaga o arquivo do storage.
 
 ### Ações em massa
 
@@ -379,13 +379,13 @@ Todas as regras desta seção são **provisórias**. Os valores ficam num único
 - **RN-FEED-05** — Criar post:
   - precisa de **texto ou título da conquista**;
   - título até 120 caracteres, texto até 3.000;
-  - **até 8 imagens**; cada imagem só pode estar em um post;
+  - **até 8 fotos e vídeos**, sendo **no máximo 1 vídeo** (com o trecho exibido de até 60 s, ver RN-ARQ-05); cada arquivo só pode estar em um post; documentos não vão em post;
   - áreas da vida **sem limite**;
   - **vários grupos**, mas só grupos de que a pessoa participa (senão, 403);
   - até 10 hashtags, cada uma até 30 caracteres (o "#" e as repetidas são retirados);
   - visibilidade: a escolhida ou a padrão das preferências.
 - **RN-FEED-06** — Post de conclusão ("Quer compartilhar?") mostra o **XP que a pessoa ganhou e ainda vale** com aquele item (tarefa, épico, iniciativa, sprint ou sonho).
-- **RN-FEED-07** — Só o autor **edita e exclui** o próprio post. Imagens retiradas na edição ou do post excluído são apagadas do storage.
+- **RN-FEED-07** — Só o autor **edita e exclui** o próprio post. Fotos e vídeos retirados na edição ou do post excluído são apagados do storage. Ao editar, o vídeo que já estava no post mantém o trecho escolhido.
 - **RN-FEED-08** — **Curtidas:** uma por pessoa. O autor é avisado; várias curtidas no mesmo post viram **um aviso só** enquanto ele não for lido ("Ana e mais 2 pessoas curtiram…"). O post mostra até 3 pessoas em "Curtido por".
 - **RN-FEED-09** — **Comentários:** de 1 a 1.000 caracteres; avisam o autor do post. Apagar: quem escreveu ou o autor do post.
 - **RN-FEED-10** — **Reações em comentários:** uma por pessoa, entre 👍 Curtir, 👎 Não curti e ❤️ Amei. Dá para trocar ou tirar.
@@ -393,7 +393,7 @@ Todas as regras desta seção são **provisórias**. Os valores ficam num único
 
 ## 11. Stories (RN-STO)
 
-- **RN-STO-01** — Story é **uma foto que some em 24 horas**.
+- **RN-STO-01** — Story é **uma foto ou um vídeo que some em 24 horas**. No vídeo, aparece só o trecho escolhido, de **até 30 segundos** (RN-ARQ-05); o story passa para o próximo quando o trecho acaba.
 - **RN-STO-02** — Exige **pelo menos 1 área da vida** (pode marcar todas), mostradas como marca d'água. Legenda opcional de **até 150 caracteres**.
 - **RN-STO-03** — **Quem vê:** o autor; "Todo mundo" = todos; "Somente amigos" = amigos do autor; "Privado" = só o autor. Bloqueados não se veem. Os filtros do feed não se aplicam.
 - **RN-STO-04** — Sem comentários. Cada pessoa tem **uma reação** (Curtir, Não curti ou Amei), que pode trocar ou tirar. O autor é avisado, com aviso agrupado como nos posts.
@@ -476,18 +476,25 @@ Todas as regras desta seção são **provisórias**. Os valores ficam num único
 - **RN-NOT-05g** — **Convite para ligar o celular:** um cartão no topo do Board, **fora da Jornada**, só se o aparelho aceita notificações, ainda não ligou e o navegador não bloqueou. "Agora não" esconde por **60 dias**.
 - **RN-NOT-06** — Motivos de notificação: pedido e aceite de amizade; curtida em post; reação em story; comentário; resumo de tarefas atrasadas; sprint iniciada; prazo da sprint; épico sem tarefas; épico concluído sem próximo passo; Jornada parada; dicas (volte ao app, área parada, grupo sugerido, "aconteceu algo bom?"); "Lembra disso?"; novidades; pesquisa rápida; trilha baixada, pendente (para admins), aprovada ou recusada; e, nos grupos, entrada, trilha nova, trilha sugerida, novo gestor, tópico, resposta, pedido para entrar, convite, pedido aprovado e pedido recusado.
 
-## 16. Arquivos e imagens (RN-ARQ)
+## 16. Arquivos: imagens, vídeos e documentos (RN-ARQ)
 
-- **RN-ARQ-01** — Só imagens **JPG, PNG, WEBP ou GIF**.
+- **RN-ARQ-01** — Tipos aceitos (decisão do dono de 07/11/2026): **imagens** JPG, PNG, WEBP e GIF; **vídeos** MP4, MOV e WebM; **documentos** PDF, Word, Excel, PowerPoint, TXT e CSV. Cada lugar aceita só alguns tipos:
 
-| Uso | Tamanho máximo |
-|---|---|
-| Foto do perfil | 2 MB |
-| Sonho, anexo de tarefa, post, story, capa de grupo, capa de trilha | 5 MB |
+| Uso | Imagem | Vídeo | Documento |
+|---|---|---|---|
+| Foto do perfil | 2 MB | não | não |
+| Sonho, capa de grupo, capa de trilha | 5 MB | não | não |
+| Story | 5 MB | 30 MB, trecho de até 30 s | não |
+| Post | 5 MB | 50 MB, trecho de até 60 s, 1 por post | não |
+| Anexo de tarefa | 5 MB | 50 MB | 10 MB |
 
-- **RN-ARQ-02** — O navegador envia a imagem direto para o storage; a API confere se ela chegou e o tamanho. Imagem grande demais é apagada e recusada.
-- **RN-ARQ-03** — Cada imagem só pode ser usada pela **própria pessoa** e na **finalidade** para a qual foi enviada (uma foto de story não vira anexo de tarefa).
+- Os valores ficam em `MEDIA_RULES` (`packages/shared/src/media.ts`); a API e o site usam os mesmos.
+
+- **RN-ARQ-02** — O navegador envia o arquivo direto para o storage; a API confere o tipo e o tamanho ao pedir o envio e, depois, se ele chegou e o tamanho real. Arquivo grande demais é apagado e recusado.
+- **RN-ARQ-03** — Cada arquivo só pode ser usado pela **própria pessoa** e na **finalidade** para a qual foi enviada (uma foto de story não vira anexo de tarefa).
 - **RN-ARQ-04** — Envios começados há mais de 1 dia e nunca confirmados são apagados.
+- **RN-ARQ-05** — **Trecho do vídeo** (story e post): o arquivo vai inteiro, como foi gravado (o app não comprime vídeo); a pessoa escolhe o trecho que aparece, e só ele é exibido. A API exige o trecho em todo vídeo de story ou post: começa em 0 ou depois, termina depois do início e dura no máximo o limite daquele lugar (meio segundo de folga). A **duração do arquivo** é conferida no aparelho, antes de enviar; a API garante o tamanho.
+- **RN-ARQ-06** — Imagens são reduzidas no aparelho antes de enviar (por isso o limite delas vale depois da redução); vídeos e documentos vão como estão. Documentos abrem com o **nome original** do arquivo.
 
 ## 17. Tarefas automáticas (RN-AUT)
 

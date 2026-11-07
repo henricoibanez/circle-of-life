@@ -36,6 +36,9 @@ export type PostBody = {
   visibility?: Visibility;
   tags?: string[];
   mediaIds?: string[];
+  /** Vídeo do post: trecho exibido (início e fim, em segundos). */
+  clipStart?: number;
+  clipEnd?: number;
   refType?: PostRefType;
   refId?: string;
 };

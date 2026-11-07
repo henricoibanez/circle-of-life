@@ -1,4 +1,4 @@
-import type { AreaId, CommentDto, ReactionKind, FeedFilter, FeedPageDto, PostDto, PostRefType, Visibility } from '@circle/shared';
+import { type AreaId, type CommentDto, type FeedFilter, type FeedPageDto, MAX_POST_VIDEOS, MEDIA_RULES, mediaKind, type PostDto, type PostRefType, type ReactionKind, validClip, type Visibility } from '@circle/shared';
 import { countReactions } from './reactions';
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma, User } from '../generated/prisma/client';
@@ -16,6 +16,9 @@ export type PostInput = {
   visibility?: Visibility;
   tags?: string[];
   mediaIds?: string[];
+  /** Vídeo do post: trecho exibido (início e fim, em segundos). */
+  clipStart?: number;
+  clipEnd?: number;
   refType?: PostRefType;
   refId?: string;
 };
@@ -101,7 +104,14 @@ export class FeedService {
         groups: r.groups.map(g => g.group).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
         visibility: r.visibility,
         tags: r.tags,
-        media: await Promise.all(r.media.map(async m => ({ id: m.fileId, url: await this.uploads.url(m.file) }))),
+        media: await Promise.all(
+          r.media.map(async m => ({
+            id: m.fileId,
+            url: await this.uploads.url(m.file),
+            kind: mediaKind(m.file.mime) ?? 'image',
+            clip: m.clipStart != null && m.clipEnd != null ? { start: m.clipStart, end: m.clipEnd } : null,
+          })),
+        ),
         xpShown: r.xpShown,
         likes: r._count.likes,
         liked: liked.has(r.id),
@@ -161,11 +171,7 @@ export class FeedService {
   async create(user: User, input: PostInput) {
     if (!input.text?.trim() && !input.title?.trim()) throw new BadRequestException('Escreva alguma coisa ou dê um título à conquista.');
     const groupIds = await this.checkGroups(user.id, input.groupIds);
-    const mediaIds = [...new Set(input.mediaIds ?? [])];
-    for (const id of mediaIds) {
-      await this.uploads.readyFile(user.id, id, 'post');
-      if (await this.prisma.postMedia.findUnique({ where: { fileId: id } })) throw new BadRequestException('Essa imagem já está em outro post.');
-    }
+    const media = await this.mediaRows(user.id, [...new Set(input.mediaIds ?? [])], input);
     const xpShown = input.refId ? await this.xpOf(user.id, input.refId) : null;
 
     const { post, xp } = await this.prisma.$transaction(async tx => {
@@ -181,13 +187,43 @@ export class FeedService {
           refType: input.refId ? (input.refType ?? null) : null,
           refId: input.refId ?? null,
           xpShown,
-          media: { create: mediaIds.map((fileId, position) => ({ fileId, position })) },
+          media: { create: media },
         },
       });
       const gained = await this.xp.grantDaily(tx, user.id, 'post');
       return { post, xp: await this.xp.change(tx, user.id, gained) };
     });
     return { post: await this.one(user, post.id), xp };
+  }
+
+  /**
+   * Confere as fotos e vídeos do post e monta as linhas na ordem: arquivos da pessoa, prontos,
+   * que não estão em outro post, e no máximo MAX_POST_VIDEOS vídeo, com o trecho exibido
+   * dentro do limite (MEDIA_RULES.post). Ao editar, o vídeo que já estava mantém o trecho se não vier outro.
+   */
+  private async mediaRows(
+    userId: string,
+    ids: string[],
+    clip: { clipStart?: number; clipEnd?: number },
+    current: { fileId: string; clipStart: number | null; clipEnd: number | null }[] = [],
+  ) {
+    const rows: { fileId: string; position: number; clipStart: number | null; clipEnd: number | null }[] = [];
+    let videos = 0;
+    for (const [position, fileId] of ids.entries()) {
+      const old = current.find(c => c.fileId === fileId);
+      const file = await this.uploads.readyFile(userId, fileId, 'post');
+      if (!old && (await this.prisma.postMedia.findUnique({ where: { fileId } }))) throw new BadRequestException('Esse arquivo já está em outro post.');
+      if (mediaKind(file.mime) !== 'video') {
+        rows.push({ fileId, position, clipStart: null, clipEnd: null });
+        continue;
+      }
+      if (++videos > MAX_POST_VIDEOS) throw new BadRequestException(`Cada post pode ter até ${MAX_POST_VIDEOS} vídeo.`);
+      const start = clip.clipStart ?? old?.clipStart ?? NaN;
+      const end = clip.clipEnd ?? old?.clipEnd ?? NaN;
+      if (!validClip('post', start, end)) throw new BadRequestException(`Escolha um trecho de até ${MEDIA_RULES.post.video!.maxSeconds} segundos do vídeo.`);
+      rows.push({ fileId, position, clipStart: start, clipEnd: end });
+    }
+    return rows;
   }
 
   /** Só dá para postar nos grupos de que a pessoa participa. */
@@ -205,22 +241,20 @@ export class FeedService {
   }
 
   /** Editar o próprio post. Com mediaIds, a lista de imagens é trocada (as que saírem são apagadas do storage). */
-  async update(user: User, id: string, input: Partial<Pick<PostInput, 'title' | 'text' | 'areas' | 'groupIds' | 'visibility' | 'tags' | 'mediaIds'>>) {
+  async update(user: User, id: string, input: Partial<Pick<PostInput, 'title' | 'text' | 'areas' | 'groupIds' | 'visibility' | 'tags' | 'mediaIds' | 'clipStart' | 'clipEnd'>>) {
     const p = await this.ownPost(user.id, id);
     if (!(input.text ?? p.text).trim() && !(input.title ?? p.title).trim()) throw new BadRequestException('Escreva alguma coisa ou dê um título à conquista.');
     const groupIds = input.groupIds && (await this.checkGroups(user.id, input.groupIds));
     let removed: string[] = [];
     if (input.mediaIds) {
       const ids = [...new Set(input.mediaIds)];
-      const current = (await this.prisma.postMedia.findMany({ where: { postId: id }, select: { fileId: true } })).map(m => m.fileId);
-      for (const fileId of ids.filter(x => !current.includes(x))) {
-        await this.uploads.readyFile(user.id, fileId, 'post');
-        if (await this.prisma.postMedia.findUnique({ where: { fileId } })) throw new BadRequestException('Essa imagem já está em outro post.');
-      }
+      const currentRows = await this.prisma.postMedia.findMany({ where: { postId: id }, select: { fileId: true, clipStart: true, clipEnd: true } });
+      const current = currentRows.map(m => m.fileId);
+      const rows = await this.mediaRows(user.id, ids, input, currentRows);
       removed = current.filter(x => !ids.includes(x));
       await this.prisma.$transaction([
         this.prisma.postMedia.deleteMany({ where: { postId: id } }),
-        this.prisma.postMedia.createMany({ data: ids.map((fileId, position) => ({ postId: id, fileId, position })) }),
+        this.prisma.postMedia.createMany({ data: rows.map(m => ({ ...m, postId: id })) }),
       ]);
     }
     await this.prisma.post.update({

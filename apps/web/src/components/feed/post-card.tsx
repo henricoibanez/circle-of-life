@@ -4,6 +4,7 @@ import { AREA, type PostDto, VISIBILITY } from '@circle/shared';
 import { useState } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
 import { PostForm } from '@/components/feed/post-form';
+import { ClipVideo, FeedVideo } from '@/components/media';
 import { Icon, type IconName } from '@/components/icon';
 import { AreaIcons, Avatar, Card, IconBtn, inputCls } from '@/components/primitives';
 import { Sheet, useSheets } from '@/components/sheet';
@@ -112,13 +113,34 @@ export function PostCard({ p }: { p: PostDto }) {
       {p.text && <p className="mt-2 whitespace-pre-wrap text-[0.9375rem] leading-relaxed text-ink/80">{p.text}</p>}
       {media.length > 0 && (
         <div className={`mt-3 grid gap-2 ${media.length === 1 ? 'grid-cols-1' : media.length === 2 ? 'grid-cols-2' : 'grid-cols-4'}`}>
-          {media.slice(0, media.length > 4 ? 3 : 4).map((m, i) => (
-            <button key={m.id} onClick={() => openSheet(close => <Gallery media={media} start={i} onClose={close} />)} aria-label={`Ver imagem ${i + 1}`}>
-              {/* Foto única no formato em que foi enviada (quadrada, vertical 4:5 ou horizontal); várias, em miniaturas quadradas. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={m.url} alt="" className={`w-full rounded-xl object-cover ${media.length === 1 ? 'max-h-[40rem]' : 'aspect-square'}`} />
-            </button>
-          ))}
+          {media.slice(0, media.length > 4 ? 3 : 4).map((m, i) =>
+            // Vídeo sozinho no post: toca no próprio feed (sem som até tocar no botão).
+            m.kind === 'video' && media.length === 1 ? (
+              <FeedVideo key={m.id} src={m.url} clip={m.clip} />
+            ) : (
+              <button
+                key={m.id}
+                onClick={() => openSheet(close => <Gallery media={media} start={i} onClose={close} />)}
+                aria-label={m.kind === 'video' ? `Ver vídeo` : `Ver imagem ${i + 1}`}
+                className="relative"
+              >
+                {m.kind === 'video' ? (
+                  <>
+                    <ClipVideo src={m.url} clip={m.clip} muted className="aspect-square w-full rounded-xl bg-black object-cover" />
+                    <span className="pointer-events-none absolute inset-0 grid place-items-center">
+                      <span className="grid h-10 w-10 place-items-center rounded-full bg-black/55 text-white">
+                        <Icon n="play" className="h-5 w-5" fill="currentColor" />
+                      </span>
+                    </span>
+                  </>
+                ) : (
+                  // Foto única no formato em que foi enviada (quadrada, vertical 4:5 ou horizontal); várias, em miniaturas quadradas.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={m.url} alt="" className={`w-full rounded-xl object-cover ${media.length === 1 ? 'max-h-[40rem]' : 'aspect-square'}`} />
+                )}
+              </button>
+            ),
+          )}
           {media.length > 4 && (
             <button onClick={() => openSheet(close => <Gallery media={media} start={3} onClose={close} />)} className="grid aspect-square place-items-center rounded-xl bg-sunk text-center">
               <span>
@@ -184,10 +206,14 @@ export function PostCard({ p }: { p: PostDto }) {
 function Gallery({ media, start, onClose }: { media: PostDto['media']; start: number; onClose: () => void }) {
   const [i, setI] = useState(start);
   return (
-    <Sheet title={`Imagem ${i + 1} de ${media.length}`} onClose={onClose}>
+    <Sheet title={media.length > 1 ? `${i + 1} de ${media.length}` : media[i]!.kind === 'video' ? 'Vídeo' : 'Imagem'} onClose={onClose}>
       <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={media[i]!.url} alt="" className="max-h-[65vh] w-full rounded-2xl object-contain" />
+        {media[i]!.kind === 'video' ? (
+          <ClipVideo key={media[i]!.id} src={media[i]!.url} clip={media[i]!.clip} autoPlay controls className="max-h-[65vh] w-full rounded-2xl bg-black object-contain" />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={media[i]!.url} alt="" className="max-h-[65vh] w-full rounded-2xl object-contain" />
+        )}
         {media.length > 1 && (
           <div className="mt-3 flex justify-center gap-2">
             <IconBtn n="chevL" label="Anterior" box disabled={i === 0} onClick={() => setI(i - 1)} />

@@ -210,6 +210,9 @@ async function startStorage() {
     `-s3.port=${s3Port}`,
     `-s3.config=${s3Config}`,
     '-master.volumeSizeLimitMB=64',
+    // Quantos "volumes" de 64 MB o storage pode criar: 0 = conforme o espaço livre do disco.
+    // O padrão (8) acaba rápido com vídeos e o envio passa a dar erro 500.
+    '-volume.max=0',
     '-volume.port=8380',
   ]);
   await waitForPort(s3Port, 'O storage (SeaweedFS)');

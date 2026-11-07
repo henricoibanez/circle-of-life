@@ -1,3 +1,4 @@
+import { mediaKind } from '@circle/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
@@ -37,7 +38,7 @@ export class TaskDetailService {
       checklist: t.checklist.map(c => ({ id: c.id, text: c.text, done: c.done })),
       logs: t.logs.map(l => ({ id: l.id, text: l.text, createdAt: l.createdAt.toISOString() })),
       attachments: await Promise.all(
-        t.attachments.map(async a => ({ id: a.id, name: a.file.name, url: await this.uploads.url(a.file) })),
+        t.attachments.map(async a => ({ id: a.id, name: a.file.name, url: await this.uploads.url(a.file), kind: mediaKind(a.file.mime) ?? 'image' })),
       ),
     };
   }
@@ -88,7 +89,7 @@ export class TaskDetailService {
       await tx.taskLog.create({ data: { taskId, text: `Anexou ${file.name}` } });
       return created;
     });
-    return { id: a.id, name: file.name, url: await this.uploads.url(file) };
+    return { id: a.id, name: file.name, url: await this.uploads.url(file), kind: mediaKind(file.mime) ?? 'image' };
   }
 
   async detach(userId: string, taskId: string, attachmentId: string) {

@@ -1,6 +1,6 @@
-import { type AreaId, STORY_HOURS, type StoryDto, type StoryGroupDto, type StoryViewerDto, type Visibility , type ReactionKind } from '@circle/shared';
+import { type AreaId, MEDIA_RULES, mediaKind, type ReactionKind, STORY_HOURS, type StoryDto, type StoryGroupDto, type StoryViewerDto, validClip, type Visibility } from '@circle/shared';
 import { countReactions } from '../feed/reactions';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { Prisma, User } from '../generated/prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -9,7 +9,7 @@ import { PeopleService, PERSON_SELECT } from '../social/people.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { XpService } from '../xp/xp.service';
 
-export type StoryInput = { fileId: string; areas: AreaId[]; caption?: string; visibility?: Visibility };
+export type StoryInput = { fileId: string; areas: AreaId[]; caption?: string; visibility?: Visibility; clipStart?: number; clipEnd?: number };
 
 /**
  * Stories: foto que some em 24 horas. Só curtidas (sem comentários) e "Visto por" para o autor.
@@ -63,6 +63,8 @@ export class StoriesService {
       const dto: StoryDto = {
         id: r.id,
         url: await this.uploads.url(r.file),
+        kind: mediaKind(r.file.mime) ?? 'image',
+        clip: r.clipStart != null && r.clipEnd != null ? { start: r.clipStart, end: r.clipEnd } : null,
         areas: r.areas,
         caption: r.caption,
         visibility: r.visibility,
@@ -87,7 +89,12 @@ export class StoriesService {
   }
 
   async create(user: User, input: StoryInput) {
-    await this.uploads.readyFile(user.id, input.fileId, 'story');
+    const file = await this.uploads.readyFile(user.id, input.fileId, 'story');
+    // Vídeo: precisa do trecho exibido, dentro do limite de duração do story.
+    const video = mediaKind(file.mime) === 'video';
+    if (video && !validClip('story', input.clipStart ?? NaN, input.clipEnd ?? NaN)) {
+      throw new BadRequestException(`Escolha um trecho de até ${MEDIA_RULES.story.video!.maxSeconds} segundos do vídeo.`);
+    }
     const areas = [...new Set(input.areas)];
     return this.prisma.$transaction(async tx => {
       const story = await tx.story.create({
@@ -96,6 +103,8 @@ export class StoriesService {
           fileId: input.fileId,
           areas,
           caption: input.caption?.trim() ?? '',
+          clipStart: video ? input.clipStart : null,
+          clipEnd: video ? input.clipEnd : null,
           visibility: input.visibility ?? user.defaultPostVisibility,
           expiresAt: new Date(Date.now() + STORY_HOURS * 3_600_000),
         },

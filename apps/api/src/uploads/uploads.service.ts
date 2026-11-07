@@ -1,27 +1,23 @@
+import { acceptedLabel, MEDIA_TYPES, mediaKind, mediaLimit, type MediaKind } from '@circle/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { FilePurpose, File as StoredFile } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 
-/** Tipos de imagem aceitos e a extensão usada no storage. */
-export const IMAGE_TYPES: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
-};
-
 const MB = 1024 * 1024;
-/** Tamanho máximo por finalidade (as imagens já são reduzidas no navegador antes do envio). */
-export const MAX_SIZE: Record<FilePurpose, number> = {
-  avatar: 2 * MB,
-  dream: 5 * MB,
-  task: 5 * MB,
-  post: 5 * MB,
-  story: 5 * MB,
-  group: 5 * MB,
-  trilha: 5 * MB,
-};
+
+/** Nome do tipo de arquivo nas mensagens de erro. */
+const KIND_NAME: Record<MediaKind, string> = { image: 'A imagem', video: 'O vídeo', doc: 'O documento' };
+
+/**
+ * Limite de tamanho (em bytes) daquele tipo de arquivo naquele lugar do app.
+ * Tipos e limites ficam em MEDIA_RULES (packages/shared/src/media.ts).
+ */
+function limitFor(purpose: FilePurpose, mime: string) {
+  const limit = mediaLimit(purpose, mime);
+  if (!limit) throw new BadRequestException(`Envie ${acceptedLabel(purpose)}.`);
+  return { bytes: limit.maxMb * MB, msg: `${KIND_NAME[mediaKind(mime)!]} pode ter até ${limit.maxMb} MB.` };
+}
 
 /**
  * Envio de arquivos em duas etapas:
@@ -38,13 +34,13 @@ export class UploadsService {
   ) {}
 
   async create(userId: string, purpose: FilePurpose, mime: string, size: number, name: string) {
-    const ext = IMAGE_TYPES[mime];
-    if (!ext) throw new BadRequestException('Envie uma imagem (JPG, PNG, WEBP ou GIF).');
-    if (size > MAX_SIZE[purpose]) throw new BadRequestException(`A imagem pode ter até ${MAX_SIZE[purpose] / MB} MB.`);
+    const limit = limitFor(purpose, mime);
+    if (size > limit.bytes) throw new BadRequestException(limit.msg);
+    const ext = MEDIA_TYPES[mime]!.ext;
     await this.cleanupStale(userId);
 
     const file = await this.prisma.file.create({
-      data: { userId, purpose, mime, size, name: name.slice(0, 200) || `imagem.${ext}`, key: `tmp-${crypto.randomUUID()}` },
+      data: { userId, purpose, mime, size, name: name.slice(0, 200) || `arquivo.${ext}`, key: `tmp-${crypto.randomUUID()}` },
     });
     const key = `users/${userId}/${purpose}/${file.id}.${ext}`;
     await this.prisma.file.update({ where: { id: file.id }, data: { key } });
@@ -56,10 +52,11 @@ export class UploadsService {
     if (file.status === 'ready') return this.toDto(file);
     const size = await this.storage.size(file.key);
     if (size === null) throw new BadRequestException('O arquivo não chegou ao storage. Tente enviar de novo.');
-    if (size > MAX_SIZE[file.purpose]) {
+    const limit = limitFor(file.purpose, file.mime);
+    if (size > limit.bytes) {
       await this.storage.remove(file.key);
       await this.prisma.file.delete({ where: { id } });
-      throw new BadRequestException(`A imagem pode ter até ${MAX_SIZE[file.purpose] / MB} MB.`);
+      throw new BadRequestException(limit.msg);
     }
     const ready = await this.prisma.file.update({ where: { id }, data: { status: 'ready', size } });
     return this.toDto(ready);
@@ -74,16 +71,18 @@ export class UploadsService {
   /** Arquivo pronto, da pessoa e da finalidade certa (usado ao anexar em tarefa, sonho, post…). */
   async readyFile(userId: string, id: string, purpose: FilePurpose) {
     const file = await this.prisma.file.findFirst({ where: { id, userId, purpose, status: 'ready' } });
-    if (!file) throw new BadRequestException('Imagem não encontrada. Envie de novo.');
+    if (!file) throw new BadRequestException('Arquivo não encontrado. Envie de novo.');
     return file;
   }
 
-  url(file: Pick<StoredFile, 'key'>) {
-    return this.storage.downloadUrl(file.key);
+  /** Link temporário para ver o arquivo. Documentos levam o nome original (ao baixar, não vira um código). */
+  url(file: Pick<StoredFile, 'key'> & Partial<Pick<StoredFile, 'mime' | 'name'>>) {
+    const doc = Boolean(file.mime && mediaKind(file.mime) === 'doc');
+    return this.storage.downloadUrl(file.key, 3600, doc ? file.name : undefined);
   }
 
   async toDto(file: StoredFile) {
-    return { id: file.id, name: file.name, url: await this.url(file) };
+    return { id: file.id, name: file.name, url: await this.url(file), kind: mediaKind(file.mime) ?? 'image', mime: file.mime };
   }
 
   private async own(userId: string, id: string) {

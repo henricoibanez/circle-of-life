@@ -322,7 +322,7 @@ Toque numa tarefa para abrir o detalhe. A janela tem sempre o mesmo tamanho, em 
 - **Nome da tarefa**: toque no título no topo, escreva e toque fora (ou aperte Enter). Nome vazio não é salvo.
 - **Detalhes**: status, prioridade, prazo, épico (com a iniciativa entre parênteses), áreas da vida (toque para abrir a lista e marcar ou desmarcar; sem nenhuma marcada, a tarefa usa as do épico) e descrição. Se você pôs ou mudou o prazo, ao fechar o detalhe abre a janela **"Agendar na Google Agenda?"**: com a agenda conectada, a pergunta aparece **em toda tarefa** e **Agendar** coloca a tarefa na agenda (**Agora não** fecha sem fazer nada). Sem a agenda conectada, **Conectar a agenda** leva às Configurações; **Agora não** (ou fechar a janela) faz o app parar de sugerir por **7 dias**, em qualquer aparelho. Depois, a caixinha **Na minha Google Agenda** coloca ou tira a tarefa da agenda. Se a tarefa já está na agenda, mudar o prazo atualiza o evento sozinho, e apagar o prazo tira da agenda.
 - **Checklist**: pequenos passos dentro da tarefa. Adicione com **Novo item** e marque quando fizer.
-- **Anexos**: imagens da tarefa (**Anexar imagem**).
+- **Anexos**: fotos, vídeos (até 50 MB) e documentos (PDF, Word, Excel, PowerPoint, TXT e CSV, até 10 MB), pelo botão **Anexar arquivo**. Documentos aparecem como um cartão com o tipo e o nome; tocar abre o arquivo. Vídeos abrem num player.
 - **Atividade**: o histórico do que aconteceu com a tarefa.
 
 No rodapé fica o botão **Excluir** (pede confirmação). Duplicar fica no menu "⋮" da tarefa no backlog.
@@ -512,7 +512,7 @@ Mostra posts seus, dos seus amigos e dos seus grupos.
 Pelo botão **+** > **Novo post**, ou ao compartilhar uma conclusão. O post tem:
 
 - **Conquista (opcional)** e o texto;
-- até **8 imagens** (depois de escolher, confirme com **Usar esta foto**);
+- até **8 fotos e vídeos** (fotos: depois de escolher, confirme com **Usar esta foto**). **1 vídeo por post**, de até 50 MB: se ele for maior que 60 segundos, arraste a barra para escolher o trecho de 60 s que aparece. No feed, o vídeo toca sozinho e sem som; toque em **Som desligado** para ouvir;
 - **Áreas** (quantas quiser, com **Marcar todas**);
 - **Grupos** (quantos quiser);
 - **Hashtags**;
@@ -524,8 +524,9 @@ Quem vê o post é quem a visibilidade libera **mais** os membros dos grupos esc
 
 Ficam numa faixa no topo do Feed.
 
-- Um story é uma **foto que some em 24 horas**. Toque no seu círculo para **Publicar story**.
-- Escolha a foto, enquadre (arraste e use o zoom) e confirme com **Usar esta foto**.
+- Um story é uma **foto ou um vídeo que some em 24 horas**. Toque no seu círculo para **Publicar story**.
+- **Foto:** escolha, enquadre (arraste e use o zoom) e confirme com **Usar esta foto**.
+- **Vídeo:** até 30 MB. Aparecem até **30 segundos**: se o vídeo for maior, arraste a barra para escolher o trecho. Ele já vai sendo enviado enquanto você preenche o resto.
 - Escolha **uma ou mais áreas da vida**: os ícones aparecem como **marca d'água** no canto de baixo da foto.
 - Escreva uma **Legenda (opcional)** curta e escolha **Quem pode ver**.
 - Nos stories dos outros, reaja com 👍, 👎 ou ❤️. Não há comentários.

@@ -1,6 +1,6 @@
 import { AREA_IDS, type AreaId, FEED_FILTERS, type FeedFilter, MAX_POST_AREAS, MAX_POST_IMAGES, POST_REF_TYPES, type PostRefType, REACTION_IDS, type ReactionKind, type Visibility } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { ArrayMaxSize, IsArray, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsIn, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { CurrentUser, Social } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { SocialModule } from '../social/social.module';
@@ -15,7 +15,10 @@ class CreatePostDto {
   @IsOptional() @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) groupIds?: string[];
   @IsOptional() @IsIn(VIS, { message: 'visibilidade inválida' }) visibility?: Visibility;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) @MaxLength(30, { each: true }) tags?: string[];
-  @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_IMAGES, { message: `até ${MAX_POST_IMAGES} imagens por post` }) @IsString({ each: true }) mediaIds?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_IMAGES, { message: `até ${MAX_POST_IMAGES} fotos e vídeos por post` }) @IsString({ each: true }) mediaIds?: string[];
+  /** Vídeo do post: trecho exibido (início e fim, em segundos). */
+  @IsOptional() @IsNumber() @Min(0) clipStart?: number;
+  @IsOptional() @IsNumber() @Min(0) clipEnd?: number;
   @IsOptional() @IsIn(POST_REF_TYPES) refType?: PostRefType;
   @IsOptional() @IsString() refId?: string;
 }
@@ -26,7 +29,10 @@ class UpdatePostDto {
   @IsOptional() @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) groupIds?: string[];
   @IsOptional() @IsIn(VIS, { message: 'visibilidade inválida' }) visibility?: Visibility;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) @MaxLength(30, { each: true }) tags?: string[];
-  @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_IMAGES, { message: `até ${MAX_POST_IMAGES} imagens por post` }) @IsString({ each: true }) mediaIds?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_POST_IMAGES, { message: `até ${MAX_POST_IMAGES} fotos e vídeos por post` }) @IsString({ each: true }) mediaIds?: string[];
+  /** Vídeo do post: trecho exibido (início e fim, em segundos). */
+  @IsOptional() @IsNumber() @Min(0) clipStart?: number;
+  @IsOptional() @IsNumber() @Min(0) clipEnd?: number;
 }
 class ReactionDto {
   @IsOptional() @IsIn(REACTION_IDS, { message: 'reação inválida' }) kind?: ReactionKind;

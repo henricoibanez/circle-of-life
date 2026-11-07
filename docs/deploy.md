@@ -60,6 +60,7 @@ A pasta `referencia/` e os arquivos `.env` nunca vão para o GitHub.
 1. No Supabase, vá em **Storage → New bucket**, nome `circle-of-life`, **privado** (Public bucket desligado).
 2. Em **Project Settings → Storage → S3 Connection**: ligue **Enable connection via S3 protocol**. Anote o **Endpoint** e a **Region**.
 3. Em **S3 Access Keys → New access key**: anote o **Access key ID** e o **Secret access key** (o segredo só aparece uma vez).
+4. **Vídeos e documentos** (decisão do dono de 07/11/2026): os maiores arquivos aceitos têm **50 MB** (vídeo de post e de anexo). Confira em **Storage → Settings** se o **limite de tamanho por arquivo** do Supabase é de pelo menos 50 MB e, no bucket, se não há restrição de tipos (o app já confere os tipos). O plano grátis tem pouco espaço para arquivos: acompanhe o uso em **Usage**, porque vídeos enchem rápido.
 
 ## 5. API na Vercel (projeto circle-api)
 

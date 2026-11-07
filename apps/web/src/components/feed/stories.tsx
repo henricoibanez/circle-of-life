@@ -1,6 +1,6 @@
 'use client';
 
-import { AREA, AREAS, type AreaId, REACTIONS, STORY_CAPTION_MAX, type StoryGroupDto, VISIBILITY, type Visibility } from '@circle/shared';
+import { AREA, AREAS, type AreaId, MEDIA_RULES, REACTIONS, STORY_CAPTION_MAX, type StoryGroupDto, type VideoClip, VISIBILITY, type Visibility } from '@circle/shared';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ConfirmSheet } from '@/components/confirm';
@@ -13,11 +13,14 @@ import { ApiError } from '@/lib/api';
 import { useMe } from '@/lib/me';
 import { useStories, useStoryActions, useStoryViewers } from '@/lib/stories';
 import { since } from '@/lib/time';
-import { uploadBlob } from '@/lib/upload';
+import { acceptFor, checkFile, uploadBlob, uploadFile, videoDuration } from '@/lib/upload';
+import { ClipPicker, ClipVideo, UploadBar } from '@/components/media';
 import { StoryCropper } from '@/components/feed/story-cropper';
 import { ReactionBar } from '@/components/feed/reactions';
 
 const STORY_MS = 5000;
+/** Trecho máximo de vídeo no story (segundos). */
+const STORY_VIDEO_MAX = MEDIA_RULES.story.video!.maxSeconds!;
 const noop = () => () => undefined;
 
 /** Ícones das áreas como marca d'água no canto inferior da foto. */
@@ -110,6 +113,8 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
   const [si, setSi] = useState(() => Math.max(0, groups[start]!.stories.findIndex(s => !s.seen)));
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  // Story de vídeo: o andamento vem do próprio vídeo (o trecho escolhido), não do relógio de 5 s.
+  const [vidPct, setVidPct] = useState(0);
   const last = useRef(0);
 
   // Curtidas e contagens vêm da lista atualizada.
@@ -139,12 +144,13 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
   };
 
   useEffect(() => {
+    setVidPct(0);
     if (s && g && !g.mine && !s.seen) void actions.view(s.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s?.id]);
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || s0?.kind === 'video') return;
     last.current = performance.now();
     const t = setInterval(() => {
       const now = performance.now();
@@ -160,7 +166,7 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
   }, [elapsed]);
 
   if (!g || !s) return null;
-  const pct = Math.min(1, elapsed / STORY_MS);
+  const pct = s.kind === 'video' ? vidPct : Math.min(1, elapsed / STORY_MS);
 
   const pauseWhile = (open: (resume: () => void) => void) => {
     setPaused(true);
@@ -174,8 +180,21 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
         <DialogPrimitive.Content aria-describedby={undefined} className="fixed inset-0 z-50 mx-auto flex max-w-lg flex-col bg-black text-white outline-none">
           <DialogPrimitive.Title className="sr-only">Story de {g.mine ? 'você' : g.author.name}</DialogPrimitive.Title>
           <div className="relative min-h-0 flex-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={s.url} alt={s.caption || `Story de ${g.author.name}`} className="absolute inset-0 h-full w-full object-cover" />
+            {s.kind === 'video' ? (
+              <ClipVideo
+                key={s.id}
+                src={s.url}
+                clip={s.clip}
+                autoPlay
+                paused={paused}
+                onProgress={setVidPct}
+                onEnded={next}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={s.url} alt={s.caption || `Story de ${g.author.name}`} className="absolute inset-0 h-full w-full object-cover" />
+            )}
             <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 to-transparent px-3 pb-8" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)' }}>
               <div className="flex gap-1">
                 {g.stories.map((x, i) => (
@@ -215,7 +234,7 @@ export function StoryViewer({ groups: initial, start, onClose }: { groups: Story
                               resume();
                             }}
                           >
-                            A foto some para todos agora.
+                            O story some para todos agora.
                           </ConfirmSheet>
                         )),
                       )
@@ -298,7 +317,7 @@ function ViewersSheet({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
-/** Publicar story: foto, 1 a 3 áreas (viram marca d'água), legenda curta e quem pode ver. */
+/** Publicar story: foto ou vídeo (até 30 s exibidos), 1 ou mais áreas (viram marca d'água), legenda curta e quem pode ver. */
 export function StoryForm({ onClose }: { onClose: () => void }) {
   const { data: me } = useMe();
   const actions = useStoryActions();
@@ -311,12 +330,49 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
   const [visibility, setVisibility] = useState<Visibility>(me?.preferences.defaultPostVisibility ?? 'publico');
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Vídeo: prévia local (já dá para escolher o trecho enquanto envia), andamento do envio e id ao terminar.
+  const [video, setVideo] = useState<{ src: string; duration: number; id: string | null; pct: number } | null>(null);
+  const [clip, setClip] = useState<VideoClip>({ start: 0, end: 0 });
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const pickFile = (file: File | undefined) => {
+  const pickFile = async (file: File | undefined) => {
     if (!file) return;
-    setRawFile(file);
-    setCropping(true);
+    let kind;
+    try {
+      kind = checkFile(file, 'story').kind;
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Arquivo não aceito.');
+      return;
+    }
+    if (kind === 'image') {
+      setVideo(null);
+      setRawFile(file);
+      setCropping(true);
+      return;
+    }
+    let duration: number;
+    try {
+      duration = await videoDuration(file);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível abrir esse vídeo.');
+      return;
+    }
+    const src = URL.createObjectURL(file);
+    setPhoto(null);
+    setRawFile(null);
+    setCropping(false);
+    setVideo({ src, duration, id: null, pct: 0 });
+    setClip({ start: 0, end: Math.min(STORY_VIDEO_MAX, duration) });
+    setUploading(true);
+    try {
+      const up = await uploadFile(file, 'story', pct => setVideo(v => (v?.src === src ? { ...v, pct } : v)));
+      setVideo(v => (v?.src === src ? { ...v, id: up.id, pct: 1 } : v));
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível enviar o vídeo.');
+      setVideo(v => (v?.src === src ? null : v));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const useCrop = async (blob: Blob) => {
@@ -335,16 +391,18 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
   const toggle = (a: AreaId) => setAreas(x => (x.includes(a) ? x.filter(y => y !== a) : [...x, a]));
 
   // Enquanto a foto não foi confirmada ("Usar esta foto") e enviada, o resto do formulário fica bloqueado.
-  const locked = cropping || uploading;
+  // Vídeo: dá para preencher o resto enquanto ele envia.
+  const locked = cropping || (uploading && !video);
   const lockProps = locked
     ? { inert: true, 'aria-disabled': true, className: 'space-y-4 pointer-events-none select-none opacity-40 transition' }
     : { className: 'space-y-4 transition' };
 
   const publish = async () => {
-    if (!photo) return;
+    const fileId = video ? video.id : photo?.id;
+    if (!fileId) return;
     setBusy(true);
     try {
-      const r = await actions.create({ fileId: photo.id, areas, caption: caption.trim(), visibility });
+      const r = await actions.create({ fileId, areas, caption: caption.trim(), visibility, ...(video ? { clipStart: clip.start, clipEnd: clip.end } : {}) });
       toast(r.xp.gained > 0 ? `Story publicado, +${r.xp.gained} XP` : 'Story publicado');
       onClose();
     } catch (e) {
@@ -363,7 +421,7 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
           <Button variant="line" className="flex-1" onClick={onClose}>
             Cancelar
           </Button>
-          <Button className="flex-1" disabled={busy || locked || !photo || !areas.length} onClick={publish}>
+          <Button className="flex-1" disabled={busy || locked || !(video ? video.id : photo) || !areas.length} onClick={publish}>
             Publicar
           </Button>
         </>
@@ -374,12 +432,12 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept={acceptFor('story')}
           className="sr-only"
           onChange={e => {
             const file = e.target.files?.[0];
             e.target.value = '';
-            pickFile(file);
+            void pickFile(file);
           }}
         />
         {cropping && rawFile ? (
@@ -401,6 +459,22 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
             >
               {photo ? 'Cancelar e manter a foto anterior' : 'Cancelar'}
             </button>
+          </div>
+        ) : video ? (
+          <div className="mx-auto w-48 space-y-2">
+            <ClipPicker
+              src={video.src}
+              duration={video.duration}
+              max={STORY_VIDEO_MAX}
+              value={clip}
+              onChange={setClip}
+              frameClassName="aspect-[9/16] w-48"
+              overlay={<AreaWatermark areas={areas} className="absolute bottom-2 right-2" />}
+            />
+            {!video.id && <UploadBar pct={video.pct} />}
+            <Button variant="line" className="w-full" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              Trocar
+            </Button>
           </div>
         ) : photo ? (
           <>
@@ -426,11 +500,16 @@ export function StoryForm({ onClose }: { onClose: () => void }) {
           >
             <span>
               <Icon n="camera" className="mx-auto mb-2 h-8 w-8" />
-              {uploading ? 'Enviando…' : 'Escolher foto'}
+              {uploading ? 'Enviando…' : 'Escolher foto ou vídeo'}
             </span>
           </button>
         )}
-        {!cropping && <ImageHint purpose="story" className="justify-center" />}
+        {!cropping && !video && <ImageHint purpose="story" className="justify-center" />}
+        {!cropping && (
+          <p className="text-center text-xs text-muted">
+            Vídeo: até {MEDIA_RULES.story.video!.maxMb} MB; aparecem até {STORY_VIDEO_MAX} segundos.
+          </p>
+        )}
         <div {...lockProps}>
         <p className="text-center text-xs text-muted">O story some sozinho em 24 horas.</p>
         <Field label="Áreas da vida (1 ou mais)">

@@ -1,11 +1,11 @@
 'use client';
 
-import { AREA, STATUS_LABEL, type AreaId, type TaskDto, type TaskStatus, type XpChange } from '@circle/shared';
+import { AREA, MEDIA_RULES, type MediaKind, STATUS_LABEL, type AreaId, type TaskDto, type TaskStatus, type XpChange } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icon';
-import { Bar, IconBtn, inputCls, Prio, Seg, ImageHint } from '@/components/primitives';
+import { Bar, IconBtn, inputCls, Prio, Seg } from '@/components/primitives';
 import { ConfirmSheet } from '@/components/confirm';
 import { Sheet, useSheets } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
@@ -17,7 +17,8 @@ import { AreaPicker } from './forms';
 import { tint } from '@/lib/color';
 import { fmtDay, useSprints } from '@/lib/sprints';
 import { since } from '@/lib/time';
-import { uploadImage } from '@/lib/upload';
+import { acceptFor, uploadAny } from '@/lib/upload';
+import { ClipVideo, DocCard, UploadBar } from '@/components/media';
 import { useBacklogSheets } from './use-backlog-sheets';
 
 type Detail = {
@@ -26,7 +27,7 @@ type Detail = {
   initiative: { id: string; title: string };
   checklist: { id: string; text: string; done: boolean }[];
   logs: { id: string; text: string; createdAt: string }[];
-  attachments: { id: string; name: string; url: string }[];
+  attachments: { id: string; name: string; url: string; kind: MediaKind }[];
 };
 
 const STATUSES = (['backlog', 'todo', 'doing', 'done'] as TaskStatus[]).map(id => ({ id, label: STATUS_LABEL[id] }));
@@ -44,6 +45,8 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
   const [item, setItem] = useState('');
   const [desc, setDesc] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Andamento do envio de vídeo ou documento (0 a 1).
+  const [uploadPct, setUploadPct] = useState(0);
   const [title, setTitle] = useState<string | null>(null);
   const [areasDraft, setAreasDraft] = useState<AreaId[] | null>(null);
   const [areasOpen, setAreasOpen] = useState(false);
@@ -395,10 +398,25 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
         <div className="grid grid-cols-3 gap-2">
           {data.attachments.map(f => (
             <div key={f.id} className="relative overflow-hidden rounded-xl border border-line">
-              <a href={f.url} target="_blank" rel="noreferrer">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={f.url} alt={f.name} className="aspect-square w-full object-cover" />
-              </a>
+              {f.kind === 'doc' ? (
+                <DocCard name={f.name} url={f.url} className="aspect-square w-full" />
+              ) : (
+                <a href={f.url} target="_blank" rel="noreferrer" title={f.name} className="relative block">
+                  {f.kind === 'video' ? (
+                    <>
+                      <ClipVideo src={f.url} muted className="aspect-square w-full bg-black object-cover" />
+                      <span className="pointer-events-none absolute inset-0 grid place-items-center">
+                        <span className="grid h-9 w-9 place-items-center rounded-full bg-black/55 text-white">
+                          <Icon n="play" className="h-4 w-4" fill="currentColor" />
+                        </span>
+                      </span>
+                    </>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={f.url} alt={f.name} className="aspect-square w-full object-cover" />
+                  )}
+                </a>
+              )}
               <button
                 aria-label="Remover anexo"
                 onClick={() => call(() => api(`/tasks/${id}/attachments/${f.id}`, { method: 'DELETE' }))}
@@ -411,11 +429,11 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
           <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-line text-xs text-muted hover:border-primary/40 hover:text-primary">
             <span className="flex flex-col items-center gap-1">
               <Icon n="clip" />
-              {uploading ? 'Enviando…' : 'Anexar imagem'}
+              {uploading ? 'Enviando…' : 'Anexar arquivo'}
             </span>
             <input
               type="file"
-              accept="image/*"
+              accept={acceptFor('task')}
               className="sr-only"
               disabled={uploading}
               onChange={async e => {
@@ -423,11 +441,12 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
                 e.target.value = '';
                 if (!file) return;
                 setUploading(true);
+                setUploadPct(0);
                 try {
-                  const up = await uploadImage(file, 'task', 1200);
+                  const up = await uploadAny(file, 'task', { max: 1200, onProgress: setUploadPct });
                   await call(() => api(`/tasks/${id}/attachments`, { method: 'POST', body: { fileId: up.id } }));
                 } catch (err) {
-                  toast(err instanceof Error ? err.message : 'Não foi possível enviar a imagem.');
+                  toast(err instanceof Error ? err.message : 'Não foi possível enviar o arquivo.');
                 } finally {
                   setUploading(false);
                 }
@@ -436,7 +455,12 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
           </label>
         </div>
       )}
-      {tab === 'files' && <ImageHint purpose="task" className="mt-2" />}
+      {tab === 'files' && uploading && uploadPct > 0 && <UploadBar pct={uploadPct} label="Enviando arquivo" />}
+      {tab === 'files' && (
+        <p className="mt-2 text-xs leading-snug text-muted">
+          Fotos, vídeos (até {MEDIA_RULES.task.video!.maxMb} MB) e documentos: PDF, Word, Excel, PowerPoint, TXT e CSV (até {MEDIA_RULES.task.doc!.maxMb} MB).
+        </p>
+      )}
 
       {tab === 'log' && (
         <ol className="relative ml-2 space-y-4 border-l border-line">

@@ -24,7 +24,7 @@ export function useStoryActions() {
       }),
     );
   return {
-    create: async (body: { fileId: string; areas: AreaId[]; caption: string; visibility: Visibility }) => {
+    create: async (body: { fileId: string; areas: AreaId[]; caption: string; visibility: Visibility; clipStart?: number; clipEnd?: number }) => {
       const r = await api<{ id: string; xp: XpChange }>('/stories', { method: 'POST', body });
       qc.setQueryData<Me>(['me'], m => m && { ...m, xp: { total: r.xp.total, gems: r.xp.gems } });
       await qc.invalidateQueries({ queryKey: STORIES_KEY });

@@ -2,13 +2,14 @@ import { Body, Controller, Delete, Global, HttpCode, Module, Param, Post } from 
 import { IsIn, IsInt, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
 import { CurrentUser } from '../common/decorators';
 import type { FilePurpose, User } from '../generated/prisma/client';
-import { IMAGE_TYPES, UploadsService } from './uploads.service';
+import { MEDIA_TYPES } from '@circle/shared';
+import { UploadsService } from './uploads.service';
 
 const PURPOSES: FilePurpose[] = ['avatar', 'dream', 'task', 'post', 'story', 'group', 'trilha'];
 
 class CreateUploadDto {
   @IsIn(PURPOSES, { message: 'finalidade do arquivo inválida' }) purpose!: FilePurpose;
-  @IsIn(Object.keys(IMAGE_TYPES), { message: 'envie uma imagem (JPG, PNG, WEBP ou GIF)' }) mime!: string;
+  @IsIn(Object.keys(MEDIA_TYPES), { message: 'tipo de arquivo não aceito' }) mime!: string;
   @IsInt() @IsPositive() size!: number;
   @IsOptional() @IsString() @MaxLength(200) name?: string;
 }

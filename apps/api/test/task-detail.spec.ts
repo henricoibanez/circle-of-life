@@ -30,9 +30,11 @@ describe('Detalhe da tarefa, checklist e anexos (storage S3)', () => {
     return created.body.fileId as string;
   };
 
-  test('recusa arquivo que não é imagem e imagem grande demais', async () => {
-    const pdf = await me.c.request('POST', '/uploads', { purpose: 'task', mime: 'application/pdf', size: 10 });
-    assert.equal(pdf.status, 400);
+  test('recusa tipo fora da lista, documento fora do anexo e imagem grande demais', async () => {
+    const zip = await me.c.request('POST', '/uploads', { purpose: 'task', mime: 'application/zip', size: 10 });
+    assert.equal(zip.status, 400);
+    const pdfAvatar = await me.c.request('POST', '/uploads', { purpose: 'avatar', mime: 'application/pdf', size: 10 });
+    assert.equal(pdfAvatar.status, 400);
     const big = await me.c.request('POST', '/uploads', { purpose: 'avatar', mime: 'image/png', size: 3 * 1024 * 1024 });
     assert.equal(big.status, 400);
     assert.match(big.body.message, /até 2 MB/);

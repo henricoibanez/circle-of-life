@@ -1,6 +1,6 @@
 import { AREA_IDS, type AreaId, REACTION_IDS, type ReactionKind, STORY_CAPTION_MAX, STORY_MAX_AREAS, type Visibility } from '@circle/shared';
 import { Body, Controller, Delete, Get, HttpCode, Module, Param, Post, Put } from '@nestjs/common';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { CurrentUser, Social } from '../common/decorators';
 import type { User } from '../generated/prisma/client';
 import { SocialModule } from '../social/social.module';
@@ -18,6 +18,9 @@ class CreateStoryDto {
   areas!: AreaId[];
   @IsOptional() @IsString() @MaxLength(STORY_CAPTION_MAX, { message: `a legenda pode ter até ${STORY_CAPTION_MAX} caracteres` }) caption?: string;
   @IsOptional() @IsIn(['publico', 'amigos', 'privado'], { message: 'visibilidade inválida' }) visibility?: Visibility;
+  /** Vídeo: trecho exibido (início e fim, em segundos). */
+  @IsOptional() @IsNumber() @Min(0) clipStart?: number;
+  @IsOptional() @IsNumber() @Min(0) clipEnd?: number;
 }
 
 @Social()

@@ -1,5 +1,11 @@
 import { AREA_IDS, type AreaId } from './areas';
+import type { MediaKind } from './media';
 import type { PersonDto } from './social';
+
+/** Trecho exibido de um vídeo (início e fim, em segundos). */
+export type VideoClip = { start: number; end: number };
+/** Foto ou vídeo de um post. */
+export type MediaDto = { id: string; url: string; kind: MediaKind; clip: VideoClip | null };
 
 export type Visibility = 'publico' | 'amigos' | 'privado';
 
@@ -31,7 +37,7 @@ export type PostDto = {
   groups: { id: string; name: string; icon: string }[];
   visibility: Visibility;
   tags: string[];
-  media: { id: string; url: string }[];
+  media: MediaDto[];
   xpShown: number | null;
   likes: number;
   liked: boolean;
@@ -78,6 +84,9 @@ export const STORY_CAPTION_MAX = 150;
 export type StoryDto = {
   id: string;
   url: string;
+  /** Foto ou vídeo (o vídeo toca só o trecho clip). */
+  kind: MediaKind;
+  clip: VideoClip | null;
   areas: AreaId[];
   caption: string;
   visibility: Visibility;

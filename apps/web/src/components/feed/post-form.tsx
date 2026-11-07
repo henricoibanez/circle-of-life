@@ -1,6 +1,6 @@
 'use client';
 
-import { AREAS, type AreaId, MAX_POST_IMAGES, type PostDraft, type PostDto, VISIBILITY, type Visibility } from '@circle/shared';
+import { AREAS, type AreaId, MAX_POST_IMAGES, MAX_POST_VIDEOS, MEDIA_RULES, type MediaDto, type PostDraft, type PostDto, type VideoClip, VISIBILITY, type Visibility } from '@circle/shared';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icon';
 import { Avatar, Field, ImageHint, inputCls, Seg } from '@/components/primitives';
@@ -11,7 +11,11 @@ import { ApiError } from '@/lib/api';
 import { useFeedActions } from '@/lib/feed';
 import { useMe } from '@/lib/me';
 import { useGroups } from '@/lib/social';
-import { uploadImage } from '@/lib/upload';
+import { acceptFor, checkFile, uploadFile, uploadImage, videoDuration } from '@/lib/upload';
+import { ClipPicker, ClipVideo, UploadBar } from '@/components/media';
+
+/** Trecho máximo de vídeo no post (segundos). */
+const POST_VIDEO_MAX = MEDIA_RULES.post.video!.maxSeconds!;
 
 /**
  * Criar post (como no protótipo), com visibilidade. Pode vir preenchido ao compartilhar uma conclusão.
@@ -31,7 +35,36 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
     tags: post?.tags.join(', ') ?? '',
     visibility: (post?.visibility ?? me?.preferences.defaultPostVisibility ?? 'publico') as Visibility,
   });
-  const [media, setMedia] = useState<{ id: string; url: string }[]>(post?.media ?? []);
+  const [media, setMedia] = useState<MediaDto[]>(post?.media ?? []);
+  // Vídeo novo: prévia local, andamento do envio e trecho escolhido (o vídeo que já estava no post mantém o trecho dele).
+  const [video, setVideo] = useState<{ src: string; duration: number; id: string | null; pct: number } | null>(null);
+  const [clip, setClip] = useState<VideoClip>({ start: 0, end: 0 });
+  const videos = media.filter(m => m.kind === 'video').length + (video && !video.id ? 1 : 0);
+
+  /** Vídeo escolhido: confere tipo, tamanho e duração, mostra a prévia com o trecho e já começa a enviar. */
+  const addVideo = async (file: File) => {
+    if (videos >= MAX_POST_VIDEOS) return toast(`Cada post pode ter até ${MAX_POST_VIDEOS} vídeo.`);
+    let duration: number;
+    try {
+      checkFile(file, 'post');
+      duration = await videoDuration(file);
+    } catch (e) {
+      return toast(e instanceof Error ? e.message : 'Não foi possível abrir esse vídeo.');
+    }
+    const src = URL.createObjectURL(file);
+    setVideo({ src, duration, id: null, pct: 0 });
+    setClip({ start: 0, end: Math.min(POST_VIDEO_MAX, duration) });
+    try {
+      const up = await uploadFile(file, 'post', pct => setVideo(v => (v?.src === src ? { ...v, pct } : v)));
+      setVideo(v => (v?.src === src ? { ...v, id: up.id, pct: 1 } : v));
+      setMedia(x => [...x, { id: up.id, url: src, kind: 'video', clip: null }]);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível enviar o vídeo.');
+      setVideo(v => (v?.src === src ? null : v));
+    }
+  };
+  // Trecho só vai junto quando há um vídeo novo (o que já estava no post mantém o dele).
+  const clipBody = video?.id && media.some(m => m.id === video.id) ? { clipStart: clip.start, clipEnd: clip.end } : {};
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
   // Fotos escolhidas que a pessoa ainda não confirmou ("Usar esta foto"). Só são enviadas ao confirmar.
@@ -58,7 +91,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
       files.map(async file => {
         try {
           const up = await uploadImage(file, 'post', 1200);
-          setMedia(x => [...x, { id: up.id, url: up.url }]);
+          setMedia(x => [...x, { id: up.id, url: up.url, kind: 'image', clip: null }]);
         } catch (err) {
           toast(err instanceof Error ? err.message : 'Não foi possível abrir essa imagem');
         } finally {
@@ -83,6 +116,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
           groupIds: f.groups,
           tags: f.tags.split(/[\s,#]+/).filter(Boolean),
           mediaIds: media.map(m => m.id),
+          ...clipBody,
           visibility: f.visibility,
         });
         toast('Post atualizado');
@@ -97,6 +131,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
         visibility: f.visibility,
         tags: f.tags.split(/[\s,#]+/).filter(Boolean),
         mediaIds: media.map(m => m.id),
+        ...clipBody,
         refType: draft?.refType,
         refId: draft?.refId,
       });
@@ -118,7 +153,7 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
           <Button variant="line" className="flex-1" onClick={onClose}>
             Cancelar
           </Button>
-          <Button className="flex-1" disabled={busy || locked || uploading > 0 || (!f.text.trim() && !f.title.trim())} onClick={publish}>
+          <Button className="flex-1" disabled={busy || locked || uploading > 0 || Boolean(video && !video.id) || (!f.text.trim() && !f.title.trim())} onClick={publish}>
             {post ? 'Salvar' : 'Publicar'}
           </Button>
         </>
@@ -175,11 +210,23 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
         <div className="grid grid-cols-4 gap-2">
           {media.map(m => (
             <div key={m.id} className="relative overflow-hidden rounded-xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={m.url} alt="" className="aspect-square w-full object-cover" />
+              {m.kind === 'video' ? (
+                <>
+                  <ClipVideo src={m.url} clip={m.clip ?? (m.id === video?.id ? clip : null)} muted className="aspect-square w-full bg-black object-cover" />
+                  <span className="pointer-events-none absolute bottom-1 left-1 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white">
+                    <Icon n="play" className="h-3 w-3" fill="currentColor" />
+                  </span>
+                </>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={m.url} alt="" className="aspect-square w-full object-cover" />
+              )}
               <button
-                aria-label="Remover imagem"
-                onClick={() => setMedia(x => x.filter(y => y.id !== m.id))}
+                aria-label={m.kind === 'video' ? 'Remover vídeo' : 'Remover imagem'}
+                onClick={() => {
+                  setMedia(x => x.filter(y => y.id !== m.id));
+                  if (m.id === video?.id) setVideo(null);
+                }}
                 className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white"
               >
                 <Icon n="x" className="h-3.5 w-3.5" />
@@ -194,15 +241,19 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
           {media.length + uploading + pending.length < MAX_POST_IMAGES && (
             <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-line text-muted hover:text-primary">
               <Icon n="camera" />
-              <span className="sr-only">Adicionar imagens</span>
+              <span className="sr-only">Adicionar fotos ou vídeo</span>
               <input
                 type="file"
-                accept="image/*"
+                accept={acceptFor('post')}
                 multiple
                 className="sr-only"
                 onChange={e => {
-                  const files = [...(e.target.files ?? [])].slice(0, MAX_POST_IMAGES - media.length - uploading - pending.length);
+                  const all = [...(e.target.files ?? [])].slice(0, MAX_POST_IMAGES - media.length - uploading - pending.length);
                   e.target.value = '';
+                  // Vídeo vai direto (com a escolha do trecho); fotos passam pela confirmação.
+                  const isVideo = (file: File) => file.type.startsWith('video/') || /.(mp4|mov|m4v|webm)$/i.test(file.name);
+                  all.filter(isVideo).forEach(file => void addVideo(file));
+                  const files = all.filter(file => !isVideo(file));
                   // Primeiro mostra a prévia; o envio só acontece em "Usar esta foto".
                   setPending(x => [...x, ...files.map(file => ({ key: nextKey.current++, file, preview: URL.createObjectURL(file) }))]);
                 }}
@@ -210,7 +261,16 @@ export function PostForm({ draft, groupId, post, onClose }: { draft?: PostDraft;
             </label>
           )}
         </div>
+        {video && (
+          <div className="space-y-2 rounded-2xl border border-line p-3">
+            <ClipPicker src={video.src} duration={video.duration} max={POST_VIDEO_MAX} value={clip} onChange={setClip} frameClassName="aspect-video w-full" />
+            {!video.id && <UploadBar pct={video.pct} />}
+          </div>
+        )}
         <ImageHint purpose="post" />
+        <p className="-mt-2 text-xs text-muted">
+          Vídeo: {MAX_POST_VIDEOS} por post, até {MEDIA_RULES.post.video!.maxMb} MB; aparecem até {POST_VIDEO_MAX} segundos.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <MultiSelect
             label="Áreas"
