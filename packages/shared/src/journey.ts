@@ -4,7 +4,7 @@ import { SOCIAL_UNLOCK_PRICE, SOCIAL_WAIT_DAYS } from './xp';
  * Jornada de primeiro acesso (decisões do dono de 03 e 04/11/2026): 7 fases, em
  * ordem (cada uma só abre quando a anterior termina). Enquanto a pessoa está na
  * Jornada, nenhuma ação rende XP; ao apertar "Concluir minha jornada" ela ganha
- * 1.000 XP. A rede social abre pagando 500 XP, ou de graça depois de 7 dias.
+ * 1.000 XP e 1.000 círculos. A rede social abre pagando 500 círculos, ou de graça depois de 7 dias.
  */
 
 /** Mínimo de caracteres do necrológio para contar como feito. */

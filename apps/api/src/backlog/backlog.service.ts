@@ -151,6 +151,9 @@ export class BacklogService {
   /** Tira o XP de tarefas, épicos e iniciativa antes de excluí-los (senão daria para "fabricar" XP). */
   private async revokeAll(tx: Tx, userId: string, ids: { tasks?: string[]; epics?: string[]; initiatives?: string[] }) {
     for (const id of ids.tasks ?? []) await this.xp.revoke(tx, userId, 'task', id);
+    // Os itens de checklist marcados também saem do XP (senão daria para marcar, excluir e repetir).
+    const items = ids.tasks?.length ? await tx.checklistItem.findMany({ where: { taskId: { in: ids.tasks }, done: true }, select: { id: true } }) : [];
+    for (const it of items) await this.xp.revoke(tx, userId, 'check', it.id);
     for (const id of ids.epics ?? []) await this.xp.revoke(tx, userId, 'epic', id);
     for (const id of ids.initiatives ?? []) await this.xp.revoke(tx, userId, 'iniciativa', id);
   }

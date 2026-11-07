@@ -91,6 +91,19 @@ describe('XP (regras provisórias)', () => {
     assert.equal((await xp()).total, 0);
   });
 
+  test('excluir tarefa (ou o épico dela) tira o XP dos itens de checklist marcados', async () => {
+    const { me, epic, ids, xp } = await setup('xpchk', 2);
+    for (const id of ids) {
+      const item = (await me.c.request('POST', `/tasks/${id}/checklist`, { text: 'item' })).body;
+      await me.c.request('PATCH', `/tasks/${id}/checklist/${item.id}`, { done: true });
+    }
+    assert.equal((await xp()).total, 4);
+    await me.c.request('DELETE', `/tasks/${ids[0]}`);
+    assert.equal((await xp()).total, 2, 'a tarefa excluída leva junto os +2 do checklist');
+    await me.c.request('DELETE', `/epics/${epic.id}`);
+    assert.equal((await xp()).total, 0, 'excluir o épico também tira');
+  });
+
   test('extrato e atividade recente registram as ações', async () => {
     const { me, ids, move } = await setup('xp8');
     await move(ids[0]!, 'done');

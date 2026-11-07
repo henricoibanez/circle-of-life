@@ -143,6 +143,23 @@ describe('Loja de trilhas', () => {
     const listed = (await buyer.c.request('GET', `/trilhas/${id}`)).body;
     assert.equal(listed.acquired, true);
     assert.equal(listed.downloads, 1);
+    const note = (await api.prisma.notification.findFirstOrThrow({ where: { userId: author.user.id, type: 'trilha_baixada', refId: id } }));
+    assert.match(note.body, /\+10 XP para você/);
+  });
+
+  test('aviso de trilha baixada só fala em XP quando o autor ganhou', async () => {
+    const id = (await publish(await makeEpic(author.c, 'Sem bônus'))).body.id;
+    await admin.c.request('POST', `/trilhas/${id}/approve`);
+    // Autora volta para a Jornada: nada rende XP.
+    await api.prisma.user.update({ where: { id: author.user.id }, data: { journey: true, journeyFinishedAt: null } });
+    try {
+      await buyer.c.request('POST', `/trilhas/${id}/import`, NEW);
+      const note = (await api.prisma.notification.findFirstOrThrow({ where: { userId: author.user.id, type: 'trilha_baixada', refId: id } }));
+      assert.ok(note, 'a autora é avisada');
+      assert.doesNotMatch(note.body, /XP/);
+    } finally {
+      await api.prisma.user.update({ where: { id: author.user.id }, data: { journey: false } });
+    }
   });
 
   test('trilha paga: recusa sem saldo; com saldo debita só o disponível do comprador; o preço não vai para o autor', async () => {

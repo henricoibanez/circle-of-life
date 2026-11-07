@@ -20,7 +20,7 @@ export type TrilhaEditInput = { title?: string; description?: string; areas?: Ar
 /**
  * Trilhas: cada trilha é um épico pronto (com as tarefas) para importar no backlog.
  * - Loja (sem grupo): publicar deixa "pendente" e avisa os admins do app; só admin aprova ou recusa.
- *   Paga em XP: o XP disponível do comprador é debitado (o preço NÃO vai para o autor); o autor
+ *   Paga em círculos: os círculos do comprador são debitados (o preço NÃO vai para o autor); o autor
  *   ganha +10 XP uma vez por pessoa que baixou.
  * - Grupo: só os membros veem. O gestor publica direto (já aprovada) ou traz uma trilha da loja
  *   (vira uma cópia do grupo, que o gestor pode editar). Membro comum só sugere: fica "pendente"
@@ -387,9 +387,11 @@ export class TrilhasService {
         await tx.trilhaAcquisition.create({ data: { userId: user.id, trilhaId: t.id, rootId: t.rootId, gemsPaid: paid } });
         // +10 XP ao autor, uma vez por pessoa que baixou (qualquer versão). Só na loja.
         if (t.authorId && !t.groupId) {
-          await this.xp.grant(tx, t.authorId, 'trilha_download', `${t.rootId}:${user.id}`);
+          const gained = await this.xp.grant(tx, t.authorId, 'trilha_download', `${t.rootId}:${user.id}`);
+          // Só fala em XP quando o autor ganhou de verdade (na Jornada, por exemplo, não ganha).
+          const bonus = gained > 0 ? ` +${gained} XP para você.` : '';
           await this.notifications.notify(
-            { userId: t.authorId, type: 'trilha_baixada', title: 'Baixaram sua trilha', body: `${user.name} importou “${t.title}”. +10 XP para você.`, link: '/loja', actorId: user.id, refId: t.id },
+            { userId: t.authorId, type: 'trilha_baixada', title: 'Baixaram sua trilha', body: `${user.name} importou “${t.title}”.${bonus}`, link: '/loja', actorId: user.id, refId: t.id },
             tx,
           );
         }

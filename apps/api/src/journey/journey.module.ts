@@ -197,7 +197,7 @@ class JourneyController {
     return this.journey.finish(u.id);
   }
 
-  /** Libera tudo: por 500 XP, ou de graça depois dos 7 dias. */
+  /** Libera tudo: por 500 círculos, ou de graça depois dos 7 dias. */
   @Post('social/unlock')
   unlockSocial(@CurrentUser() u: User) {
     return this.journey.unlockSocial(u.id);

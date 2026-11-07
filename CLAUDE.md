@@ -1,6 +1,6 @@
 # Circle of Life — guia do projeto
 
-Este arquivo é lido pelo Claude no início de toda sessão. Ele explica o que é o app, o método por trás dele e as regras que valem para qualquer mudança. O plano técnico detalhado (modelo de dados, endpoints, etapas) está em [docs/plano.md](docs/plano.md).
+Este arquivo é lido pelo Claude no início de toda sessão. Ele explica o que é o app, o método por trás dele e as regras que valem para qualquer mudança. O plano técnico detalhado (modelo de dados, endpoints, etapas) está em [docs/plano.md](docs/plano.md). O **manual de funcionalidades** (para quem usa o app) está em [docs/manual-funcionalidades.md](docs/manual-funcionalidades.md) e as **regras de negócio** (numeradas, conferidas no código) em [docs/regras-de-negocio.md](docs/regras-de-negocio.md): ao mudar uma tela ou regra, atualize o documento correspondente.
 
 ## Como trabalhar com o dono do projeto
 
