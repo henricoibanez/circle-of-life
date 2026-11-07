@@ -289,6 +289,7 @@ Todas as regras desta seção são **provisórias**. Os valores ficam num único
   - a próxima sprint nasce **em planejamento** e herda a duração.
 - **RN-SPR-08** — Sprint **completa** = pelo menos 1 tarefa e **todas prontas**. Só ela rende **+100 XP e +50 Círculos** (provisória). Sprint vazia não conta como completa.
 - **RN-SPR-09** — A sprint de uma pessoa nunca mexe nas tarefas de outra.
+- **RN-SPR-10** — **Filtros do quadro** (só mudam o que aparece na tela, não mexem nas tarefas): área da vida, iniciativa, épico e busca pelo título **se somam** (a tarefa precisa passar em todos). Escolher um épico também escolhe a iniciativa dele; trocar a iniciativa tira o épico se ele for de outra. As listas mostram só iniciativas e épicos com tarefas no quadro. Código: `apps/web/src/app/(app)/board/page.tsx`.
 
 ## 8. Exercícios de reflexão (RN-EXE)
 

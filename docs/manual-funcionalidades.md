@@ -297,7 +297,7 @@ No menu de três pontinhos do Backlog: **Nova iniciativa**, **Importar trilha da
 
 - **Iniciativa**: **Editar**, **Duplicar iniciativa**, **Concluir iniciativa** (quando todos os épicos estão encerrados), **Reabrir iniciativa** e **Excluir iniciativa**.
 - **Épico**: **Editar**, **Duplicar épico**, **Reabrir épico**, **Publicar como trilha** e **Excluir épico**. Quando todas as tarefas estão prontas, o épico pode ser encerrado e vira uma conquista.
-- **Tarefa**: **Puxar para a sprint**, **Voltar para o backlog**, **Abrir detalhes**, **Editar**, **Duplicar** e **Excluir**.
+- **Tarefa**: **Puxar para a sprint**, **Voltar para o backlog**, **Abrir e editar** (abre o detalhe, onde tudo se edita), **Duplicar** e **Excluir**.
 
 ### Selecionar várias tarefas
 
@@ -317,14 +317,15 @@ A planilha segue o modelo do app antigo, com estas colunas: área da vida, inici
 
 ### Detalhe da tarefa
 
-Toque numa tarefa para abrir o detalhe. Ele tem quatro abas:
+Toque numa tarefa para abrir o detalhe. A janela tem sempre o mesmo tamanho, em qualquer aba. Tudo se edita ali mesmo, como no Jira: toque no campo, mude e pronto. **As mudanças salvam sozinhas**, sem botão "Editar" ou "Salvar".
 
-- **Detalhes**: prazo, áreas, iniciativa e épico, descrição e status.
+- **Nome da tarefa**: toque no título no topo, escreva e toque fora (ou aperte Enter). Nome vazio não é salvo.
+- **Detalhes**: status, prioridade, prazo, épico (com a iniciativa entre parênteses), áreas da vida (toque para abrir a lista e marcar ou desmarcar; sem nenhuma marcada, a tarefa usa as do épico) e descrição. Ao pôr ou mudar o prazo, o app pergunta **"Colocar na sua Google Agenda?"** (**Adicionar** ou **Agora não**), se a agenda estiver conectada; se não estiver, mostra o atalho **Conecte a Google Agenda**. Depois, a caixinha **Na minha Google Agenda** coloca ou tira a tarefa da agenda. Se a tarefa já está na agenda, mudar o prazo atualiza o evento sozinho, e apagar o prazo tira da agenda.
 - **Checklist**: pequenos passos dentro da tarefa. Adicione com **Novo item** e marque quando fizer.
 - **Anexos**: imagens da tarefa (**Anexar imagem**).
 - **Atividade**: o histórico do que aconteceu com a tarefa.
 
-Daqui também dá para editar, duplicar e excluir.
+No rodapé fica o botão **Excluir** (pede confirmação). Duplicar fica no menu "⋮" da tarefa no backlog.
 
 ### Google Agenda (opcional)
 
@@ -373,9 +374,10 @@ Aparece uma celebração com o que foi entregue e o que você ganhou. Se **todas
 O quadro tem três colunas: **A Fazer**, **Fazendo** e **Pronto**.
 
 - **Arraste** os cartões entre as colunas. No celular, segure o cartão e arraste.
-- Nas opções do cartão: **Mover para** outra coluna, **Voltar para o backlog** e **Editar**.
+- Nas opções do cartão: **Mover para** outra coluna, **Voltar para o backlog** e **Abrir e editar** (abre o detalhe da tarefa).
 - Alterne entre a visão **Quadro** e **Lista**.
-- Use a **busca** ("Pesquisar título da tarefa") e o filtro de área (**Filtros**).
+- Cada cartão mostra, em etiquetas pequenas, a **iniciativa** (cinza, com o alvo) e o **épico** (na cor da área principal do épico) da tarefa. Nomes longos aparecem cortados. A visão Lista mostra as mesmas etiquetas.
+- Use a **busca** ("Pesquisar título da tarefa") e o botão **Filtros**, que filtra por **área da vida**, **iniciativa** e **épico**. Os filtros se somam: a tarefa precisa passar em todos (e na busca). As listas mostram só as iniciativas e os épicos que têm tarefas no quadro; com uma iniciativa escolhida, aparecem só os épicos dela. Os filtros ativos ficam logo abaixo dos botões: toque no nome para trocar e no **x** para tirar (ou em **Limpar** para tirar todos). Os filtros valem enquanto a tela está aberta.
 - **Tarefas atrasadas** (prazo vencido e ainda não prontas) aparecem num aviso vermelho no topo. Toque para ver a lista e abrir cada uma. Elas também geram aviso no sino e no celular.
 
 ### Concluir tarefa e "Quer compartilhar?"

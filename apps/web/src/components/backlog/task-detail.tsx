@@ -3,13 +3,16 @@
 import { AREA, STATUS_LABEL, type AreaId, type TaskDto, type TaskStatus, type XpChange } from '@circle/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Icon } from '@/components/icon';
 import { Bar, IconBtn, inputCls, Prio, Seg, ImageHint } from '@/components/primitives';
 import { Sheet } from '@/components/sheet';
 import { useToast } from '@/components/toasts';
 import { Button } from '@/components/ui/button';
 import { api, ApiError, type Me } from '@/lib/api';
-import { BACKLOG_KEY, useBacklogActions } from '@/lib/backlog';
+import { BACKLOG_KEY, useBacklog, useBacklogActions } from '@/lib/backlog';
+import { useMe } from '@/lib/me';
+import { AreaPicker } from './forms';
 import { tint } from '@/lib/color';
 import { useSprints } from '@/lib/sprints';
 import { since } from '@/lib/time';
@@ -40,12 +43,25 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
   const [item, setItem] = useState('');
   const [desc, setDesc] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [title, setTitle] = useState<string | null>(null);
+  const [areasDraft, setAreasDraft] = useState<AreaId[] | null>(null);
+  const [areasOpen, setAreasOpen] = useState(false);
+  const [askCal, setAskCal] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const areasTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const { data: backlog } = useBacklog();
+  const { data: me } = useMe();
 
   useEffect(() => {
     if (error instanceof ApiError && error.status === 404) onClose();
   }, [error, onClose]);
-  useEffect(() => () => clearTimeout(saveTimer.current), []);
+  useEffect(
+    () => () => {
+      clearTimeout(saveTimer.current);
+      clearTimeout(areasTimer.current);
+    },
+    [],
+  );
   if (!data) return null;
 
   const t = data.task;
@@ -81,15 +97,58 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
     { id: 'log' as const, label: 'Atividade' },
   ];
 
+  // Cada campo salva sozinho ao mudar (como no Jira): não há botão "Editar" nem "Salvar".
+  const save = (body: Record<string, unknown>) =>
+    actions
+      .updateTask(id, body)
+      .then(refresh)
+      .catch(() => undefined);
   const onDesc = (v: string) => {
     setDesc(v);
     clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => actions.updateTask(id, { description: v }).then(refresh), 700);
+    saveTimer.current = setTimeout(() => save({ description: v }), 700);
   };
+  const saveTitle = () => {
+    const v = (title ?? '').trim();
+    setTitle(null);
+    if (v && v !== t.title) save({ title: v });
+  };
+  const onAreas = (v: AreaId[]) => {
+    setAreasDraft(v);
+    clearTimeout(areasTimer.current);
+    areasTimer.current = setTimeout(() => save({ areas: v }), 600);
+  };
+  // Ao pôr ou mudar o prazo, o app pergunta se a pessoa quer a tarefa na Google Agenda.
+  // (Se ela já estiver na agenda, o servidor atualiza o evento sozinho; sem prazo, tira da agenda.)
+  const changeDue = async (v: string) => {
+    await save({ dueDate: v || null });
+    setAskCal(Boolean(v) && !t.inCalendar);
+  };
+  const toggleCalendar = (on: boolean) =>
+    (on ? actions.addToCalendar(id) : actions.removeFromCalendar(id))
+      .then(() => {
+        setAskCal(false);
+        if (on) toast('Tarefa na sua Google Agenda');
+        refresh();
+      })
+      .catch(() => undefined);
+  const epics = (backlog?.epics ?? []).filter(e => !e.closedAt || e.id === t.epicId);
+  const iniTitle = (iid: string) => backlog?.initiatives.find(i => i.id === iid)?.title ?? '';
+  const calendar = me?.googleCalendar;
+  // Campo que parece texto e vira caixa de edição ao tocar.
+  const fieldCls =
+    'w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 font-medium hover:bg-sunk focus:border-primary/50 focus:bg-surface focus:outline-none';
+  const label = (n: string, text: string) => (
+    <p className="flex items-center gap-1.5 px-2 text-[0.8125rem] text-muted">
+      <Icon n={n} className="h-3.5 w-3.5" />
+      {text}
+    </p>
+  );
 
   return (
     <Sheet
       onClose={onClose}
+      fixed
       icon={
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ background: tint(area.color, 0.12), color: area.color }}>
           <Icon n={area.icon} />
@@ -97,7 +156,28 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
       }
       title={
         <div>
-          <p className="leading-snug">{t.title}</p>
+          {/* O título cresce em linhas conforme o texto: um texto invisível igual, atrás do campo, dá a altura. */}
+          <div className="-mx-2 -my-1 grid">
+            <span aria-hidden className="invisible col-start-1 row-start-1 whitespace-pre-wrap break-words border border-transparent px-2 py-1 leading-snug">
+              {(title ?? t.title) + ' '}
+            </span>
+            <textarea
+              rows={1}
+              aria-label="Nome da tarefa"
+              value={title ?? t.title}
+              maxLength={120}
+              onFocus={() => setTitle(t.title)}
+              onChange={e => setTitle(e.target.value.replace(/\n/g, ''))}
+              onBlur={saveTitle}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+              }}
+              className="col-start-1 row-start-1 block h-full w-full resize-none overflow-hidden break-words rounded-lg border border-transparent bg-transparent px-2 py-1 leading-snug hover:bg-sunk focus:border-primary/50 focus:bg-surface focus:outline-none"
+            />
+          </div>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] font-normal text-muted">
             {t.status !== 'backlog' && sprints && <span>Sprint {sprints.current.number}</span>}
             {t.status !== 'backlog' && <span>•</span>}
@@ -119,14 +199,14 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
             <Icon n="trash" className="h-4 w-4" />
             Excluir
           </Button>
-          <Button variant="line" className="flex-1" onClick={() => sheets.openTask({ id })}>
-            <Icon n="edit" className="h-4 w-4" />
-            Editar
-          </Button>
+          <p className="flex flex-1 items-center justify-end gap-1 text-xs text-muted">
+            <Icon n="check" className="h-3.5 w-3.5" />
+            As mudanças salvam sozinhas
+          </p>
         </>
       }
     >
-      <div className="no-bar -mx-5 mb-4 flex gap-1 overflow-x-auto border-b border-line px-5" role="tablist">
+      <div className="no-bar sticky top-0 z-10 -mx-5 mb-4 flex gap-1 overflow-x-auto border-b border-line bg-surface px-5" role="tablist">
         {tabs.map(x => (
           <button
             key={x.id}
@@ -142,60 +222,107 @@ export function TaskDetail({ id, onClose }: { id: string; onClose: () => void })
       </div>
 
       {tab === 'det' && (
-        <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="space-y-4 text-sm">
+          <div>
+            <p className="mb-2 text-sm font-semibold">Status</p>
+            <Seg items={STATUSES} value={t.status} onChange={st => actions.moveTask(id, st).then(refresh).catch(() => undefined)} />
+          </div>
+          <div className="-mx-2 grid grid-cols-2 gap-x-2 gap-y-3">
             <div>
-              <p className="flex items-center gap-1.5 text-muted">
-                <Icon n="calendar" className="h-4 w-4" />
-                Prazo
-              </p>
-              <input
-                type="date"
-                value={t.dueDate ?? ''}
-                onChange={e => actions.updateTask(id, { dueDate: e.target.value || null }).then(refresh)}
-                className="mt-1 w-full bg-transparent font-medium focus:outline-none"
-              />
+              {label('flag', 'Prioridade')}
+              <select aria-label="Prioridade" value={t.priority} onChange={e => save({ priority: e.target.value })} className={fieldCls}>
+                <option value="alta">Alta</option>
+                <option value="media">Média</option>
+                <option value="baixa">Baixa</option>
+              </select>
             </div>
             <div>
-              <p className="flex items-center gap-1.5 text-muted">
-                <Icon n="folder" className="h-4 w-4" />
-                {areaIds.length > 1 ? 'Áreas' : 'Área'}
-              </p>
-              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-medium">
-                {areaIds.map(a => (
+              {label('calendar', 'Prazo')}
+              <input type="date" aria-label="Prazo" value={t.dueDate ?? ''} onChange={e => changeDue(e.target.value)} className={fieldCls} />
+            </div>
+            <div className="col-span-2">
+              {label('layersArea', 'Épico (iniciativa)')}
+              <select aria-label="Épico" value={t.epicId} onChange={e => save({ epicId: e.target.value })} className={`${fieldCls} truncate`}>
+                {epics.map(e => (
+                  <option key={e.id} value={e.id}>
+                    {e.title} · {iniTitle(e.initiativeId)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-2">
+              {label('wheel', areaIds.length > 1 ? 'Áreas da vida' : 'Área da vida')}
+              <button
+                type="button"
+                aria-expanded={areasOpen}
+                onClick={() => setAreasOpen(!areasOpen)}
+                className={`${fieldCls} flex flex-wrap items-center gap-x-2.5 gap-y-1 text-left pointer-coarse:text-base`}
+              >
+                {(areasDraft?.length ? areasDraft : areaIds).map(a => (
                   <span key={a} className="inline-flex items-center gap-1">
                     <Icon n={AREA[a].icon} className="h-3.5 w-3.5" style={{ color: AREA[a].color }} />
                     {AREA[a].name}
                   </span>
                 ))}
-              </p>
+                {!(areasDraft ?? t.areas).length && <span className="text-xs font-normal text-muted">(as do épico)</span>}
+                <Icon n={areasOpen ? 'chevU' : 'chevD'} className="ml-auto h-4 w-4 text-muted" />
+              </button>
+              {areasOpen && (
+                <div className="mt-2 px-2">
+                  <AreaPicker multi value={areasDraft ?? t.areas} onChange={onAreas} />
+                  <p className="mt-2 text-xs text-muted">Sem nenhuma marcada, a tarefa usa as áreas do épico.</p>
+                </div>
+              )}
             </div>
           </div>
-          <div className="text-sm">
-            <p className="flex items-center gap-1.5 text-muted">
-              <Icon n="target" className="h-4 w-4" />
-              Iniciativa e épico
-            </p>
-            <p className="mt-1">
-              {data.initiative.title} <span className="text-muted">›</span> {data.epic.title}
-            </p>
-          </div>
-          <div className="text-sm">
-            <p className="flex items-center gap-1.5 text-muted">
-              <Icon n="list" className="h-4 w-4" />
-              Descrição
-            </p>
+          {askCal && t.dueDate && !t.inCalendar && calendar?.connected && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+              <p className="flex items-center gap-2 font-semibold">
+                <Icon n="calendar" className="h-4 w-4 text-primary" />
+                Colocar na sua Google Agenda?
+              </p>
+              <p className="mt-0.5 text-xs text-muted">A tarefa entra na agenda no dia do prazo.</p>
+              <div className="mt-2.5 flex gap-2">
+                <Button className="flex-1" onClick={() => toggleCalendar(true)} disabled={actions.busy}>
+                  Adicionar
+                </Button>
+                <Button variant="line" className="flex-1" onClick={() => setAskCal(false)}>
+                  Agora não
+                </Button>
+              </div>
+            </div>
+          )}
+          {askCal && t.dueDate && calendar?.available && !calendar.connected && (
+            <div className="rounded-xl bg-sunk p-3 text-xs text-muted">
+              <p>
+                Quer as tarefas com prazo na sua agenda?{' '}
+                <Link href="/perfil" onClick={onClose} className="font-semibold text-primary">
+                  Conecte a Google Agenda
+                </Link>{' '}
+                nas Configurações.
+              </p>
+              <button type="button" onClick={() => setAskCal(false)} className="mt-1.5 font-semibold text-ink/70">
+                Agora não
+              </button>
+            </div>
+          )}
+          {calendar?.connected && t.dueDate && !(askCal && !t.inCalendar) && (
+            <label className="flex items-center gap-2.5 rounded-xl bg-sunk px-3.5 py-2.5">
+              <input type="checkbox" checked={t.inCalendar} onChange={e => toggleCalendar(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--p))]" />
+              <Icon n="calendar" className="h-4 w-4 text-primary" />
+              <span>Na minha Google Agenda</span>
+            </label>
+          )}
+          <div className="-mx-2">
+            {label('list', 'Descrição')}
             <textarea
-              rows={3}
+              rows={4}
               value={desc ?? t.description}
               onChange={e => onDesc(e.target.value)}
+              maxLength={4000}
               placeholder="Adicione detalhes e próximos passos"
-              className="mt-1 w-full resize-none bg-transparent text-[0.9375rem] leading-relaxed placeholder:text-muted/70 focus:outline-none"
+              className={`${fieldCls} resize-none text-[0.9375rem] font-normal leading-relaxed placeholder:text-muted/70`}
             />
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-semibold">Status</p>
-            <Seg items={STATUSES} value={t.status} onChange={st => actions.moveTask(id, st).then(refresh)} />
           </div>
         </div>
       )}

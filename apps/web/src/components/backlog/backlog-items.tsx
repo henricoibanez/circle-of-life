@@ -56,8 +56,8 @@ export function TaskLine({ t, last }: { t: TaskDto; last?: boolean }) {
             t.status === 'backlog'
               ? { icon: 'board', label: 'Puxar para a sprint', run: () => actions.moveTask(t.id, 'todo').then(r => r && toast('Tarefa na sprint atual')) }
               : !done && { icon: 'backlog', label: 'Voltar para o backlog', run: () => actions.moveTask(t.id, 'backlog') },
-            { icon: 'checkSq', label: 'Abrir detalhes', run: () => sheets.openTaskDetail(t.id) },
-            { icon: 'edit', label: 'Editar', run: () => sheets.openTask({ id: t.id }) },
+            // A edição é feita no próprio detalhe (como no Jira).
+            { icon: 'edit', label: 'Abrir e editar', run: () => sheets.openTaskDetail(t.id) },
             { icon: 'copy', label: 'Duplicar', run: () => actions.duplicateTask(t.id).then(() => toast('Tarefa duplicada')) },
             {
               icon: 'trash',

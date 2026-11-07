@@ -9,8 +9,8 @@ import { Header, useGoBack } from '@/components/header';
 import { BoardLocked } from '@/components/journey';
 import { useBoardLocked, useJourney } from '@/lib/journey';
 import { Icon } from '@/components/icon';
-import { AreaIcon, AreaIcons, Bar, Card, IconBtn, inputCls, Prio } from '@/components/primitives';
-import { useSheets } from '@/components/sheet';
+import { AreaIcon, AreaIcons, Bar, Card, IconBtn, inputCls, Prio, Tag } from '@/components/primitives';
+import { useSheets, type Action } from '@/components/sheet';
 import { taskAreas, useBacklog, useBacklogActions } from '@/lib/backlog';
 import { boardTasks, fmtDay, sprintPeriod, useSprints } from '@/lib/sprints';
 import { PushAsk } from '@/components/push-ask';
@@ -34,6 +34,8 @@ export default function BoardPage() {
   const goBack = useGoBack('/feed');
   const [view, setView] = useState<'quadro' | 'lista'>('quadro');
   const [area, setArea] = useState<AreaId | 'all'>('all');
+  const [initiative, setInitiative] = useState<string | null>(null);
+  const [epic, setEpic] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [search, setSearch] = useState(false);
   const [showLate, setShowLate] = useState(false);
@@ -51,9 +53,22 @@ export default function BoardPage() {
     return () => window.removeEventListener('touchmove', block);
   }, []);
 
-  const tasks = data ? boardTasks(data).filter(t => (area === 'all' || taskAreas(data, t).includes(area)) && (!q || t.title.toLowerCase().includes(q.toLowerCase()))) : [];
-  const late = data ? data.tasks.filter(t => !t.archivedAt && isLate(t)) : [];
   const epicOf = (t: TaskDto) => data?.epics.find(e => e.id === t.epicId);
+  const initiativeOf = (t: TaskDto) => {
+    const ep = epicOf(t);
+    return ep ? data?.initiatives.find(i => i.id === ep.initiativeId) : undefined;
+  };
+  // Filtros do quadro: área, iniciativa, épico e busca se combinam (a tarefa precisa passar em todos).
+  const tasks = data
+    ? boardTasks(data).filter(
+        t =>
+          (area === 'all' || taskAreas(data, t).includes(area)) &&
+          (!initiative || initiativeOf(t)?.id === initiative) &&
+          (!epic || t.epicId === epic) &&
+          (!q || t.title.toLowerCase().includes(q.toLowerCase())),
+      )
+    : [];
+  const late = data ? data.tasks.filter(t => !t.archivedAt && isLate(t)) : [];
 
   const openTask = (id: string) => sheets.openTaskDetail(id);
   const setStatus = (id: string, status: TaskStatus) => actions.moveTask(id, status);
@@ -110,7 +125,7 @@ export default function BoardPage() {
     openActions(t.title, [
       ...COLS.filter(c => c.id !== t.status).map(c => ({ icon: 'chevR' as const, label: `Mover para ${c.label}`, run: () => setStatus(t.id, c.id) })),
       { icon: 'backlog', label: 'Voltar para o backlog', run: () => setStatus(t.id, 'backlog') },
-      { icon: 'edit', label: 'Editar', run: () => sheets.openTask({ id: t.id }) },
+      { icon: 'edit', label: 'Abrir e editar', run: () => openTask(t.id) },
     ]);
 
   const areaFilter = () =>
@@ -118,6 +133,87 @@ export default function BoardPage() {
       { icon: 'grid', label: 'Todas as áreas', run: () => setArea('all') },
       ...AREAS.map(a => ({ icon: a.icon as never, label: a.name, run: () => setArea(a.id) })),
     ]);
+
+  // Só entram nas listas as iniciativas e os épicos que têm tarefas no quadro.
+  const onBoardTasks = data ? boardTasks(data) : [];
+  const boardEpics = data ? data.epics.filter(e => onBoardTasks.some(t => t.epicId === e.id)) : [];
+  const boardInitiatives = data ? data.initiatives.filter(i => boardEpics.some(e => e.initiativeId === i.id)) : [];
+  const initiativeName = (id: string | null) => data?.initiatives.find(i => i.id === id)?.title;
+  const epicName = (id: string | null) => data?.epics.find(e => e.id === id)?.title;
+
+  const initiativeFilter = () =>
+    openActions('Filtrar por iniciativa', [
+      { icon: 'grid', label: 'Todas as iniciativas', run: () => setInitiative(null) },
+      ...boardInitiatives.map(i => ({
+        icon: 'target' as const,
+        label: i.title,
+        run: () => {
+          setInitiative(i.id);
+          // O épico escolhido antes só continua se for desta iniciativa.
+          if (epic && data?.epics.find(e => e.id === epic)?.initiativeId !== i.id) setEpic(null);
+        },
+      })),
+    ]);
+
+  const epicFilter = () => {
+    const list = boardEpics.filter(e => !initiative || e.initiativeId === initiative);
+    openActions('Filtrar por épico', [
+      { icon: 'grid', label: 'Todos os épicos', run: () => setEpic(null) },
+      ...list.map(e => ({
+        icon: 'layersArea' as const,
+        // Épicos com o mesmo nome em iniciativas diferentes levam o nome da iniciativa junto.
+        label: list.filter(x => x.title === e.title).length > 1 ? `${e.title} (${initiativeName(e.initiativeId) ?? ''})` : e.title,
+        run: () => {
+          setEpic(e.id);
+          setInitiative(e.initiativeId);
+        },
+      })),
+    ]);
+  };
+
+  const activeFilters = (area !== 'all' ? 1 : 0) + (initiative ? 1 : 0) + (epic ? 1 : 0);
+  const clearFilters = () => {
+    setArea('all');
+    setInitiative(null);
+    setEpic(null);
+  };
+  const filterMenu = () => {
+    const acts: Action[] = [
+      { icon: 'wheel', label: area === 'all' ? 'Área da vida' : `Área da vida: ${AREA[area].name}`, run: areaFilter },
+      { icon: 'target', label: initiative ? `Iniciativa: ${initiativeName(initiative)}` : 'Iniciativa', run: initiativeFilter },
+      { icon: 'layersArea', label: epic ? `Épico: ${epicName(epic)}` : 'Épico', run: epicFilter },
+      activeFilters > 0 && { icon: 'undo', label: 'Limpar filtros', run: clearFilters },
+    ];
+    openActions('Filtros do quadro', acts);
+  };
+
+  /** Tags com a iniciativa e o épico da tarefa (nomes longos são cortados). */
+  const taskTags = (t: TaskDto, row?: boolean) => {
+    const ep = epicOf(t);
+    const ini = initiativeOf(t);
+    if (!ep && !ini) return null;
+    const tag = 'inline-flex min-w-0 max-w-full items-center gap-0.5 px-1.5';
+    return (
+      <span className={row ? 'mt-1 flex min-w-0 gap-1' : 'mt-1.5 flex flex-col items-start gap-1'}>
+        {ini && (
+          <Tag c="#6b7280" className={tag}>
+            <Icon n="target" className="h-2.5 w-2.5 shrink-0" sw={2.6} />
+            <span className="truncate" title={`Iniciativa: ${ini.title}`}>
+              {ini.title}
+            </span>
+          </Tag>
+        )}
+        {ep && (
+          <Tag c={AREA[ep.areas[0]!]?.color ?? 'rgb(var(--p))'} className={tag}>
+            <Icon n="layersArea" className="h-2.5 w-2.5 shrink-0" sw={2.6} />
+            <span className="truncate" title={`Épico: ${ep.title}`}>
+              {ep.title}
+            </span>
+          </Tag>
+        )}
+      </span>
+    );
+  };
 
   const renderCard = (t: TaskDto, ghost?: boolean) => {
     const areas = data ? taskAreas(data, t) : [];
@@ -152,6 +248,7 @@ export default function BoardPage() {
             )
           )}
         </div>
+        {taskTags(t)}
         <div className="mt-2">
           <Prio p={t.priority} />
         </div>
@@ -276,15 +373,42 @@ export default function BoardPage() {
           Sprint
         </Link>
         <button
-          onClick={areaFilter}
+          onClick={filterMenu}
+          aria-label="Filtros"
           className={`ml-auto inline-flex items-center gap-1.5 rounded-xl border px-3 py-2.5 sm:px-4 text-sm font-semibold ${
-            area !== 'all' ? 'border-primary/40 bg-primary/5 text-primary' : 'border-line bg-surface text-ink/80'
+            activeFilters ? 'border-primary/40 bg-primary/5 text-primary' : 'border-line bg-surface text-ink/80'
           }`}
         >
           <Icon n="filter" className="h-4 w-4" />
-          {area === 'all' ? <span className="max-sm:sr-only">Filtros</span> : AREA[area].name.split(' ')[0]}
+          <span className="max-sm:sr-only">Filtros</span>
+          {activeFilters > 0 && (
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[0.6875rem] text-onprimary">{activeFilters}</span>
+          )}
         </button>
       </div>
+
+      {activeFilters > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
+          {area !== 'all' && <FilterChip icon={AREA[area].icon} label={AREA[area].name} onOpen={areaFilter} onClear={() => setArea('all')} />}
+          {initiative && (
+            <FilterChip
+              icon="target"
+              label={initiativeName(initiative) ?? 'Iniciativa'}
+              onOpen={initiativeFilter}
+              onClear={() => {
+                setInitiative(null);
+                setEpic(null);
+              }}
+            />
+          )}
+          {epic && <FilterChip icon="layersArea" label={epicName(epic) ?? 'Épico'} onOpen={epicFilter} onClear={() => setEpic(null)} />}
+          {activeFilters > 1 && (
+            <button onClick={clearFilters} className="px-1.5 text-[0.8125rem] font-semibold text-primary">
+              Limpar
+            </button>
+          )}
+        </div>
+      )}
 
       {planning && !onBoard && (
         <div className="mx-4 rounded-2xl border border-line bg-surface p-6 text-center">
@@ -367,13 +491,12 @@ export default function BoardPage() {
                 </h2>
                 <Card className="divide-y divide-line">
                   {list.map(t => {
-                    const ep = epicOf(t);
                     return (
                       <button key={t.id} onClick={() => openTask(t.id)} className="flex w-full items-center gap-3 p-3.5 text-left">
                         <AreaIcon id={data ? taskAreas(data, t)[0] : undefined} areas={data ? taskAreas(data, t) : undefined} size="w-9 h-9" icon="w-4 h-4" />
                         <span className="min-w-0 flex-1">
                           <span className={`block truncate font-medium ${t.status === 'done' ? 'text-muted line-through' : ''}`}>{t.title}</span>
-                          <span className="block truncate text-xs text-muted">{ep?.title}</span>
+                          {taskTags(t, true)}
                         </span>
                         <Prio p={t.priority} />
                       </button>
@@ -393,5 +516,20 @@ export default function BoardPage() {
         </div>
       )}
     </>
+  );
+}
+
+/** Filtro ativo: toque no nome para trocar, no "x" para tirar. */
+function FilterChip({ icon, label, onOpen, onClear }: { icon: string; label: string; onOpen: () => void; onClear: () => void }) {
+  return (
+    <span className="inline-flex min-w-0 max-w-full items-center rounded-full border border-primary/30 bg-primary/5 text-[0.8125rem] font-semibold text-primary">
+      <button onClick={onOpen} className="inline-flex min-w-0 items-center gap-1 py-1.5 pl-2.5">
+        <Icon n={icon} className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{label}</span>
+      </button>
+      <button onClick={onClear} aria-label={`Tirar o filtro ${label}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-full">
+        <Icon n="x" className="h-3.5 w-3.5" sw={2.4} />
+      </button>
+    </span>
   );
 }
