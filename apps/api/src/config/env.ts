@@ -23,8 +23,12 @@ export const envSchema = z.object({
   S3_PUBLIC_ENDPOINT: z.url(),
   S3_REGION: z.string().min(1),
   S3_BUCKET: z.string().min(1),
-  S3_ACCESS_KEY_ID: z.string().min(1),
-  S3_SECRET_ACCESS_KEY: z.string().min(1),
+  /**
+   * Chave de acesso ao storage. Vazias = usa a credencial do próprio ambiente (na AWS, a permissão
+   * da task no ECS), sem chave guardada em lugar nenhum. Preencha as duas, ou nenhuma.
+   */
+  S3_ACCESS_KEY_ID: z.string().optional().default(''),
+  S3_SECRET_ACCESS_KEY: z.string().optional().default(''),
   S3_FORCE_PATH_STYLE: bool.default(true),
   S3_CREATE_BUCKET: bool.default(false),
   S3_CORS_ORIGINS: z.string().transform(v => v.split(',').map(s => s.trim()).filter(Boolean)),
@@ -89,6 +93,10 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     .refine(env => env.NODE_ENV !== 'production' || env.JWT_SECRET !== EXAMPLE_JWT_SECRET, {
       path: ['JWT_SECRET'],
       message: 'em produção, troque o valor de exemplo por um segredo aleatório',
+    })
+    .refine(env => Boolean(env.S3_ACCESS_KEY_ID) === Boolean(env.S3_SECRET_ACCESS_KEY), {
+      path: ['S3_SECRET_ACCESS_KEY'],
+      message: 'preencha S3_ACCESS_KEY_ID e S3_SECRET_ACCESS_KEY juntas (ou deixe as duas vazias na AWS)',
     })
     .refine(env => env.AI_MODE !== 'afl' || (env.AFL_API_URL && env.AFL_API_KEY && env.AFL_AGENT_ID), {
       path: ['AFL_API_KEY'],

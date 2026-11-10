@@ -15,7 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Env } from '../config/env';
 
 /**
- * Acesso ao storage compatível com S3 (SeaweedFS local, Supabase em produção).
+ * Acesso ao storage compatível com S3 (SeaweedFS local, Supabase ou Amazon S3 em produção).
  * Só usa o SDK S3 padrão: trocar de provedor é trocar variáveis de ambiente.
  */
 @Injectable()
@@ -28,6 +28,7 @@ export class StorageService implements OnModuleInit {
 
   constructor(private readonly config: ConfigService<Env, true>) {
     this.bucket = config.get('S3_BUCKET');
+    const accessKeyId = config.get('S3_ACCESS_KEY_ID');
     const base: S3ClientConfig = {
       region: config.get('S3_REGION'),
       forcePathStyle: config.get('S3_FORCE_PATH_STYLE'),
@@ -35,10 +36,10 @@ export class StorageService implements OnModuleInit {
       // códigos de conferência novos da AWS; só usamos quando obrigatório.
       requestChecksumCalculation: 'WHEN_REQUIRED',
       responseChecksumValidation: 'WHEN_REQUIRED',
-      credentials: {
-        accessKeyId: config.get('S3_ACCESS_KEY_ID'),
-        secretAccessKey: config.get('S3_SECRET_ACCESS_KEY'),
-      },
+      // Sem chave no ambiente, o SDK usa a credencial da máquina (na AWS, a permissão da task).
+      ...(accessKeyId && {
+        credentials: { accessKeyId, secretAccessKey: config.get('S3_SECRET_ACCESS_KEY') },
+      }),
     };
     this.client = new S3Client({ ...base, endpoint: config.get('S3_ENDPOINT') });
     this.publicClient = new S3Client({ ...base, endpoint: config.get('S3_PUBLIC_ENDPOINT') });

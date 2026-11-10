@@ -1,4 +1,32 @@
-# Como publicar o Circle of Life (Supabase + Vercel)
+# Como publicar o Circle of Life
+
+## Produção na AWS (desde 11/2026)
+
+O endereço oficial é **https://circleoflife.labzz.studio**, na conta AWS da Labzz/Eduzz. Quem cuida da
+infraestrutura é o time da Labzz; o código da infra e o manual de operação ficam no repositório
+`eduzz-aws`, pasta `infra/circle-of-life`.
+
+**Para publicar, basta enviar o código para a branch `master`.** O Jenkins (https://ci.labzz.studio)
+monta o site e a API, publica a versão nova sem tirar o app do ar e confere se ela está funcionando.
+Se a versão nova não subir, a anterior continua no ar e o build fica vermelho no Jenkins. As
+migrations do banco rodam sozinhas quando a API nova inicia.
+
+| Peça | Onde fica na AWS |
+|---|---|
+| Site e API | ECS (contêineres `web` e `api` juntos), imagens `apps/web/Dockerfile` e `apps/api/Dockerfile` |
+| Banco de dados | PostgreSQL no RDS, com backup automático de 7 dias |
+| Arquivos (fotos, vídeos, documentos) | Amazon S3, bucket privado `circle-of-life-prod-media` |
+| Variáveis secretas | AWS Secrets Manager (`circle-of-life-prod`); peça ao time da Labzz para trocar alguma |
+
+Na AWS, a API não usa `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`: ela acessa o bucket pela permissão
+do próprio servidor, sem chave guardada. No computador local e na Vercel, as chaves continuam
+valendo como antes.
+
+O restante deste guia descreve a publicação antiga, na Vercel + Supabase.
+
+---
+
+# Publicação na Vercel + Supabase (beta)
 
 Este guia explica, passo a passo, como colocar o beta no ar usando só dois serviços: **Supabase** (banco de dados e fotos) e **Vercel** (site e API). Cada termo técnico vem explicado na primeira vez que aparece.
 

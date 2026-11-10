@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import type { NextConfig } from 'next';
 
 // Endereço da API. O navegador só conversa com o site; o site repassa
@@ -9,6 +10,12 @@ if (!apiUrl) {
 }
 
 const nextConfig: NextConfig = {
+  // Na imagem Docker (apps/web/Dockerfile), gera um servidor enxuto com só o necessário.
+  // Na Vercel e no computador local, nada muda.
+  ...(process.env.NEXT_OUTPUT === 'standalone' && {
+    output: 'standalone',
+    outputFileTracingRoot: resolve(__dirname, '../..'),
+  }),
   // O selo "N" do Next em desenvolvimento cobre a barra inferior do app.
   devIndicators: false,
   poweredByHeader: false,
