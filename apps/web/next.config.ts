@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Endereço que mudou: com MOVED_TO_URL preenchida (só no servidor antigo), toda página
+  // manda a pessoa para o mesmo caminho no endereço novo. Vazia = nada muda.
+  async redirects() {
+    const movedTo = process.env.MOVED_TO_URL?.replace(/\/$/, '');
+    return movedTo ? [{ source: '/:path*', destination: `${movedTo}/:path*`, permanent: true }] : [];
+  },
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiUrl.replace(/\/$/, '')}/api/:path*` }];
   },

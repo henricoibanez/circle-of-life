@@ -25,6 +25,17 @@ Na AWS, a API não usa `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`: ela acessa o b
 do próprio servidor, sem chave guardada. No computador local e na Vercel, as chaves continuam
 valendo como antes.
 
+### Desligando a publicação antiga (Vercel + Supabase)
+
+Os dados já foram levados para a AWS. Para quem abrir o endereço antigo cair no novo:
+
+1. **Site antigo (projeto `circle-web` na Vercel):** em Settings → Environment Variables, crie
+   `MOVED_TO_URL` = `https://circleoflife.labzz.studio` (Production) e faça um Redeploy. Toda página
+   do endereço antigo passa a levar para a mesma página no novo.
+2. **API antiga (projeto `circle-api`):** apague a variável `CRON_SECRET` e faça um Redeploy. Assim as
+   tarefas diárias param e ninguém recebe avisos repetidos tirados do banco antigo. (Ou exclua o projeto.)
+3. **Supabase:** mantenha o banco e os arquivos por algumas semanas, como cópia de segurança; depois, pode excluir.
+
 O restante deste guia descreve a publicação antiga, na Vercel + Supabase.
 
 ---
