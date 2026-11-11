@@ -19,7 +19,7 @@ migrations do banco rodam sozinhas quando a API nova inicia.
 | Variáveis secretas | AWS Secrets Manager (`circle-of-life-prod`); peça ao time da Labzz para trocar alguma |
 
 Para acompanhar cada publicação (etapas e log ao vivo): https://ci.labzz.studio/job/circle-of-life/job/deploy/
-(entre com o login do GitHub).
+(entre com o login do GitHub). Uma publicação leva de 2 a 4 minutos do push até o ar, sem tirar o app do ar.
 
 Na AWS, a API não usa `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`: ela acessa o bucket pela permissão
 do próprio servidor, sem chave guardada. No computador local e na Vercel, as chaves continuam
