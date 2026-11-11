@@ -24,7 +24,6 @@ import { since } from '@/lib/time';
 import { disablePush, enablePush, pushActive, pushSupported } from '@/lib/notifications';
 import { uploadImage } from '@/lib/upload';
 import { NotificationPrefsCard } from '@/components/notification-prefs';
-import { HealthStatus } from '../health-status';
 
 type Usage = { maslow: number; roda: number; necrologio: number; quadro: number; backlog: number };
 type Activity = { id: string; icon: IconName; text: string; link: string; createdAt: string };
@@ -365,11 +364,6 @@ export default function PerfilPage() {
 
         <PushCard />
         <NotificationPrefsCard />
-
-        <Card className="space-y-2 p-4">
-          <h2 className="font-semibold">Estado do sistema</h2>
-          <HealthStatus />
-        </Card>
 
         <Card className="p-4">
           <Button variant="line" className="w-full" onClick={logout}>
