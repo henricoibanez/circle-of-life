@@ -87,15 +87,44 @@ case "${1:-}" in
     aws ecs update-service --cluster $CLUSTER --service $SERVICE --task-definition "$NOVA" >/dev/null
     # A versão nova sobe ao lado da atual (sem queda). Se UMA task nova falhar, devolvemos a anterior
     # na hora — o circuit breaker do ECS faria o mesmo, mas só depois de várias falhas (15–20 min).
+    #
+    # "No ar" = a versão nova com todas as tasks rodando, a antiga já fora e o alvo saudável nos dois
+    # target groups. Não esperamos o COMPLETED do ECS: ele chega ~2 min depois, com o app já no ar,
+    # e esperar não segura a versão antiga (quem a tira é o ECS). Depois de "no ar", observamos mais
+    # 30 s; o circuit breaker do ECS continua ativo até o COMPLETED, como segunda rede.
     echo "aguardando a versão nova ficar saudável (a atual segue no ar)…"
-    ESTADO='' FALHAS=0
-    for i in $(seq 1 60); do   # até 15 min
-      read -r ESTADO FALHAS < <(aws ecs describe-services --cluster $CLUSTER --services $SERVICE \
-        --query "services[0].deployments[?taskDefinition=='$NOVA'] | [0].[rolloutState,failedTasks]" --output text)
-      [ "$ESTADO" = "COMPLETED" ] && { echo "ok: $NOVA no ar"; exit 0; }
+    TGS=$(aws ecs describe-services --cluster $CLUSTER --services $SERVICE --query 'services[0].loadBalancers[].targetGroupArn' --output text)
+    estado() {  # → "<rollout> <falhas> <rodando> <desejadas> <tasks de outras versões>"
+      aws ecs describe-services --cluster $CLUSTER --services $SERVICE --query "services[0].[
+        deployments[?taskDefinition=='$NOVA'] | [0].rolloutState, deployments[?taskDefinition=='$NOVA'] | [0].failedTasks,
+        deployments[?taskDefinition=='$NOVA'] | [0].runningCount, deployments[?taskDefinition=='$NOVA'] | [0].desiredCount,
+        sum(deployments[?taskDefinition!='$NOVA'].runningCount)]" --output text
+    }
+    alvos_saudaveis() {  # todo alvo de cada target group saudável, e pelo menos um em cada
+      local tg st
+      for tg in $TGS; do
+        st=$(aws elbv2 describe-target-health --target-group-arn "$tg" --query 'TargetHealthDescriptions[].TargetHealth.State' --output text)
+        [ -n "$st" ] && [ -z "$(tr '\t' '\n' <<<"$st" | grep -v '^healthy$')" ] || return 1
+      done
+    }
+    ESTADO='' FALHAS=0 NO_AR=''
+    for i in $(seq 1 180); do   # até 15 min, de 5 em 5 s
+      read -r ESTADO FALHAS RODANDO DESEJADAS OUTRAS < <(estado)
       if [ "$ESTADO" = "FAILED" ] || [ "${FALHAS:-0}" -ge 1 ]; then break; fi
-      sleep 15
+      if [ "$ESTADO" = "COMPLETED" ] || { [ "$RODANDO" = "$DESEJADAS" ] && [ "${OUTRAS%.*}" = 0 ] && alvos_saudaveis; }; then
+        NO_AR=$i; break
+      fi
+      sleep 5
     done
+    if [ -n "$NO_AR" ]; then
+      echo "no ar em ~$((NO_AR * 5)) s; observando mais 30 s…"
+      for i in 1 2 3 4 5 6; do
+        sleep 5
+        read -r ESTADO FALHAS RODANDO DESEJADAS OUTRAS < <(estado)
+        if [ "$ESTADO" = "FAILED" ] || [ "${FALHAS:-0}" -ge 1 ] || [ "$RODANDO" != "$DESEJADAS" ]; then NO_AR=''; break; fi
+      done
+      [ -n "$NO_AR" ] && { echo "ok: $NOVA no ar"; exit 0; }
+    fi
     echo "FALHOU: a versão nova não ficou saudável ($ESTADO, $FALHAS task(s) com falha). Voltando para"
     echo "$ATUAL — o app não saiu do ar. Motivo no log da task: CloudWatch → $LOGS."
     aws ecs update-service --cluster $CLUSTER --service $SERVICE --task-definition "$ATUAL" >/dev/null

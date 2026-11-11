@@ -14,7 +14,10 @@ RUN npm install -g pnpm@12.10.1
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile --filter "@circle/web..."
+# Os pacotes baixados ficam num cache do Docker entre builds: quando a lista de dependências muda,
+# só o que é novo é baixado. O lockfile congelado garante o mesmo resultado.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --store-dir /pnpm/store --filter "@circle/web..."
 
 COPY packages/shared packages/shared
 COPY apps/web apps/web
