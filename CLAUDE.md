@@ -177,6 +177,7 @@ Cada tela de ferramenta tem um botão "i" com a explicação do exercício (text
 - A cor `accent` (era o roxo `#7c4dde` do protótipo) **segue a cor do tema** (decisão do dono de 05/11/2026): tudo que era roxo muda junto com a paleta. Cores das áreas e das ferramentas continuam fixas.
 - Item com **3 ou mais áreas da vida** (`MANY_AREAS` em `components/primitives.tsx`) mostra uma **mini roda colorida** (uma fatia por área, com o número no meio) no lugar do ícone da área principal; com as 10, o texto diz "Todas as áreas da vida".
 - Ícones e ilustrações (paisagens `Art`, folhas, troféu, pena etc.) são os SVGs do protótipo, copiados para componentes.
+- **Logo** (decisão do dono de 10/11/2026): uma **serpente em "C"** (ouroboros + C de Circle), grossa e afinando só no fim, com um olhinho, e um **quadro** no meio (A Fazer, Fazendo, Pronto). No app ele segue a cor do tema (`Logo` em `components/art.tsx`); a cor fixa da marca é o verde `#5e873c`. Os ícones do celular (`apps/web/public/icons/`) e o **pacote de marketing** (`marketing/`, com logos, peças do Instagram, capas e guia da marca; fica **fora do git**, só no computador do dono) saem desse mesmo desenho; as peças são refeitas com `node marketing/fonte/gerar.mjs` (usa o Edge sem janela para desenhar com as fontes do app).
 
 ## Stack obrigatória
 

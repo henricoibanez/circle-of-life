@@ -105,18 +105,43 @@ export function Leaves({ className = '', c = 'rgb(var(--p))' }: { className?: st
   );
 }
 
+/**
+ * Corpo da serpente do logo: um "C" que fica grosso quase todo o caminho e afina só no fim (o rabo).
+ * Gerado a partir de um arco de raio 17 em volta do centro (24, 24); o mesmo desenho está em public/icons/icon.svg.
+ */
+const SNAKE_BODY =
+  'M40.89 14.25L40.36 13.38L39.78 12.54L39.16 11.74L38.5 10.96L37.8 10.22L37.06 9.52L36.29 8.86L35.48 8.24L34.65 7.66L33.78 7.13L32.89 6.64L31.97 6.2L31.03 5.81L30.07 5.47L29.09 5.18L28.11 4.94L27.11 4.75L26.1 4.61L25.08 4.53L24.07 4.5L23.05 4.52L22.03 4.6L21.02 4.73L20.02 4.91L19.03 5.14L18.06 5.43L17.1 5.76L16.15 6.15L15.23 6.58L14.34 7.06L13.47 7.59L12.62 8.16L11.81 8.78L11.04 9.43L10.29 10.13L9.59 10.86L8.92 11.63L8.3 12.44L7.72 13.27L7.18 14.14L6.69 15.03L6.24 15.94L5.85 16.88L5.5 17.84L5.2 18.81L4.96 19.8L4.76 20.8L4.62 21.8L4.54 22.82L4.5 23.83L4.52 24.85L4.59 25.87L4.71 26.88L4.89 27.88L5.12 28.87L5.4 29.85L5.73 30.81L6.11 31.76L6.54 32.68L7.01 33.58L7.54 34.45L8.1 35.3L8.72 36.11L9.37 36.88L10.11 37.59L10.88 38.25L11.67 38.87L12.5 39.45L13.36 39.98L14.23 40.46L15.13 40.9L16.05 41.28L16.99 41.62L17.93 41.9L18.89 42.14L19.86 42.32L20.83 42.46L21.8 42.54L22.78 42.57L23.75 42.55L24.71 42.48L25.67 42.36L26.62 42.19L27.55 41.97L28.47 41.7L29.37 41.39L30.25 41.03L31.11 40.63L31.94 40.18L32.74 39.69L33.52 39.17L34.26 38.6L34.97 38L35.65 37.36L36.29 36.69L36.89 36L37.46 35.27L37.98 34.52L38.46 33.74L38.9 32.94L39.29 32.12L39.64 31.29L39.95 30.44L39.58 30.29L39.17 31.07L38.73 31.83L38.25 32.55L37.74 33.25L37.19 33.92L36.61 34.56L36 35.16L35.36 35.73L34.69 36.26L34 36.76L33.29 37.21L32.56 37.63L31.81 38.01L31.04 38.34L30.26 38.64L29.46 38.89L28.66 39.1L27.85 39.26L27.04 39.39L26.23 39.47L25.41 39.5L24.6 39.5L23.79 39.45L22.99 39.36L22.2 39.22L21.41 39.05L20.65 38.84L19.89 38.59L19.16 38.3L18.44 37.97L17.74 37.61L17.07 37.21L16.42 36.78L15.79 36.32L15.2 35.83L14.63 35.31L14.09 34.76L13.59 34.19L13.11 33.59L12.63 33L12.18 32.4L11.76 31.77L11.37 31.12L11.02 30.45L10.7 29.77L10.41 29.07L10.17 28.35L9.96 27.62L9.79 26.88L9.66 26.14L9.57 25.39L9.51 24.63L9.5 23.88L9.53 23.12L9.59 22.37L9.7 21.62L9.84 20.87L10.02 20.14L10.24 19.42L10.5 18.71L10.8 18.01L11.13 17.33L11.49 16.67L11.89 16.02L12.32 15.4L12.79 14.8L13.28 14.23L13.81 13.69L14.36 13.17L14.94 12.68L15.54 12.22L16.17 11.8L16.81 11.41L17.48 11.05L18.17 10.73L18.87 10.44L19.58 10.19L20.31 9.98L21.04 9.8L21.79 9.67L22.54 9.57L23.29 9.52L24.05 9.5L24.81 9.52L25.56 9.58L26.31 9.69L27.05 9.83L27.79 10L28.51 10.22L29.23 10.47L29.92 10.77L30.61 11.09L31.27 11.45L31.92 11.85L32.54 12.28L33.14 12.74L33.71 13.23L34.26 13.76L34.78 14.3L35.27 14.88L35.73 15.48L36.16 16.1L36.56 16.75Z';
+
+/**
+ * Logo do Circle of Life: uma serpente em "C" (o ouroboros, a vida em ciclos) com um quadro no meio
+ * (A Fazer, Fazendo, Pronto). Segue a cor do tema; o olho é um furo, então mostra o fundo da tela.
+ */
 export function Logo({ className = 'w-9 h-9' }: { className?: string }) {
   const id = 'lg' + useId().replace(/:/g, '');
   return (
     <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
       <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="rgb(var(--p))" />
-          <stop offset="1" stopColor="rgb(var(--p) / .45)" />
-        </linearGradient>
+        <mask id={id}>
+          <rect width="48" height="48" fill="#fff" />
+          <circle cx="39.05" cy="14.41" r="0.6" fill="#000" />
+        </mask>
       </defs>
-      <path d="M38 11A18 18 0 1 0 41.5 28" fill="none" stroke={`url(#${id})`} strokeWidth="4.2" strokeLinecap="round" />
-      <circle cx="24" cy="24" r="10.5" fill="none" stroke="rgb(var(--p) / .25)" strokeWidth="1.5" />
+      <g fill="rgb(var(--p))" mask={`url(#${id})`}>
+        <path d={SNAKE_BODY} />
+        <circle cx="38.72" cy="15.5" r="2.5" />
+        <circle cx="39.76" cy="30.37" r="0.2" />
+      </g>
+      <g fill="rgb(var(--p))">
+        <g fillOpacity=".45">
+          <rect x="13.5" y="19.4" width="5" height="1.8" rx=".9" />
+          <rect x="13.5" y="22.1" width="5" height="1.8" rx=".9" />
+          <rect x="13.5" y="24.8" width="5" height="1.8" rx=".9" />
+          <rect x="21.5" y="20.75" width="5" height="1.8" rx=".9" />
+          <rect x="21.5" y="23.45" width="5" height="1.8" rx=".9" />
+        </g>
+        <rect x="29.5" y="22.1" width="5" height="1.8" rx=".9" />
+      </g>
+      <path d="M20 18.2V28.4M28 18.2V28.4" stroke="rgb(var(--p))" strokeOpacity=".3" strokeWidth=".6" />
     </svg>
   );
 }

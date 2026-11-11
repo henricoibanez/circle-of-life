@@ -30,5 +30,8 @@ Thumbs.db
 # Material de referência (grande demais para o git; fica só no computador)
 referencia/
 
+# Pacote de marketing (logos, peças do Instagram); fica só no computador do dono
+marketing/
+
 # Configurações pessoais do Claude Code (não compartilhadas)
 .claude/settings.local.json
